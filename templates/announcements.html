@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Announcements Hero v2 -->
+<section class="announcements-hero-v2">
+    <div class="announcements-hero-content-v2">
+        <div class="announcements-hero-title-v2">
+            <span class="hero-icon">📢</span> SRC Announcements
+        </div>
+        <div class="announcements-hero-subtitle-v2">Official updates from the Student Representative Council</div>
+    </div>
+    <div class="announcements-hero-actions-v2">
+        <a href="/student/dashboard" class="landing-hero-btn-secondary">← Dashboard</a>
+    </div>
+</section>
+
+<!-- Search & Filter Bar -->
+<div class="announcements-search-bar">
+    <input type="text" class="announcements-search-input" id="announcementSearch" placeholder="🔍 Search announcements..." autocomplete="off">
+    <div class="announcements-filter-pills" id="filterPills">
+        <button class="announcements-filter-pill active" data-filter="all">All</button>
+        <button class="announcements-filter-pill" data-filter="Academic">📚 Academic</button>
+        <button class="announcements-filter-pill" data-filter="Event">🎉 Event</button>
+        <button class="announcements-filter-pill" data-filter="General">📋 General</button>
+        <button class="announcements-filter-pill" data-filter="Urgent">🚨 Urgent</button>
+    </div>
+</div>
+
+{% if announcements %}
+<!-- Pinned Announcement (first one if marked) -->
+{% if announcements|length > 0 and loop.first %}
+<div class="announcement-pinned-v2">
+    <div class="announcement-pinned-label-v2">📌 Pinned Announcement</div>
+    <div class="announcement-pinned-title-v2">{{ announcements[0].title }}</div>
+    <div class="announcement-pinned-meta-v2">
+        <span>📅 {{ announcements[0].created_at.strftime('%Y-%m-%d') }}</span>
+        <span>✍️ {{ announcements[0].author }}</span>
+    </div>
+    <div class="announcement-pinned-content-v2">{{ announcements[0].content|safe }}</div>
+</div>
+{% endif %}
+
+<!-- Timeline -->
+<div class="announcements-timeline-v2" id="announcementsTimeline">
+    {% for a in announcements %}
+    <div class="announcement-card-v2" data-title="{{ a.title|lower }}" data-content="{{ a.content|striptags|lower }}" data-category="General">
+        <div class="announcement-card-inner-v2">
+            <div class="announcement-card-header-v2">
+                <div class="announcement-card-title-v2">{{ a.title }}</div>
+                <div class="announcement-card-badges-v2">
+                    <span class="announcement-card-category-v2 announcement-card-category-general">📋 General</span>
+                    {% if loop.index <= 2 %}
+                    <span class="announcement-card-new-badge-v2">🆕 New</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="announcement-card-meta-v2">
+                <span>📅 {{ a.created_at.strftime('%Y-%m-%d') }}</span>
+                <span>✍️ {{ a.author }}</span>
+                <span>👁️ Read</span>
+            </div>
+            <div class="announcement-card-body-v2 collapsed" id="announcementBody{{ loop.index }}">
+                {{ a.content|safe }}
+            </div>
+            <button class="announcement-card-toggle-v2" onclick="toggleAnnouncement({{ loop.index }})">
+                📖 Read more
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<!-- Empty State -->
+<div class="announcements-no-results visible">
+    <span class="announcements-no-results-icon">📢</span>
+    <div class="announcements-no-results-title">No Announcements</div>
+    <div class="announcements-no-results-desc">Check back later for updates from the SRC</div>
+</div>
+{% endif %}
+
+<script>
+function toggleAnnouncement(index) {
+    const body = document.getElementById('announcementBody' + index);
+    const btn = body.parentElement.querySelector('.announcement-card-toggle-v2');
+    if (body.classList.contains('collapsed')) {
+        body.classList.remove('collapsed');
+        btn.innerHTML = '🔼 Show less';
+    } else {
+        body.classList.add('collapsed');
+        btn.innerHTML = '📖 Read more';
+    }
+}
+
+// Search & Filter
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('announcementSearch');
+    const filterPills = document.querySelectorAll('.announcements-filter-pill');
+    const cards = document.querySelectorAll('.announcement-card-v2');
+    const noResults = document.querySelector('.announcements-no-results');
+
+    function filterAnnouncements() {
+        const search = searchInput ? searchInput.value.toLowerCase() : '';
+        const activeFilter = document.querySelector('.announcements-filter-pill.active');
+        const filter = activeFilter ? activeFilter.dataset.filter : 'all';
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const title = card.dataset.title || '';
+            const content = card.dataset.content || '';
+            const category = card.dataset.category || '';
+            
+            const matchesSearch = title.includes(search) || content.includes(search);
+            const matchesFilter = filter === 'all' || category === filter;
+            
+            if (matchesSearch && matchesFilter) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        if (noResults) {
+            noResults.classList.toggle('visible', visibleCount === 0);
+        }
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterAnnouncements);
+    }
+
+    filterPills.forEach(pill => {
+        pill.addEventListener('click', function() {
+            filterPills.forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            filterAnnouncements();
+        });
+    });
+});
+</script>
+{% endblock %}
+

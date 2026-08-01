@@ -1,0 +1,566 @@
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+import re
+
+db = SQLAlchemy()
+
+# ==================== STUDENT MODEL ====================
+
+class Student(db.Model):
+    __tablename__ = 'students'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.String(20), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    full_name = db.Column(db.String(100))
+    department = db.Column(db.String(100))
+    year_of_study = db.Column(db.Integer)
+    is_active = db.Column(db.Boolean, default=True)
+    theme_preference = db.Column(db.String(10), default='light')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'student_id': self.student_id,
+            'email': self.email,
+            'full_name': self.full_name,
+            'department': self.department,
+            'year_of_study': self.year_of_study
+        }
+
+# ==================== FEEDBACK MODEL ====================
+
+class Feedback(db.Model):
+    __tablename__ = 'feedback'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=False)
+    anonymous = db.Column(db.Boolean, default=True)
+    category = db.Column(db.String(50), nullable=False)
+    location = db.Column(db.String(200))
+    feedback_text = db.Column(db.Text, nullable=False)
+    cleaned_text = db.Column(db.Text)
+    sentiment = db.Column(db.String(10))
+    sentiment_score = db.Column(db.Float)
+    urgency_score = db.Column(db.Integer, default=1)
+    status = db.Column(db.String(20), default='Pending')
+    assigned_to = db.Column(db.String(100))
+    src_response = db.Column(db.Text)
+    
+    # === Solution Recommendation System (nullable to avoid breaking existing DB rows) ===
+    recommended_keywords = db.Column(db.Text)  # comma-separated keywords matched
+    short_term_solution = db.Column(db.Text)
+    long_term_solution = db.Column(db.Text)
+    responsible_department = db.Column(db.String(200))
+    estimated_time = db.Column(db.String(100))
+
+    # === Confidence & Emotion Analysis (from HybridSentimentEngine) ===
+    confidence_score = db.Column(db.Float)                # 0-100 agreement confidence
+    dominant_emotion = db.Column(db.String(50))           # e.g. 'anger', 'joy', 'neutral'
+    compound_mood = db.Column(db.String(50))              # e.g. 'frustrated_resignation', 'cheerful'
+    emotion_intensities = db.Column(db.Text)              # JSON dict {emotion: intensity 0-1}
+    secondary_emotions = db.Column(db.Text)               # JSON list of secondary emotions
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    resolved_at = db.Column(db.DateTime)
+    has_profanity = db.Column(db.Boolean, default=False)
+
+    __table_args__ = (
+        db.Index('idx_feedback_status_urgency', 'status', 'urgency_score'),
+        db.Index('idx_feedback_category_sentiment', 'category', 'sentiment'),
+        db.Index('idx_feedback_student_created', 'student_id', 'created_at'),
+        db.Index('idx_feedback_created_category', 'created_at', 'category'),
+    )
+    
+    @property
+    def vote_count(self):
+        return FeedbackVote.query.filter_by(feedback_id=self.id).count()
+    
+    def to_dict(self, include_student=False):
+        data = {
+            'id': self.id,
+            'category': self.category,
+            'location': self.location,
+            'feedback_text': self.feedback_text,
+            'sentiment': self.sentiment,
+            'sentiment_score': self.sentiment_score,
+            'urgency_score': self.urgency_score,
+            'status': self.status,
+            'assigned_to': self.assigned_to,
+            'src_response': self.src_response,
+            'short_term_solution': self.short_term_solution,
+            'long_term_solution': self.long_term_solution,
+            'responsible_department': self.responsible_department,
+            'estimated_time': self.estimated_time,
+            'recommended_keywords': self.recommended_keywords,
+            'confidence_score': self.confidence_score,
+            'dominant_emotion': self.dominant_emotion,
+            'compound_mood': self.compound_mood,
+            'emotion_intensities': self.emotion_intensities,
+            'secondary_emotions': self.secondary_emotions,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M'),
+            'vote_count': self.vote_count
+
+        }
+        if include_student and not self.anonymous:
+            data['student_id'] = self.student_id
+        return data
+
+class FeedbackVote(db.Model):
+    __tablename__ = 'feedback_votes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=False)
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('feedback_id', 'student_id', name='unique_vote'),)
+
+# ==================== FORUM MODELS ====================
+
+class ForumTopic(db.Model):
+    __tablename__ = 'forum_topics'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=False)
+    is_pinned = db.Column(db.Boolean, default=False)
+    is_locked = db.Column(db.Boolean, default=False)
+    view_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    sentiment = db.Column(db.String(10))
+    sentiment_score = db.Column(db.Float)
+    urgency_score = db.Column(db.Integer, default=1)
+    
+    student = db.relationship('Student', backref='topics')
+    replies = db.relationship('ForumReply', backref='topic', lazy=True, cascade='all, delete-orphan')
+    tags = db.relationship('ForumTopicTag', backref='topic', lazy=True, cascade='all, delete-orphan')
+    
+    @property
+    def vote_count(self):
+        upvotes = ForumTopicVote.query.filter_by(topic_id=self.id, vote_type='up').count()
+        downvotes = ForumTopicVote.query.filter_by(topic_id=self.id, vote_type='down').count()
+        return upvotes - downvotes
+    
+    @property
+    def is_hot(self):
+        return len(self.replies) > 10 or self.urgency_score >= 4
+
+class ForumReply(db.Model):
+    __tablename__ = 'forum_replies'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey('forum_topics.id'), nullable=False)
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    cleaned_content = db.Column(db.Text)
+    sentiment = db.Column(db.String(10))
+    sentiment_score = db.Column(db.Float)
+    urgency_score = db.Column(db.Integer, default=1)
+    is_flagged = db.Column(db.Boolean, default=False)
+    is_edited = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    edited_at = db.Column(db.DateTime)
+    
+    student = db.relationship('Student', backref='replies')
+
+class ForumTopicVote(db.Model):
+    __tablename__ = 'forum_topic_votes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey('forum_topics.id'), nullable=False)
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=False)
+    vote_type = db.Column(db.String(10))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('topic_id', 'student_id', name='unique_topic_vote'),)
+
+class ForumTopicTag(db.Model):
+    __tablename__ = 'forum_topic_tags'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(db.Integer, db.ForeignKey('forum_topics.id'), nullable=False)
+    tag = db.Column(db.String(50), nullable=False)
+    
+    __table_args__ = (db.UniqueConstraint('topic_id', 'tag', name='unique_topic_tag'),)
+
+# ==================== CHAT MODELS ====================
+
+class ChatRoom(db.Model):
+    __tablename__ = 'chat_rooms'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(500))
+    category = db.Column(db.String(50))
+    is_active = db.Column(db.Boolean, default=True)
+    created_by = db.Column(db.String(20), db.ForeignKey('students.student_id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_activity = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    messages = db.relationship('ChatMessage', backref='room', lazy=True, cascade='all, delete-orphan')
+    members = db.relationship('ChatRoomMember', backref='room', lazy=True, cascade='all, delete-orphan')
+
+class ChatMessage(db.Model):
+    __tablename__ = 'chat_messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('chat_rooms.id'), nullable=False)
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    cleaned_message = db.Column(db.Text)
+    sentiment = db.Column(db.String(10))
+    sentiment_score = db.Column(db.Float)
+    urgency_score = db.Column(db.Integer, default=1)
+    is_flagged = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    student = db.relationship('Student', backref='chat_messages')
+    
+    def to_dict(self):
+        student_name = self.student.full_name if self.student else 'Unknown Student'
+        room_name = self.room.name if self.room else 'Unknown Room'
+        return {
+            'id': self.id,
+            'room_id': self.room_id,
+            'room_name': room_name,
+            'student_id': self.student_id,
+            'username': student_name.split()[0] if student_name else 'Student',
+            'full_name': student_name,
+            'message': self.message,
+            'cleaned_message': self.cleaned_message,
+            'sentiment': self.sentiment,
+            'sentiment_score': self.sentiment_score,
+            'urgency_score': self.urgency_score,
+            'is_flagged': bool(self.is_flagged),
+            'timestamp': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'student': {
+                'full_name': student_name
+            } if self.student else None,
+            'room': {
+                'name': room_name
+            } if self.room else None
+        }
+
+class ChatRoomMember(db.Model):
+    __tablename__ = 'chat_room_members'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('chat_rooms.id'), nullable=False)
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=False)
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_read = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('room_id', 'student_id', name='unique_member'),)
+
+class ChatRoomSentiment(db.Model):
+    __tablename__ = 'chat_room_sentiment'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey('chat_rooms.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    positive_count = db.Column(db.Integer, default=0)
+    negative_count = db.Column(db.Integer, default=0)
+    neutral_count = db.Column(db.Integer, default=0)
+    avg_urgency = db.Column(db.Float, default=0)
+    total_messages = db.Column(db.Integer, default=0)
+    
+    __table_args__ = (db.UniqueConstraint('room_id', 'date', name='unique_room_date'),)
+
+# ==================== ANNOUNCEMENT MODEL ====================
+
+class Announcement(db.Model):
+    __tablename__ = 'announcements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    author = db.Column(db.String(100))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime)
+
+# ==================== AUTH MODELS ====================
+
+class PasswordResetToken(db.Model):
+    __tablename__ = 'password_reset_tokens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.String(20), nullable=False)
+    token = db.Column(db.String(100), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime)
+
+class SystemLog(db.Model):
+    __tablename__ = 'system_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    log_type = db.Column(db.String(20))
+    level = db.Column(db.String(10))
+    user_type = db.Column(db.String(20))
+    user_id = db.Column(db.String(50))
+    action = db.Column(db.String(100))
+    details = db.Column(db.Text)
+    ip_address = db.Column(db.String(45))
+
+class SRCUser(db.Model):
+    __tablename__ = 'src_users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(50))
+    email = db.Column(db.String(120))
+    last_login = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ==================== HYBRID SENTIMENT ENGINE MODELS ====================
+
+class CustomLexicon(db.Model):
+    """HTU-specific terms and Ghanaian slang with sentiment scores.
+    
+    Before VADER analyzes a sentence, any words found here override VADER's default score.
+    """
+    __tablename__ = 'custom_lexicon'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    word = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    sentiment_score = db.Column(db.Float, nullable=False)  # -1.0 to 1.0
+    category = db.Column(db.String(50), default='general')  # e.g., 'slang', 'htu_specific', 'academic'
+    added_by = db.Column(db.String(100))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'word': self.word,
+            'sentiment_score': self.sentiment_score,
+            'category': self.category,
+            'added_by': self.added_by,
+            'is_active': self.is_active,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else ''
+        }
+
+
+class UnknownWord(db.Model):
+    """Words not found in CustomLexicon, VADER, AFINN, or SentiWordNet.
+    
+    FastText suggests a score, but admin approval is required before adding to CustomLexicon.
+    """
+    __tablename__ = 'unknown_words'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    word = db.Column(db.String(100), nullable=False, index=True)
+    context = db.Column(db.Text)  # The sentence/context where the word was found
+    suggested_score = db.Column(db.Float)  # FastText suggestion
+    source = db.Column(db.String(50), default='fasttext')  # 'fasttext', 'manual'
+    is_reviewed = db.Column(db.Boolean, default=False)
+    is_approved = db.Column(db.Boolean, default=False)
+    reviewed_by = db.Column(db.String(100))
+    reviewed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'word': self.word,
+            'context': self.context,
+            'suggested_score': self.suggested_score,
+            'source': self.source,
+            'is_reviewed': self.is_reviewed,
+            'is_approved': self.is_approved,
+            'reviewed_by': self.reviewed_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else ''
+        }
+
+
+class SentimentFeedbackScore(db.Model):
+    """Stores all intermediate sentiment scores and the final decision.
+    
+    Linked to Feedback, ForumTopic, or ChatMessage via entity_type + entity_id.
+    """
+    __tablename__ = 'sentiment_feedback_scores'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    entity_type = db.Column(db.String(20), nullable=False)  # 'feedback', 'forum_topic', 'forum_reply', 'chat'
+    entity_id = db.Column(db.Integer, nullable=False)
+    
+    # VADER (primary)
+    vader_compound = db.Column(db.Float)
+    vader_label = db.Column(db.String(10))
+    vader_pos = db.Column(db.Float)
+    vader_neu = db.Column(db.Float)
+    vader_neg = db.Column(db.Float)
+    
+    # Custom Lexicon override
+    custom_lexicon_words_used = db.Column(db.Text)  # JSON list of custom words matched
+    custom_lexicon_adjusted_score = db.Column(db.Float)
+    
+    # TextBlob
+    textblob_polarity = db.Column(db.Float)
+    textblob_subjectivity = db.Column(db.Float)
+    
+    # AFINN
+    afinn_score = db.Column(db.Float)
+    
+    # SentiWordNet
+    sentiwordnet_pos_score = db.Column(db.Float)
+    sentiwordnet_neg_score = db.Column(db.Float)
+    sentiwordnet_obj_score = db.Column(db.Float)
+    
+    # NRC Emotion Lexicon
+    nrc_joy = db.Column(db.Float, default=0.0)
+    nrc_anger = db.Column(db.Float, default=0.0)
+    nrc_fear = db.Column(db.Float, default=0.0)
+    nrc_sadness = db.Column(db.Float, default=0.0)
+    nrc_trust = db.Column(db.Float, default=0.0)
+    nrc_surprise = db.Column(db.Float, default=0.0)
+    nrc_disgust = db.Column(db.Float, default=0.0)
+    nrc_anticipation = db.Column(db.Float, default=0.0)
+    
+    # BERT/RoBERTa (fallback)
+    bert_used = db.Column(db.Boolean, default=False)
+    bert_score = db.Column(db.Float)
+    bert_label = db.Column(db.String(10))
+    
+    # Decision Engine Output
+    final_sentiment = db.Column(db.String(10))
+    final_score = db.Column(db.Float)
+    confidence_score = db.Column(db.Float)
+    
+    # Unknown words detected
+    unknown_words_found = db.Column(db.Text)  # JSON list
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class DecisionEngineWeight(db.Model):
+    """Configurable weights for the Decision Engine.
+    
+    Stored as key-value pairs for easy management.
+    """
+    __tablename__ = 'decision_engine_weights'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    source_name = db.Column(db.String(50), unique=True, nullable=False)  # 'vader', 'textblob', 'afinn', 'sentiwordnet', 'bert'
+    weight = db.Column(db.Float, nullable=False, default=1.0)
+    is_active = db.Column(db.Boolean, default=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    @classmethod
+    def get_default_weights(cls):
+        """Return default weights if none are configured."""
+        return {
+            'vader': 1.0,
+            'textblob': 0.6,
+            'afinn': 0.7,
+            'sentiwordnet': 0.5,
+            'bert': 0.8
+        }
+
+
+# ==================== SOLUTION RECOMMENDATION MODELS ====================
+
+class SolutionTemplate(db.Model):
+    """Configurable solution recommendation templates.
+    
+    Admins can create/edit/delete templates via the admin panel.
+    If a template exists for a category in the DB, it takes precedence
+    over the hardcoded templates in solution_recommender.py.
+    """
+    __tablename__ = 'solution_templates'
+
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(50), nullable=False, index=True)
+    keywords = db.Column(db.Text, nullable=False)  # comma-separated
+    short_term_solution = db.Column(db.Text, nullable=False)
+    long_term_solution = db.Column(db.Text, nullable=False)
+    responsible_department = db.Column(db.String(200), nullable=False)
+    estimated_time = db.Column(db.String(100), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    usage_count = db.Column(db.Integer, default=0)
+    resolution_count = db.Column(db.Integer, default=0)
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def resolution_rate(self):
+        if self.usage_count > 0:
+            return round((self.resolution_count / self.usage_count) * 100, 1)
+        return 0.0
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'category': self.category,
+            'keywords': self.keywords,
+            'short_term_solution': self.short_term_solution,
+            'long_term_solution': self.long_term_solution,
+            'responsible_department': self.responsible_department,
+            'estimated_time': self.estimated_time,
+            'is_active': self.is_active,
+            'usage_count': self.usage_count,
+            'resolution_count': self.resolution_count,
+            'resolution_rate': self.resolution_rate,
+            'created_by': self.created_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M') if self.updated_at else '',
+        }
+
+
+class SolutionFeedback(db.Model):
+    """Tracks whether a solution recommendation was helpful.
+    
+    Enables a feedback loop: "Was this recommendation helpful?"
+    Students/admins can mark solutions as helpful or not.
+    Over time, this data improves which templates are used.
+    """
+    __tablename__ = 'solution_feedback'
+
+    id = db.Column(db.Integer, primary_key=True)
+    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=False)
+    template_category = db.Column(db.String(50), nullable=False)
+    was_helpful = db.Column(db.Boolean, nullable=False)
+    resolved_after = db.Column(db.Boolean, default=False)  # Was the issue eventually resolved?
+    resolution_time_hours = db.Column(db.Float, nullable=True)  # Hours between submission and resolution
+    comment = db.Column(db.Text)
+    created_by = db.Column(db.String(100))  # admin or student ID
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'feedback_id': self.feedback_id,
+            'template_category': self.template_category,
+            'was_helpful': self.was_helpful,
+            'resolved_after': self.resolved_after,
+            'resolution_time_hours': self.resolution_time_hours,
+            'comment': self.comment,
+            'created_by': self.created_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+        }
+
+
+# ==================== HELPER FUNCTIONS ====================
+
+def is_valid_htu_email(email):
+    pattern = r'^03\d{8}@htu\.edu\.gh$'
+    return re.match(pattern, email) is not None
+
+def extract_student_id_from_email(email):
+    if email and '@' in email:
+        return email.split('@')[0]
+    return None

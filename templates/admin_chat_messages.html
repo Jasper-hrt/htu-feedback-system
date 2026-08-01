@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.flagged-row { background-color: rgba(239, 68, 68, 0.08); }
+.flagged-row:hover { background-color: rgba(239, 68, 68, 0.12) !important; }
+.live-indicator { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.75rem; border-radius: var(--radius-full); background: rgba(16, 185, 129, 0.1); color: var(--success); font-weight: 700; font-size: 0.78rem; border: 1px solid rgba(16, 185, 129, 0.2); }
+.live-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--success); animation: livePulse 1.5s ease-in-out infinite; }
+@keyframes livePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+.msg-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem 1.15rem; margin-bottom: 0.65rem; transition: all var(--transition-fast); position: relative; overflow: hidden; cursor: pointer; }
+.msg-card:hover { transform: translateX(4px); box-shadow: var(--shadow-md); border-color: rgba(59,130,246,0.2); }
+.msg-card-flagged { border-left: 4px solid var(--danger); background: rgba(239,68,68,0.03); }
+.msg-card-flagged::before { content: '⚠️ FLAGGED'; position: absolute; top: 0.5rem; right: 0.75rem; font-size: 0.6rem; font-weight: 800; color: var(--danger); background: rgba(239,68,68,0.1); padding: 0.15rem 0.5rem; border-radius: var(--radius-full); letter-spacing: 0.04em; }
+.msg-card-top { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.35rem; flex-wrap: wrap; }
+.msg-avatar { width: 2rem; height: 2rem; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; flex-shrink: 0; }
+.msg-student { font-weight: 700; font-size: 0.85rem; color: var(--text-primary); }
+.msg-room { font-size: 0.72rem; }
+.msg-time { font-size: 0.7rem; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+.msg-text { font-size: 0.88rem; line-height: 1.5; color: var(--text-primary); padding-left: 2.65rem; word-break: break-word; }
+.msg-meta { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.4rem; padding-left: 2.65rem; flex-wrap: wrap; }
+.msg-card-flagged .msg-text { color: rgba(239,68,68,0.9); }
+
+/* Message Detail Modal */
+.detail-keywords { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.75rem; }
+.detail-keyword { padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.7rem; font-weight: 600; background: rgba(30,64,175,0.08); color: var(--primary); border: 1px solid rgba(30,64,175,0.12); }
+/* Stats cards */
+.stat-card-mini { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem 1rem; text-align: center; }
+.stat-card-mini .stat-val { font-size: 1.5rem; font-weight: 800; line-height: 1.2; }
+.stat-card-mini .stat-lbl { font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.modal-detail-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; }
+.modal-detail-row:last-child { border-bottom: none; }
+.modal-detail-label { font-weight: 600; color: var(--text-secondary); }
+.modal-detail-value { font-weight: 700; color: var(--text-primary); text-align: right; }
+</style>
+
+<div class="mb-6">
+    <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
+        <div>
+            <h2 class="text-2xl font-bold" style="color: var(--primary);">📨 Chat Messages</h2>
+            <p class="text-sm text-secondary">Monitor all chat messages across rooms</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+            <a href="/admin/chat/messages?flagged=true" class="btn btn-warning btn-sm">⚠️ Flagged Only</a>
+            <a href="/admin/chat/messages" class="btn btn-secondary btn-sm">All Messages</a>
+            <a href="/admin/dashboard" class="btn btn-secondary btn-sm">← Back</a>
+        </div>
+    </div>
+
+    {% if flagged_only %}
+    <div class="alert alert-warning mb-4 flex items-center gap-2" style="border-radius: 0.75rem;">
+        <span>⚠️</span>
+        <p class="text-sm" style="font-weight: 600;">Showing only flagged messages (urgent complaints that need attention)</p>
+    </div>
+    {% endif %}
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-4 gap-3 mb-4">
+        <div class="stat-card-mini">
+            <div class="stat-val" style="color: var(--primary);">{{ messages|length }}</div>
+            <div class="stat-lbl">Total Messages</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-val" style="color: var(--danger);">{{ messages|selectattr('is_flagged','true')|list|length }}</div>
+            <div class="stat-lbl">Flagged</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-val" style="color: var(--success);">{{ messages|selectattr('sentiment','equalto','Positive')|list|length }}</div>
+            <div class="stat-lbl">Positive</div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-val" style="color: var(--danger);">{{ messages|selectattr('sentiment','equalto','Negative')|list|length }}</div>
+            <div class="stat-lbl">Negative</div>
+        </div>
+    </div>
+
+    <!-- Enhanced Filter Bar -->
+    <div class="filter-bar-enhanced mb-4">
+        <span class="filter-label">🔍</span>
+        <input type="text" id="searchMessage" placeholder="Search messages, students, rooms..." class="filter-input" style="min-width: 200px;">
+        <span class="live-indicator ml-auto" id="liveIndicator">
+            <span class="live-dot"></span>
+            <span>Live</span>
+            <span id="messageCounter" style="font-weight: 600;">0</span>
+        </span>
+    </div>
+
+    <!-- Message Feed -->
+    <div id="messageFeed">
+        {% for msg in messages %}
+        {% set student_name = msg.student.full_name.split()[0] if msg.student else 'Student' %}
+        {% set student_initial = msg.student.full_name.split()[0][0] if msg.student else 'S' %}
+        {% set room_name = msg.room.name if msg.room else 'Unknown Room' %}
+        <div class="msg-card {% if msg.is_flagged %}msg-card-flagged{% endif %}" onclick='openMsgModal({{ msg|tojson }})'>
+            <div class="msg-card-top">
+                <div class="msg-avatar">{{ student_initial }}</div>
+                <span class="msg-student">{{ student_name }}</span>
+                <span class="msg-room badge badge-info">{{ room_name }}</span>
+                <span class="msg-time">{{ msg.created_at }}</span>
+            </div>
+            <div class="msg-text">{{ msg.message[:200] }}{% if msg.message|length > 200 %}...{% endif %}</div>
+            <div class="msg-meta">
+                {% if msg.sentiment == 'Positive' %}<span class="badge badge-success">😊 Positive</span>{% elif msg.sentiment == 'Negative' %}<span class="badge badge-danger">😞 Negative</span>{% else %}<span class="badge badge-neutral">😐 Neutral</span>{% endif %}
+                {% if msg.urgency_score >= 4 %}<span class="badge badge-danger">⚠️ Urgency {{ msg.urgency_score }}/5</span>{% elif msg.urgency_score >= 3 %}<span class="badge badge-warning">Urgency {{ msg.urgency_score }}/5</span>{% else %}<span class="badge badge-neutral">Urgency {{ msg.urgency_score }}/5</span>{% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state mt-6">
+            <span class="empty-state-icon">📭</span>
+            <div class="empty-state-title">No Messages Found</div>
+            <div class="empty-state-desc">{% if flagged_only %}No flagged messages need attention.{% else %}There are no chat messages yet. Students will see their messages appear here in real-time.{% endif %}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Message Detail Modal -->
+<div class="modal" id="msgModal">
+    <div class="modal-content" style="max-width: 42rem;">
+        <div class="modal-header">📄 Message Details</div>
+        <div id="msgModalBody"></div>
+        <div class="flex justify-end mt-4">
+            <button class="btn btn-secondary btn-sm" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let msgData = {};
+
+function openMsgModal(msg) {
+    msgData = msg;
+    const studentName = msg.student && msg.student.full_name ? msg.student.full_name.split()[0] : 'Student';
+    const roomName = msg.room && msg.room.name ? msg.room.name : 'Unknown Room';
+    const timestamp = msg.created_at ? msg.created_at : '';
+    const sentHtml = msg.sentiment === 'Positive' ? '<span class="badge badge-success">😊 Positive</span>' : (msg.sentiment === 'Negative' ? '<span class="badge badge-danger">😞 Negative</span>' : '<span class="badge badge-neutral">😐 Neutral</span>');
+    const urgHtml = msg.urgency_score >= 4 ? '<span class="badge badge-danger">⚠️ Urgent ' + msg.urgency_score + '/5</span>' : (msg.urgency_score >= 3 ? '<span class="badge badge-warning">' + msg.urgency_score + '/5</span>' : '<span class="badge badge-neutral">' + msg.urgency_score + '/5</span>');
+    const flaggedHtml = msg.is_flagged ? '<span class="badge badge-danger">⚠️ Flagged</span>' : '<span class="badge badge-neutral">No</span>';
+
+    document.getElementById('msgModalBody').innerHTML = `
+        <div class="modal-detail-row"><span class="modal-detail-label">Student</span><span class="modal-detail-value">${escapeHtml(studentName)}</span></div>
+        <div class="modal-detail-row"><span class="modal-detail-label">Room</span><span class="modal-detail-value">${escapeHtml(roomName)}</span></div>
+        <div class="modal-detail-row"><span class="modal-detail-label">Time</span><span class="modal-detail-value">${escapeHtml(timestamp)}</span></div>
+        <div class="modal-detail-row"><span class="modal-detail-label">Sentiment</span><span class="modal-detail-value">${sentHtml}</span></div>
+        <div class="modal-detail-row"><span class="modal-detail-label">Urgency</span><span class="modal-detail-value">${urgHtml}</span></div>
+        <div class="modal-detail-row"><span class="modal-detail-label">Flagged</span><span class="modal-detail-value">${flaggedHtml}</span></div>
+        <div style="margin-top: 0.75rem; padding: 0.75rem 1rem; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg);">
+            <div style="font-weight: 700; font-size: 0.8rem; margin-bottom: 0.35rem; color: var(--text-secondary);">Message</div>
+            <div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);">${escapeHtml(msg.message || '')}</div>
+        </div>
+    `;
+    document.getElementById('msgModal').classList.add('active');
+}
+
+function closeModal() {
+    document.getElementById('msgModal').classList.remove('active');
+}
+
+document.getElementById('msgModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+function escapeHtml(text) {
+    var d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+// Search
+document.getElementById('searchMessage').addEventListener('keyup', function() {
+    var term = this.value.toLowerCase();
+    document.querySelectorAll('.msg-card').forEach(function(card) {
+        card.style.display = card.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+
+// Socket.IO live messages
+(function() {
+    var counter = 0;
+    var adminSocket = io({
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000
+    });
+    adminSocket.on('connect', function() {
+        var name = '{{ session.admin_name.split()[0] if session.admin_name else "Admin" }}';
+        adminSocket.emit('join', { room_id: 'admins', username: name });
+        console.log('Admin socket connected');
+        // Reset the counter on reconnect
+        counter = 0;
+        document.getElementById('messageCounter').textContent = counter;
+    });
+    adminSocket.on('connect_error', function(err) {
+        console.error('Admin socket error:', err);
+    });
+    adminSocket.on('disconnect', function(reason) {
+        console.log('Admin socket disconnected:', reason);
+    });
+    adminSocket.on('admin_new_message', function(data) {
+        if (!data) return;
+        counter++;
+        document.getElementById('messageCounter').textContent = counter;
+        
+        var feed = document.getElementById('messageFeed');
+        var flagged = !!data.is_flagged;
+        var sentiment = data.sentiment || 'Neutral';
+        
+        var card = document.createElement('div');
+        card.className = 'msg-card' + (flagged ? ' msg-card-flagged' : '');
+        card.style.animation = 'slideUp 0.3s ease';
+        card.onclick = function() { openMsgModal(data); };
+        
+        var sentHtml = sentiment === 'Positive' ? '<span class="badge badge-success">😊 Positive</span>' : (sentiment === 'Negative' ? '<span class="badge badge-danger">😞 Negative</span>' : '<span class="badge badge-neutral">😐 Neutral</span>');
+        var urgHtml = Number(data.urgency_score || 0) >= 4 ? '<span class="badge badge-danger">⚠️ Urgency ' + data.urgency_score + '/5</span>' : (Number(data.urgency_score || 0) >= 3 ? '<span class="badge badge-warning">Urgency ' + data.urgency_score + '/5</span>' : '<span class="badge badge-neutral">Urgency ' + data.urgency_score + '/5</span>');
+        
+        var firstLetter = data.username ? data.username.charAt(0).toUpperCase() : 'S';
+        
+        card.innerHTML = `
+            <div class="msg-card-top">
+                <div class="msg-avatar">${firstLetter}</div>
+                <span class="msg-student">${escapeHtml(data.username || 'Student')}</span>
+                <span class="msg-room badge badge-info">${escapeHtml(data.room_name || data.room_id || '')}</span>
+                <span class="msg-time">${escapeHtml(data.timestamp || '')}</span>
+            </div>
+            <div class="msg-text">${escapeHtml(data.message || '')}</div>
+            <div class="msg-meta">${sentHtml} ${urgHtml}</div>
+        `;
+        
+        feed.prepend(card);
+        
+        // Keep only 200 latest
+        while (feed.children.length > 200) {
+            feed.removeChild(feed.lastChild);
+        }
+    });
+})();
+</script>
+{% endblock %}
+

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-top-actions">
+    <a href="/forum" class="btn-back">
+        <span class="btn-back-icon">←</span>
+        <span class="btn-back-text">Back to Forum</span>
+    </a>
+</div>
+
+<!-- ==================== CREATE TOPIC CARD ==================== -->
+<div class="create-topic-card">
+    <div class="feedback-form-header">
+        <h2>📝 Create New Discussion Topic</h2>
+        <p>Start a new conversation — be clear and specific</p>
+    </div>
+
+    <form method="POST">
+        <!-- Title -->
+        <div class="form-group-enhanced">
+            <label class="form-label">Topic Title</label>
+            <input type="text" name="title" required class="form-input-enhanced"
+                   placeholder="Summarize the issue or discussion"
+                   maxlength="200">
+            <span class="form-label-hint">Be clear and specific so others understand the topic</span>
+        </div>
+
+        <!-- Category -->
+        <div class="form-group-enhanced">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select-enhanced" required>
+                <option value="Academics">📚 Academics</option>
+                <option value="Accommodation">🏠 Accommodation</option>
+                <option value="Catering">🍽️ Catering</option>
+                <option value="Facilities">🏢 Facilities</option>
+                <option value="ICT/Wi-Fi">💻 ICT/Wi-Fi</option>
+                <option value="Safety">🛡️ Safety</option>
+                <option value="Transport">🚌 Transport</option>
+                <option value="Mental Health">🧠 Mental Health</option>
+                <option value="General">💬 General Discussion</option>
+            </select>
+        </div>
+
+        <!-- Content -->
+        <div class="form-group-enhanced">
+            <label class="form-label">Content</label>
+            <textarea name="content" rows="8" required class="form-textarea-enhanced"
+                      placeholder="Describe the issue or start the discussion..." style="min-height: 180px;"></textarea>
+            <div class="form-label-hint mt-1">💡 Your topic will be automatically analyzed for sentiment and urgency.</div>
+        </div>
+
+        <!-- Tags -->
+        <div class="form-group-enhanced">
+            <label class="form-label">Tags (comma separated)</label>
+            <input type="text" name="tags" class="form-input-enhanced"
+                   placeholder="e.g., urgent, maintenance, wi-fi">
+            <span class="form-label-hint">Add tags to help others find your topic</span>
+        </div>
+
+        <!-- Info Alert -->
+        <div class="alert alert-info flex items-center gap-2" style="padding: 0.75rem 1rem; border-radius: var(--radius-lg); margin-bottom: 1.25rem;">
+            <span>💡</span>
+            <p style="font-size: 0.85rem; font-weight: 600;">The system will flag urgent issues for SRC attention.</p>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn btn-primary w-full" style="padding: 0.75rem; font-size: 1rem; font-weight: 800; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            📢 Create Topic
+        </button>
+    </form>
+</div>
+{% endblock %}

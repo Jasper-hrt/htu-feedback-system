@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container auth-bg-wrapper">
+    <!-- Background Image -->
+    <div class="auth-bg-image">
+        <img src="{{ url_for('static', filename='images/htu-pic.jpg') }}" alt="HTU Campus" loading="lazy">
+    </div>
+
+    <!-- Animated particles -->
+    <div class="auth-particles" style="z-index: 2;">
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+    </div>
+
+    <div class="auth-card auth-card-wide gradient-border" style="z-index: 3;">
+        <!-- Brand Badge with Logo -->
+        <div class="auth-brand-badge">
+            <img src="{{ url_for('static', filename='images/htu-logo.png') }}" alt="HTU Logo" style="height:22px;width:auto;margin:0;filter:brightness(0) invert(1);">
+            <span class="badge-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; animation: dotPulse 2s ease-in-out infinite;"></span>
+            STUDENT PORTAL
+            <span style="margin-left: 0.25rem; font-size: 0.65rem; opacity: 0.6;">v2.0</span>
+        </div>
+
+        <div class="auth-header">
+            <div class="auth-header-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 8px 28px rgba(59, 130, 246, 0.3); position: relative;">
+                📝
+                <span style="position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: #3b82f6; border: 2px solid var(--card-bg); animation: dotPulse 2s ease-in-out infinite;"></span>
+            </div>
+            <h1 class="auth-title">Student Registration</h1>
+            <p class="auth-subtitle">
+                Create your account using your 
+                <span style="color: var(--text-primary); font-weight: 600;">HTU credentials</span>
+            </p>
+        </div>
+
+        {% if error %}
+        <div class="auth-alert auth-alert-error" style="animation: slideUp 0.3s ease;">
+            <span>⚠️</span>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form method="POST" class="auth-form" id="registerForm" autocomplete="off">
+            <div class="auth-row">
+                <div class="form-group">
+                    <label class="form-label">🆔 Student ID</label>
+                    <div class="input-wrapper" style="position: relative;">
+                        <input type="text" name="student_id" id="regStudentId" required class="form-input floating-input"
+                               placeholder="0322080001" autocomplete="off"
+                               style="padding-left: 2.5rem;">
+                        <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.45; pointer-events: none;">🆔</span>
+                    </div>
+                    <p class="text-sm text-secondary mt-1" style="display: flex; align-items: center; gap: 0.3rem;">
+                        <span>📌</span>
+                        <span>Your 10-digit HTU student ID number</span>
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📧 HTU Email</label>
+                    <div class="input-wrapper" style="position: relative;">
+                        <input type="email" name="email" id="regEmail" required class="form-input floating-input"
+                               placeholder="0322080001@htu.edu.gh" autocomplete="email"
+                               style="padding-left: 2.5rem;">
+                        <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.45; pointer-events: none;">📧</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">👤 Full Name</label>
+                <div class="input-wrapper" style="position: relative;">
+                    <input type="text" name="full_name" id="regFullName" required class="form-input floating-input"
+                           placeholder="John Mensah" autocomplete="name"
+                           style="padding-left: 2.5rem;">
+                    <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.45; pointer-events: none;">👤</span>
+                </div>
+            </div>
+
+            <div class="auth-row">
+                <div class="form-group">
+                    <label class="form-label">🏢 Department</label>
+                    <div class="input-wrapper" style="position: relative;">
+                        <select name="department" id="regDepartment" class="form-input" style="appearance: auto; padding-left: 2.5rem;">
+                            <option value="">Select Department</option>
+                            <option>Computer Science</option>
+                            <option>Information Technology</option>
+                            <option>Business Administration</option>
+                            <option>Engineering</option>
+                            <option>Mathematics</option>
+                            <option>Other</option>
+                        </select>
+                        <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.45; pointer-events: none;">🏢</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📚 Year of Study</label>
+                    <div class="input-wrapper" style="position: relative;">
+                        <select name="year_of_study" id="regYear" class="form-input" style="appearance: auto; padding-left: 2.5rem;">
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                        <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.45; pointer-events: none;">📚</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="auth-row">
+                <div class="form-group">
+                    <label class="form-label">🔒 Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" name="password" id="regPassword" required class="form-input floating-input"
+                               placeholder="Minimum 6 characters" autocomplete="new-password"
+                               style="padding-left: 2.5rem;">
+                        <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.45; pointer-events: none;">🔒</span>
+                        <button type="button" class="password-toggle" onclick="togglePassword('regPassword', this)" tabindex="-1">👁️</button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength" style="margin-top: 0.4rem; display: none;">
+                        <div style="display: flex; gap: 0.25rem; margin-bottom: 0.2rem;">
+                            <div class="strength-bar" data-index="0" style="flex:1; height: 3px; border-radius: 2px; background: var(--border-color); transition: all 0.2s ease;"></div>
+                            <div class="strength-bar" data-index="1" style="flex:1; height: 3px; border-radius: 2px; background: var(--border-color); transition: all 0.2s ease;"></div>
+                            <div class="strength-bar" data-index="2" style="flex:1; height: 3px; border-radius: 2px; background: var(--border-color); transition: all 0.2s ease;"></div>
+                            <div class="strength-bar" data-index="3" style="flex:1; height: 3px; border-radius: 2px; background: var(--border-color); transition: all 0.2s ease;"></div>
+                        </div>
+                        <span class="strength-text" style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted);"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">✅ Confirm Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" name="confirm_password" id="regConfirmPassword" required class="form-input floating-input"
+                               placeholder="Retype password" autocomplete="new-password"
+                               style="padding-left: 2.5rem;">
+                        <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.45; pointer-events: none;">✅</span>
+                        <button type="button" class="password-toggle" onclick="togglePassword('regConfirmPassword', this)" tabindex="-1">👁️</button>
+                    </div>
+                    <span class="password-match" id="passwordMatch" style="font-size: 0.72rem; font-weight: 600; margin-top: 0.3rem; display: none;"></span>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label class="checkbox-label" style="background: rgba(59, 130, 246, 0.04); border-color: rgba(59, 130, 246, 0.15); padding: 0.6rem 0.85rem;">
+                    <input type="checkbox" name="agree_terms" id="agreeTerms" required>
+                    <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">
+                        I agree to the <a href="#" style="color: var(--primary); text-decoration: underline; font-weight: 700;">Terms of Service</a> and <a href="#" style="color: var(--primary); text-decoration: underline; font-weight: 700;">Privacy Policy</a>
+                    </span>
+                </label>
+            </div>
+
+            <button type="submit" class="auth-btn" id="registerButton"
+                    style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.25);">
+                <span class="auth-btn-text">Create Account</span>
+                <span class="auth-btn-pulse"></span>
+                <span class="btn-loading-spinner" style="display: none; width: 1.2rem; height: 1.2rem; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite;"></span>
+            </button>
+        </form>
+
+        <div class="auth-demo" style="background: rgba(59, 130, 246, 0.06); border-color: rgba(59, 130, 246, 0.12);">
+            <span>🎓</span>
+            <span>HTU Students Only</span>
+            <span style="opacity: 0.3;">•</span>
+            <span>Use your <strong>@htu.edu.gh</strong> email</span>
+        </div>
+
+        <div class="auth-trust" style="background: rgba(59, 130, 246, 0.04); border-color: rgba(59, 130, 246, 0.08);">
+            <span class="auth-trust-icon">🛡️</span>
+            <span>HTU Verified Registration</span>
+            <span style="opacity: 0.3;">•</span>
+            <span>256-bit Encrypted</span>
+            <span style="opacity: 0.3;">•</span>
+            <span>Data Protected</span>
+        </div>
+
+        <div class="auth-footer">
+            <p>
+                <span style="color: var(--text-secondary);">Already have an account?</span>
+                <a href="/student/login" style="color: var(--primary); font-weight: 700;">🔑 Login here</a>
+            </p>
+            <p style="margin-top: 0.5rem; font-size: 0.72rem; color: var(--text-muted);">
+                <a href="/" style="color: var(--text-secondary);">← Back to Home</a>
+                <span style="opacity: 0.3; margin: 0 0.5rem;">•</span>
+                Need help? <span style="color: var(--primary); font-weight: 600;">Contact IT Support</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ---- Input wrapper enhancements ---- */
+.input-wrapper .form-input {
+    transition: all 0.2s ease;
+}
+.input-wrapper .form-input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    background: var(--card-bg) !important;
+}
+
+/* ---- Password toggle hover ---- */
+.password-toggle:hover {
+    color: #3b82f6 !important;
+}
+
+/* ---- Checkbox label enhancements ---- */
+.checkbox-label input[type="checkbox"] {
+    accent-color: #3b82f6;
+    width: 1rem;
+    height: 1rem;
+}
+.checkbox-label:hover {
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ---- Button loading state ---- */
+.auth-btn.loading .auth-btn-text {
+    opacity: 0.6;
+}
+.auth-btn.loading .btn-loading-spinner {
+    display: inline-block !important;
+}
+.auth-btn.loading .auth-btn-pulse {
+    display: none;
+}
+
+/* ---- Trust badge ---- */
+.auth-trust {
+    animation: fadeIn 0.6s ease 0.3s both;
+}
+
+/* ---- Footer links ---- */
+.auth-footer a {
+    transition: all 0.15s ease;
+}
+.auth-footer a:hover {
+    opacity: 0.8;
+    text-decoration: underline !important;
+}
+
+/* ---- Demo code ---- */
+.auth-demo strong {
+    color: var(--text-primary);
+}
+
+/* ---- Gradient border override ---- */
+.auth-card-wide.gradient-border::after {
+    background: var(--card-bg) !important;
+}
+
+/* ---- Password strength bars ---- */
+.strength-bar.active {
+    background: currentColor !important;
+}
+
+/* ---- Background Image Enhancement ---- */
+.auth-bg-image {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.auth-bg-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(15, 23, 42, 0.88) 0%,
+        rgba(30, 41, 59, 0.82) 50%,
+        rgba(15, 23, 42, 0.9) 100%
+    );
+}
+
+.auth-bg-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+html.theme-dark .auth-bg-image::after {
+    background: linear-gradient(
+        135deg,
+        rgba(2, 6, 23, 0.92) 0%,
+        rgba(15, 23, 42, 0.88) 50%,
+        rgba(2, 6, 23, 0.94) 100%
+    );
+}
+
+/* ---- Select arrow styling ---- */
+select.form-input {
+    cursor: pointer;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const registerForm = document.getElementById('registerForm');
+    const registerBtn = document.getElementById('registerButton');
+    const studentIdInput = document.getElementById('regStudentId');
+    const passwordInput = document.getElementById('regPassword');
+    const confirmInput = document.getElementById('regConfirmPassword');
+    const passwordStrength = document.getElementById('passwordStrength');
+    const strengthBars = document.querySelectorAll('.strength-bar');
+    const strengthText = document.querySelector('.strength-text');
+    const matchSpan = document.getElementById('passwordMatch');
+    const agreeCheckbox = document.getElementById('agreeTerms');
+
+    // Auto-focus student ID field
+    if (studentIdInput) {
+        setTimeout(function() { studentIdInput.focus(); }, 100);
+    }
+
+    // Password strength checker
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const val = this.value;
+            if (val.length === 0) {
+                passwordStrength.style.display = 'none';
+                return;
+            }
+            passwordStrength.style.display = 'block';
+
+            let strength = 0;
+            if (val.length >= 6) strength++;
+            if (val.length >= 10) strength++;
+            if (/[A-Z]/.test(val) && /[a-z]/.test(val)) strength++;
+            if (/[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val)) strength++;
+
+            const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
+            const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+
+            strengthBars.forEach((bar, i) => {
+                bar.style.background = i < strength ? colors[strength - 1] : 'var(--border-color)';
+            });
+
+            strengthText.textContent = labels[strength - 1] || '';
+            strengthText.style.color = colors[strength - 1] || 'var(--text-muted)';
+        });
+    }
+
+    // Password match checker
+    function checkMatch() {
+        const pw = passwordInput.value;
+        const confirm = confirmInput.value;
+        if (confirm.length === 0) {
+            matchSpan.style.display = 'none';
+            return;
+        }
+        matchSpan.style.display = 'block';
+        if (pw === confirm) {
+            matchSpan.textContent = '✅ Passwords match';
+            matchSpan.style.color = '#10b981';
+        } else {
+            matchSpan.textContent = '❌ Passwords do not match';
+            matchSpan.style.color = '#ef4444';
+        }
+    }
+
+    if (confirmInput) {
+        confirmInput.addEventListener('input', checkMatch);
+    }
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            if (confirmInput.value.length > 0) checkMatch();
+        });
+    }
+
+    // Form validation on submit
+    if (registerForm && registerBtn) {
+        registerForm.addEventListener('submit', function(e) {
+            const studentId = document.getElementById('regStudentId').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const fullName = document.getElementById('regFullName').value.trim();
+            const password = passwordInput.value;
+            const confirm = confirmInput.value;
+
+            // Reset errors
+            document.querySelectorAll('.floating-input, select.form-input').forEach(function(el) {
+                el.style.borderColor = '';
+                el.style.boxShadow = '';
+            });
+
+            let hasError = false;
+
+            if (!studentId) {
+                document.getElementById('regStudentId').style.borderColor = '#ef4444';
+                document.getElementById('regStudentId').style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                hasError = true;
+            }
+            if (!email || !email.endsWith('@htu.edu.gh')) {
+                document.getElementById('regEmail').style.borderColor = '#ef4444';
+                document.getElementById('regEmail').style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                hasError = true;
+            }
+            if (!fullName) {
+                document.getElementById('regFullName').style.borderColor = '#ef4444';
+                document.getElementById('regFullName').style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                hasError = true;
+            }
+            if (password.length < 6) {
+                passwordInput.style.borderColor = '#ef4444';
+                passwordInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                hasError = true;
+            }
+            if (password !== confirm) {
+                confirmInput.style.borderColor = '#ef4444';
+                confirmInput.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                hasError = true;
+            }
+            if (!agreeCheckbox.checked) {
+                agreeCheckbox.closest('.checkbox-label').style.borderColor = '#ef4444';
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                return;
+            }
+
+            registerBtn.classList.add('loading');
+            registerBtn.querySelector('.auth-btn-text').textContent = 'Creating Account...';
+        });
+
+        // Clear errors on input
+        document.querySelectorAll('.floating-input, select.form-input').forEach(function(input) {
+            input.addEventListener('input', function() {
+                this.style.borderColor = '';
+                this.style.boxShadow = '';
+            });
+        });
+
+        // Clear checkbox error on change
+        agreeCheckbox.addEventListener('change', function() {
+            this.closest('.checkbox-label').style.borderColor = '';
+        });
+    }
+});
+
+function togglePassword(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+    }
+}
+</script>
+{% endblock %}
+

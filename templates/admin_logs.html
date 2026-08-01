@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-layout">
+    <aside class="admin-sidebar" aria-label="Admin logs sidebar">
+        <div class="admin-sidebar-title">
+            📋 System Logs
+            <span class="sub">Audit trail & monitoring</span>
+        </div>
+        <nav class="admin-sidebar-nav">
+            <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
+            <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
+            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+            <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/logs" class="admin-sidebar-link admin-sidebar-link-active">📋 Logs</a>
+            <a href="/admin/chat/rooms" class="admin-sidebar-link">💬 Chat Rooms</a>
+            <a href="/admin/chat/messages" class="admin-sidebar-link">📨 Chat Messages</a>
+            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+        </nav>
+        <div style="margin-top: 1.25rem;">
+            <a href="/admin/logout" class="btn-logout btn-logout--student student-sidebar-logout">
+                <span class="btn-logout-icon">⏻</span>
+                <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+            </a>
+        </div>
+    </aside>
+    <section class="student-content">
+
+        <!-- 🛡️ Hero Section -->
+        <div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;">
+            <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 500px 300px at 30% 50%, rgba(59,130,246,0.06) 0%, transparent 70%), radial-gradient(ellipse 300px 300px at 80% 80%, rgba(239,68,68,0.04) 0%, transparent 70%); pointer-events: none;"></div>
+            <div style="position: relative; z-index: 1;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                    <div class="admin-hero-title" style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.6rem;">
+                        📋 System Audit Logs
+                    </div>
+                    <span class="badge badge-info" style="font-size: 0.7rem; padding: 0.3rem 0.75rem; display: flex; align-items: center; gap: 0.35rem;">
+                        <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: livePulse 2s ease-in-out infinite;"></span>
+                        Live
+                    </span>
+                    <span style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 500;">Auto-refreshes</span>
+                </div>
+                <div class="admin-hero-subtitle">Complete audit trail of all system activities, authentication events, and administrative actions</div>
+            </div>
+            <div class="admin-hero-actions" style="position: relative; z-index: 1;">
+                <a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
+                <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 500;">Press <kbd style="background: rgba(255,255,255,0.12); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">R</kbd> to refresh</span>
+            </div>
+        </div>
+
+        <!-- 📊 Stats Grid -->
+        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--primary);"></div>
+                <div class="stat-card-icon stat-card-icon-blue">📋</div>
+                <div class="stat-card-value" style="color: var(--primary);">{{ stats.total }}</div>
+                <div class="stat-card-label">Total Logs</div>
+                <div class="stat-card-trend stat-card-trend-up">📈 All entries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--info);"></div>
+                <div class="stat-card-icon stat-card-icon-blue">📅</div>
+                <div class="stat-card-value" style="color: var(--info);">{{ stats.today }}</div>
+                <div class="stat-card-label">Today</div>
+                <div class="stat-card-trend stat-card-trend-up">📆 {{ current_days }} day view</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--warning);"></div>
+                <div class="stat-card-icon stat-card-icon-amber">⚠️</div>
+                <div class="stat-card-value" style="color: var(--warning);">{{ stats.warnings }}</div>
+                <div class="stat-card-label">Warnings</div>
+                <div class="stat-card-trend stat-card-trend-up">🟡 Needs review</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--danger);"></div>
+                <div class="stat-card-icon stat-card-icon-red">🚨</div>
+                <div class="stat-card-value" style="color: var(--danger);">{{ stats.errors }}</div>
+                <div class="stat-card-label">Errors</div>
+                <div class="stat-card-trend stat-card-trend-down">🔴 Critical</div>
+            </div>
+        </div>
+
+        <!-- 📈 Charts Row -->
+        <div class="grid grid-cols-2 gap-6 mb-6">
+            <!-- Severity Distribution Donut -->
+            <div class="chart-card" style="margin-bottom: 0;">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">🎯 Log Severity Distribution</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                    <div style="position: relative; width: 140px; height: 140px; flex-shrink: 0;">
+                        <canvas id="severityChart"></canvas>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.65rem; background: rgba(16,185,129,0.06); border-radius: var(--radius-md);">
+                            <span style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 600;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--success);"></span> INFO
+                            </span>
+                            <span style="font-weight: 800; font-size: 0.85rem;">{{ severity_distribution.INFO }}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.65rem; background: rgba(245,158,11,0.06); border-radius: var(--radius-md);">
+                            <span style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 600;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--warning);"></span> WARNING
+                            </span>
+                            <span style="font-weight: 800; font-size: 0.85rem;">{{ severity_distribution.WARNING }}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.65rem; background: rgba(239,68,68,0.06); border-radius: var(--radius-md);">
+                            <span style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 600;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--danger);"></span> ERROR
+                            </span>
+                            <span style="font-weight: 800; font-size: 0.85rem;">{{ severity_distribution.ERROR }}</span>
+                        </div>
+                        <div style="margin-top: 0.25rem;">
+                            {% set total_sev = severity_distribution.INFO + severity_distribution.WARNING + severity_distribution.ERROR %}
+                            {% if total_sev > 0 %}
+                            <div class="progress-bar" style="height: 0.4rem;">
+                                <div class="progress-fill" style="width: {{ (severity_distribution.INFO / total_sev * 100) | round }}%; background: var(--success);"></div>
+                                <div class="progress-fill" style="width: {{ (severity_distribution.WARNING / total_sev * 100) | round }}%; background: var(--warning);"></div>
+                                <div class="progress-fill" style="width: {{ (severity_distribution.ERROR / total_sev * 100) | round }}%; background: var(--danger);"></div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Trend -->
+            <div class="chart-card" style="margin-bottom: 0;">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">📈 Activity (Last 7 Days)</div>
+                </div>
+                <canvas id="activityTrendChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <!-- 🔍 Filter Bar -->
+        <div class="filter-bar-enhanced">
+            <span class="filter-label">🔍 Filter</span>
+            <form method="GET" class="flex flex-wrap gap-3 w-full">
+                <select name="log_type" class="filter-select">
+                    <option value="">All Log Types</option>
+                    <option value="auth" {% if current_type == 'auth' %}selected{% endif %}>🔐 Authentication</option>
+                    <option value="feedback" {% if current_type == 'feedback' %}selected{% endif %}>💬 Feedback</option>
+                    <option value="admin" {% if current_type == 'admin' %}selected{% endif %}>🛡️ Admin Actions</option>
+                    <option value="system" {% if current_type == 'system' %}selected{% endif %}>⚙️ System</option>
+                </select>
+                <select name="level" class="filter-select">
+                    <option value="">All Levels</option>
+                    <option value="INFO" {% if current_level == 'INFO' %}selected{% endif %}>ℹ️ INFO</option>
+                    <option value="WARNING" {% if current_level == 'WARNING' %}selected{% endif %}>⚠️ WARNING</option>
+                    <option value="ERROR" {% if current_level == 'ERROR' %}selected{% endif %}>🚨 ERROR</option>
+                </select>
+                <select name="days" class="filter-select">
+                    <option value="1" {% if current_days == 1 %}selected{% endif %}>Last 24 hours</option>
+                    <option value="7" {% if current_days == 7 %}selected{% endif %}>Last 7 days</option>
+                    <option value="30" {% if current_days == 30 %}selected{% endif %}>Last 30 days</option>
+                    <option value="90" {% if current_days == 90 %}selected{% endif %}>Last 90 days</option>
+                    <option value="365" {% if current_days == 365 %}selected{% endif %}>Last year</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="/admin/logs" class="btn btn-secondary">Clear Filters</a>
+            </form>
+        </div>
+
+        <!-- 📋 Log Type Quick Stats -->
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            <span style="display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: var(--radius-full); background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.12); font-size: 0.78rem; font-weight: 700; color: var(--primary);">
+                🔐 Auth <span class="badge badge-info" style="margin-left: 0.25rem;">{{ type_distribution.auth }}</span>
+            </span>
+            <span style="display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: var(--radius-full); background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.12); font-size: 0.78rem; font-weight: 700; color: var(--success);">
+                💬 Feedback <span class="badge badge-success" style="margin-left: 0.25rem;">{{ type_distribution.feedback }}</span>
+            </span>
+            <span style="display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: var(--radius-full); background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.12); font-size: 0.78rem; font-weight: 700; color: var(--warning);">
+                🛡️ Admin <span class="badge badge-warning" style="margin-left: 0.25rem;">{{ type_distribution.admin }}</span>
+            </span>
+            <span style="display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: var(--radius-full); background: rgba(107,114,128,0.08); border: 1px solid rgba(107,114,128,0.12); font-size: 0.78rem; font-weight: 700; color: var(--secondary);">
+                ⚙️ System <span class="badge badge-neutral" style="margin-left: 0.25rem;">{{ type_distribution.system }}</span>
+            </span>
+        </div>
+
+        <!-- 📋 Audit Trail Table -->
+        <div class="chart-card" style="margin-bottom: 0;">
+            <div class="chart-card-header">
+                <div class="chart-card-title">📋 Audit Trail</div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;">
+                        {% if pagination %}{{ pagination.total }}{% else %}{{ logs|length }}{% endif %} entries
+                    </span>
+                    {% if current_type or current_level or current_days != 7 %}
+                    <span class="badge badge-warning">Filtered</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="table-modern-container">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 130px;">Timestamp</th>
+                            <th>Type</th>
+                            <th>Level</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                            <th>IP Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td style="white-space: nowrap; font-size: 0.78rem; font-weight: 600; color: var(--text-primary);">
+                                {{ log.timestamp.strftime('%Y-%m-%d') }}
+                                <span style="color: var(--text-muted); font-weight: 500;">{{ log.timestamp.strftime('%H:%M:%S') }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {% if log.log_type == 'auth' %}badge-info{% elif log.log_type == 'feedback' %}badge-success{% elif log.log_type == 'admin' %}badge-warning{% else %}badge-neutral{% endif %}" style="font-size: 0.7rem;">
+                                    {% if log.log_type == 'auth' %}🔐{% elif log.log_type == 'feedback' %}💬{% elif log.log_type == 'admin' %}🛡️{% else %}⚙️{% endif %}
+                                    {{ log.log_type }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if log.level == 'ERROR' %}badge-danger{% elif log.level == 'WARNING' %}badge-warning{% else %}badge-success{% endif %}" style="font-size: 0.7rem;">
+                                    {% if log.level == 'ERROR' %}🚨{% elif log.level == 'WARNING' %}⚠️{% else %}ℹ️{% endif %}
+                                    {{ log.level }}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; flex-direction: column; gap: 0.1rem;">
+                                    <span style="font-weight: 700; font-size: 0.78rem; color: var(--text-primary);">{{ log.user_type }}</span>
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">{{ log.user_id[:20] }}</span>
+                                </div>
+                            </td>
+                            <td style="font-weight: 600; font-size: 0.82rem; color: var(--text-primary);">{{ log.action }}</td>
+                            <td style="max-width: 220px; word-break: break-word; font-size: 0.8rem; color: var(--text-secondary);">
+                                {{ log.details[:80] }}{% if log.details|length > 80 %}...{% endif %}
+                            </td>
+                            <td style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">{{ log.ip_address }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 3rem 1rem;">
+                                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📭</div>
+                                <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">No logs found</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">No log entries match the current filter criteria.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="pagination-modern">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('admin_logs', page=pagination.prev_num, log_type=current_type, level=current_level, days=current_days) }}" class="page-btn">← Prev</a>
+            {% endif %}
+            {% for p in range(1, pagination.pages + 1) %}
+            {% if p == pagination.page %}
+            <span class="page-btn page-btn-active">{{ p }}</span>
+            {% elif p >= pagination.page - 2 and p <= pagination.page + 2 %}
+            <a href="{{ url_for('admin_logs', page=p, log_type=current_type, level=current_level, days=current_days) }}" class="page-btn">{{ p }}</a>
+            {% elif p == 1 or p == pagination.pages %}
+            <a href="{{ url_for('admin_logs', page=p, log_type=current_type, level=current_level, days=current_days) }}" class="page-btn">{{ p }}</a>
+            {% elif p == pagination.page - 3 or p == pagination.page + 3 %}
+            <span class="page-btn" style="border: none; cursor: default;">…</span>
+            {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <a href="{{ url_for('admin_logs', page=pagination.next_num, log_type=current_type, level=current_level, days=current_days) }}" class="page-btn">Next →</a>
+            {% endif %}
+            <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Charts Scripts -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Severity Donut Chart
+            var sevCtx = document.getElementById('severityChart');
+            if (sevCtx) {
+                new Chart(sevCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['INFO', 'WARNING', 'ERROR'],
+                        datasets: [{
+                            data: [
+                                {{ severity_distribution.INFO }},
+                                {{ severity_distribution.WARNING }},
+                                {{ severity_distribution.ERROR }}
+                            ],
+                            backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                            borderWidth: 0,
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'var(--card-bg)',
+                                titleColor: 'var(--text-primary)',
+                                bodyColor: 'var(--text-secondary)',
+                                borderColor: 'var(--border-color)',
+                                borderWidth: 1,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(ctx) {
+                                        var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                        var pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                                        return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Activity Trend Chart
+            var trendCtx = document.getElementById('activityTrendChart');
+            if (trendCtx) {
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ log_trend|map(attribute='date')|list|tojson }},
+                        datasets: [{
+                            label: 'Log Entries',
+                            data: {{ log_trend|map(attribute='count')|list|tojson }},
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.08)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#3b82f6',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'var(--card-bg)',
+                                titleColor: 'var(--text-primary)',
+                                bodyColor: 'var(--text-secondary)',
+                                borderColor: 'var(--border-color)',
+                                borderWidth: 1,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 10 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(0,0,0,0.05)' },
+                                ticks: {
+                                    font: { size: 10 },
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        // Auto-refresh
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+
+        // Keyboard shortcut: R to refresh
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'r' || e.key === 'R') {
+                if (!e.ctrlKey && !e.metaKey) {
+                    location.reload();
+                }
+            }
+        });
+        </script>
+
+        <style>
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        </style>
+
+    </section>
+</div>
+{% endblock %}

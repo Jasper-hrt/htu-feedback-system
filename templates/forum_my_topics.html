@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+    <div>
+        <h2 class="text-2xl font-bold" style="color: var(--primary);">📝 My Topics</h2>
+        <p class="text-sm text-secondary">Topics you have created</p>
+    </div>
+    <a href="/forum/create" class="btn btn-primary flex items-center gap-2">+ New Topic</a>
+</div>
+
+{% if topics %}
+<div class="flex flex-col gap-3">
+    {% for topic in topics %}
+    <div class="topic-card animate-fade-in">
+        <div class="topic-card-header">
+            <div style="flex: 1; min-width: 0;">
+                <div class="flex flex-wrap gap-1 mb-1">
+                    <span class="badge badge-info" style="font-size: 0.7rem;">{{ topic.category }}</span>
+                    {% if topic.is_pinned %}<span class="badge badge-warning" style="font-size: 0.7rem;">📌 Pinned</span>{% endif %}
+                    {% if topic.is_locked %}<span class="badge badge-danger" style="font-size: 0.7rem;">🔒 Locked</span>{% endif %}
+                    {% if topic.is_hot %}<span class="badge badge-danger" style="font-size: 0.7rem;">🔥 Hot</span>{% endif %}
+                </div>
+                <a href="/forum/topic/{{ topic.id }}" class="topic-card-title">{{ topic.title }}</a>
+                <div class="topic-card-meta">
+                    <span>💬 {{ topic.replies|length }} replies</span>
+                    <span>👁️ {{ topic.view_count }} views</span>
+                    <span>🗳️ {{ topic.vote_count }}</span>
+                    <span>📅 {{ topic.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+            </div>
+            <div class="topic-card-sentiment">
+                {% if topic.sentiment == 'Positive' %}
+                <span class="badge badge-success">😊</span>
+                {% elif topic.sentiment == 'Negative' %}
+                <span class="badge badge-danger">😞</span>
+                {% else %}
+                <span class="badge badge-neutral">😐</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state-premium">
+    <span class="empty-state-premium-icon">📝</span>
+    <div class="empty-state-premium-title">No Topics Yet</div>
+    <div class="empty-state-premium-desc">You haven't created any topics. Start a discussion today!</div>
+    <a href="/forum/create" class="btn btn-primary btn-lg">Create Your First Topic</a>
+</div>
+{% endif %}
+{% endblock %}

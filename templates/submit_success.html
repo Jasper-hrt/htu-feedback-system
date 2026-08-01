@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-content animate-slide-up">
+        <div class="feedback-form-card text-center" style="padding: 2.5rem 2rem; max-width: 32rem; margin: 0 auto;">
+            <div class="success-icon">✅</div>
+            <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--success); margin-bottom: 0.5rem; margin-top: 0.5rem;">Feedback Submitted!</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">Thank you for sharing your voice. The SRC will review your feedback.</p>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.5rem 1rem; display: inline-block;">
+                Feedback ID: <strong style="color: var(--primary);">{{ feedback_id }}</strong>
+            </p>
+            <div class="confetti-container" style="margin-bottom: 1.5rem;">
+                <div class="confetti-piece" style="left: 10%; background: var(--primary); animation-delay: 0s;"></div>
+                <div class="confetti-piece" style="left: 30%; background: var(--success); animation-delay: 0.3s;"></div>
+                <div class="confetti-piece" style="left: 50%; background: var(--warning); animation-delay: 0.6s;"></div>
+                <div class="confetti-piece" style="left: 70%; background: var(--danger); animation-delay: 0.9s;"></div>
+                <div class="confetti-piece" style="left: 90%; background: var(--info); animation-delay: 1.2s;"></div>
+            </div>
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; font-weight: 800; border-radius: 0.75rem;">
+                ← Back to Dashboard
+            </a>
+            <div style="margin-top: 0.75rem;">
+                <a href="{{ url_for('submit_feedback') }}" style="color: var(--primary); font-weight: 600; font-size: 0.9rem;">
+                    Submit another feedback →
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

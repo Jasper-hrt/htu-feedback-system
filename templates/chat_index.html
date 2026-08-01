@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-hero-premium">
+    <div class="dashboard-hero-content">
+        <div class="dashboard-hero-greeting">
+            <div class="dashboard-hero-avatar">💬</div>
+            <div class="dashboard-hero-greeting-text">
+                <div class="dashboard-hero-title">Chat Rooms</div>
+                <div class="dashboard-hero-subtitle">Join real-time conversations with fellow students</div>
+            </div>
+        </div>
+    </div>
+    <div class="dashboard-hero-actions">
+        <a href="/chat/create" class="btn-hero btn-hero-primary">+ Create Room</a>
+        <a href="/student/dashboard" class="btn-hero">← Dashboard</a>
+    </div>
+</div>
+
+<div class="chat-room-grid">
+    {% for room_data in rooms %}
+    <div class="chat-room-card">
+        <div class="chat-room-card-top">
+            <div>
+                <div class="chat-room-name">{{ room_data.room.name }}</div>
+                <div class="chat-room-desc">{{ room_data.room.description or 'No description' }}</div>
+            </div>
+            <div class="chat-room-sentiment">
+                {% if room_data.sentiment.sentiment_score >= 0.05 %}
+                <span class="badge badge-success">😊 Positive</span>
+                {% elif room_data.sentiment.sentiment_score <= -0.05 %}
+                <span class="badge badge-danger">😞 Negative</span>
+                {% else %}
+                <span class="badge badge-neutral">😐 Neutral</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="chat-room-meta">
+            <span>📁 {{ room_data.room.category }}</span>
+            <span>💬 {{ room_data.message_count }} messages</span>
+            <span>👥 {{ room_data.member_count }} members</span>
+        </div>
+        {% if room_data.message_count > 0 %}
+        <div class="chat-room-sentiment-bar">
+            <div class="bar-positive" style="width: {{ room_data.sentiment.positive_pct }}%;"></div>
+            <div class="bar-negative" style="width: {{ room_data.sentiment.negative_pct }}%;"></div>
+        </div>
+        {% endif %}
+        <a href="/chat/room/{{ room_data.room.id }}" class="chat-room-join-btn">Join Room →</a>
+    </div>
+    {% else %}
+    <div class="empty-state-premium" style="grid-column: 1 / -1;">
+        <span class="empty-state-premium-icon">💬</span>
+        <div class="empty-state-premium-title">No Chat Rooms Yet</div>
+        <div class="empty-state-premium-desc">Be the first to create a chat room!</div>
+        <a href="/chat/create" class="btn btn-primary">Create First Room</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

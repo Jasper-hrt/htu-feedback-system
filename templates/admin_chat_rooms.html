@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.room-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 1.25rem 1.35rem; transition: all var(--transition-normal); position: relative; overflow: hidden; }
+.room-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: rgba(59,130,246,0.2); }
+.room-card-accent { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 0 0 2px 2px; }
+.room-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.65rem; flex-wrap: wrap; }
+.room-card-name { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; }
+.room-card-stats { display: flex; gap: 1rem; font-size: 0.78rem; color: var(--text-secondary); font-weight: 500; flex-wrap: wrap; margin-bottom: 0.65rem; }
+.room-card-stats span { display: flex; align-items: center; gap: 0.25rem; }
+.room-card-sentiment { margin-bottom: 0.65rem; }
+.sentiment-bar { height: 0.4rem; border-radius: var(--radius-full); background: var(--border-color); overflow: hidden; display: flex; }
+.sentiment-bar .bar-positive { height: 100%; background: linear-gradient(90deg, var(--success), #34d399); transition: width 0.3s ease; }
+.sentiment-bar .bar-negative { height: 100%; background: linear-gradient(90deg, var(--danger), #f87171); transition: width 0.3s ease; }
+.sentiment-bar .bar-neutral { height: 100%; background: linear-gradient(90deg, var(--secondary), #9ca3af); transition: width 0.3s ease; }
+.sentiment-labels { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); font-weight: 600; margin-top: 0.25rem; }
+.room-card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.room-card-time { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+/* Stats Cards */
+.stat-card-room { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem 1rem; text-align: center; }
+.stat-card-room .stat-val { font-size: 1.5rem; font-weight: 800; line-height: 1.2; }
+.stat-card-room .stat-lbl { font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+/* No results */
+.no-results { display: none; text-align: center; padding: 2.5rem 2rem; background: var(--card-bg); border: 1px dashed var(--border-color); border-radius: var(--radius-xl); }
+.no-results.visible { display: block; }
+</style>
+
+<div class="mb-6">
+    <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
+        <div>
+            <h2 class="text-2xl font-bold" style="color: var(--primary);">💬 Chat Room Management</h2>
+            <p class="text-sm text-secondary">Monitor and manage all chat rooms</p>
+        </div>
+        <a href="/admin/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="grid grid-cols-4 gap-3 mb-4">
+        <div class="stat-card-room">
+            <div class="stat-val" style="color: var(--primary);">{{ rooms|length }}</div>
+            <div class="stat-lbl">Total Rooms</div>
+        </div>
+        <div class="stat-card-room">
+            <div class="stat-val" style="color: var(--success);">{{ total_messages_all }}</div>
+            <div class="stat-lbl">Total Messages</div>
+        </div>
+        <div class="stat-card-room">
+            <div class="stat-val" style="color: var(--secondary);">{{ rooms|sum(attribute='member_count') }}</div>
+            <div class="stat-lbl">Total Members</div>
+        </div>
+        <div class="stat-card-room">
+            <div class="stat-val" style="color: var(--warning);">{{ total_flagged_all }}</div>
+            <div class="stat-lbl">Flagged Msgs</div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar-enhanced mb-4">
+        <span class="filter-label">🔍</span>
+        <input type="text" id="searchRoom" placeholder="Search by name or category..." class="filter-input" style="min-width: 180px;">
+        <span class="filter-label ml-2">Sort:</span>
+        <select id="sortRooms" class="filter-select" style="min-width: 140px;">
+            <option value="activity">Last Activity</option>
+            <option value="messages">Most Messages</option>
+            <option value="members">Most Members</option>
+            <option value="name">Name A-Z</option>
+        </select>
+    </div>
+
+    <!-- Room Grid -->
+    <div class="grid grid-cols-2 gap-4" id="roomGrid">
+        {% for room_data in rooms %}
+        {% set s = room_data.sentiment %}
+        {% set pos_pct = (s.positive / s.total * 100) if s.total > 0 else 0 %}
+        {% set neg_pct = (s.negative / s.total * 100) if s.total > 0 else 0 %}
+        {% set neu_pct = (s.neutral / s.total * 100) if s.total > 0 else 0 %}
+        {% set accent_color = 'var(--success)' if s.sentiment_score >= 0.05 else ('var(--danger)' if s.sentiment_score <= -0.05 else 'var(--secondary)') %}
+        <div class="room-card" data-name="{{ room_data.room.name.lower() }}" data-category="{{ room_data.room.category.lower() }}" data-messages="{{ room_data.message_count }}" data-members="{{ room_data.member_count }}" data-activity="{{ room_data.room.last_activity.strftime('%Y%m%d%H%M%S') if room_data.room.last_activity else '00000000000000' }}" data-sortname="{{ room_data.room.name.lower() }}">
+            <div class="room-card-accent" style="background: {{ accent_color }};"></div>
+            <div class="room-card-top">
+                <div class="room-card-name">{{ room_data.room.name }}</div>
+                <span class="room-card-time">{{ room_data.room.last_activity.strftime('%Y-%m-%d %H:%M') if room_data.room.last_activity else 'Inactive' }}</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                <span class="badge badge-info">{{ room_data.room.category }}</span>
+                {% if s.sentiment_score >= 0.05 %}
+                <span class="badge badge-success">😊 Positive</span>
+                {% elif s.sentiment_score <= -0.05 %}
+                <span class="badge badge-danger">😞 Negative</span>
+                {% else %}
+                <span class="badge badge-neutral">😐 Neutral</span>
+                {% endif %}
+                {% if room_data.room.created_by %}<span class="badge badge-neutral">Created by: {{ room_data.room.created_by }}</span>{% endif %}
+            </div>
+            <div class="room-card-stats">
+                <span>💬 {{ room_data.message_count }} messages</span>
+                <span>👥 {{ room_data.member_count }} members</span>
+                <span>📅 {{ room_data.room.created_at.strftime('%b %d, %Y') }}</span>
+            </div>
+            <div class="room-card-sentiment">
+                <div class="sentiment-bar">
+                    <div class="bar-positive" style="width: {{ pos_pct }}%;"></div>
+                    <div class="bar-neutral" style="width: {{ neu_pct }}%;"></div>
+                    <div class="bar-negative" style="width: {{ neg_pct }}%;"></div>
+                </div>
+                <div class="sentiment-labels">
+                    <span style="color: var(--success);">😊 {{ '%.0f'|format(pos_pct) }}%</span>
+                    <span style="color: var(--secondary);">😐 {{ '%.0f'|format(neu_pct) }}%</span>
+                    <span style="color: var(--danger);">😞 {{ '%.0f'|format(neg_pct) }}%</span>
+                </div>
+            </div>
+            <div class="room-card-actions">
+                <form method="POST" action="/admin/chat/rooms/{{ room_data.room.id }}/delete" style="display: inline;" onsubmit="return confirmDelete(event, '{{ room_data.room.name }}')">
+                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Delete Room</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- No Results -->
+    <div id="noResults" class="no-results mt-4">
+        <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">🔍</span>
+        <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No Rooms Found</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">Try adjusting your search or filters.</div>
+        <a href="/admin/chat/rooms" class="btn btn-primary btn-sm mt-3">Clear Filters</a>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content" style="max-width: 32rem;">
+        <div class="modal-header" style="color: var(--danger);">⚠️ Confirm Deletion</div>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+            Are you sure you want to delete <strong id="deleteRoomName" style="color: var(--text-primary);"></strong>?
+            <br>This will permanently remove the room and all its messages. <strong>This action cannot be undone.</strong>
+        </p>
+        <div class="flex gap-2 justify-end">
+            <button class="btn btn-danger" id="confirmDeleteBtn">🗑️ Yes, Delete</button>
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(event, roomName) {
+    event.preventDefault();
+    document.getElementById('deleteRoomName').textContent = roomName;
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+        event.target.submit();
+    };
+    document.getElementById('deleteModal').classList.add('active');
+    return false;
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+}
+
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+
+// Search
+document.getElementById('searchRoom').addEventListener('keyup', function() {
+    var term = this.value.toLowerCase();
+    filterAndSort();
+});
+
+// Sort
+document.getElementById('sortRooms').addEventListener('change', function() {
+    filterAndSort();
+});
+
+function filterAndSort() {
+    var term = document.getElementById('searchRoom').value.toLowerCase();
+    var sort = document.getElementById('sortRooms').value;
+    var grid = document.getElementById('roomGrid');
+    var cards = Array.from(grid.querySelectorAll('.room-card'));
+    var visible = 0;
+
+    // Filter
+    cards.forEach(function(card) {
+        var match = card.getAttribute('data-name').includes(term) || card.getAttribute('data-category').includes(term);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+
+    // Sort
+    var visibleCards = cards.filter(function(c) { return c.style.display !== 'none'; });
+    visibleCards.sort(function(a, b) {
+        if (sort === 'messages') return parseInt(b.getAttribute('data-messages')) - parseInt(a.getAttribute('data-messages'));
+        if (sort === 'members') return parseInt(b.getAttribute('data-members')) - parseInt(a.getAttribute('data-members'));
+        if (sort === 'name') return a.getAttribute('data-sortname').localeCompare(b.getAttribute('data-sortname'));
+        // activity
+        return b.getAttribute('data-activity').localeCompare(a.getAttribute('data-activity'));
+    });
+
+    visibleCards.forEach(function(card) { grid.appendChild(card); });
+
+    document.getElementById('noResults').classList.toggle('visible', visible === 0);
+}
+</script>
+{% endblock %}

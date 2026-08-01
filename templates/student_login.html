@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container auth-bg-wrapper">
+    <div class="auth-bg-image">
+        <img src="{{ url_for('static', filename='images/htu-pic.jpg') }}" alt="HTU Campus" loading="lazy">
+    </div>
+    <div class="auth-bg-content" style="width:100%;display:flex;align-items:center;justify-content:center;">
+    <div class="auth-particles">
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+    </div>
+    <div class="auth-card">
+        <div class="auth-brand-badge">
+            <img src="{{ url_for('static', filename='images/htu-logo.png') }}" alt="HTU Logo" class="htu-logo-auth" style="height:32px;width:auto;margin:0;">
+            STUDENT PORTAL
+        </div>
+        <div class="auth-header">
+            <div class="auth-header-icon">🔑</div>
+            <h1 class="auth-title">Student Login</h1>
+            <p class="auth-subtitle">Use your HTU email to access the system</p>
+        </div>
+        {% if error %}<div class="auth-alert auth-alert-error">{{ error }}</div>{% endif %}
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label class="form-label">📧 HTU Email</label>
+                <input type="email" name="email" required class="form-input" placeholder="0322080001@htu.edu.gh">
+                <p class="text-sm text-secondary mt-1">Format: yourstudentid@htu.edu.gh</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🔒 Password</label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="studentPassword" required class="form-input" placeholder="Enter your password">
+                    <button type="button" class="password-toggle" onclick="togglePassword('studentPassword', this)" tabindex="-1">👁️</button>
+                </div>
+            </div>
+            <button type="submit" class="auth-btn">
+                Sign In
+                <span class="auth-btn-pulse"></span>
+            </button>
+        </form>
+        <div class="auth-footer">
+            <p><a href="/student/forgot-password">🔑 Forgot Password?</a></p>
+        </div>
+        <div class="auth-footer">
+            <p>First time? <a href="/student/register">📝 Register here</a></p>
+        </div>
+        <div class="auth-trust">
+            <span class="auth-trust-icon">✓</span>
+            <span>HTU students only • Secure login • Encrypted</span>
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}
+

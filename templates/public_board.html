@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Back Link -->
+<div class="mb-4">
+    <a href="/" class="btn-back">
+        <span class="btn-back-icon">←</span>
+        <span class="btn-back-text">Back to Home</span>
+    </a>
+</div>
+
+<!-- Hero Section -->
+<div class="dashboard-hero-premium mb-6">
+    <div class="dashboard-hero-content">
+        <div class="dashboard-hero-greeting">
+            <div class="dashboard-hero-avatar">📊</div>
+            <div class="dashboard-hero-greeting-text">
+                <h1 class="dashboard-hero-title">Campus Sentiment <span class="dashboard-hero-title-highlight">Dashboard</span></h1>
+                <p class="dashboard-hero-subtitle">Updated daily | Fully anonymized | Transparency in action</p>
+            </div>
+        </div>
+    </div>
+    <div class="dashboard-hero-actions">
+        <a href="/submit" class="btn-hero btn-hero-primary">✏️ Submit Feedback</a>
+        <a href="/announcements" class="btn-hero">📢 Announcements</a>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid-premium mb-6">
+    <div class="stat-card-premium animate-fade-in">
+        <div class="stat-card-premium-accent" style="background: linear-gradient(90deg, var(--success), #34d399);"></div>
+        <div class="stat-card-premium-glow" style="background: var(--success);"></div>
+        <div class="stat-card-premium-top">
+            <div class="stat-card-premium-icon" style="background: rgba(16,185,129,0.1); color: var(--success);">👍</div>
+            <span class="stat-card-premium-badge" style="background: rgba(16,185,129,0.1); color: var(--success);">Positive</span>
+        </div>
+        <div class="stat-card-premium-value" style="color: var(--success);">{{ sentiment_counts.positive }}</div>
+        <div class="stat-card-premium-label">Positive Feedback</div>
+        <div class="stat-card-premium-trend">
+            <span style="color: var(--success);">{{ (sentiment_counts.positive / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}% of total</span>
+        </div>
+    </div>
+    <div class="stat-card-premium animate-fade-in" style="animation-delay: 0.1s;">
+        <div class="stat-card-premium-accent" style="background: linear-gradient(90deg, var(--danger), #f87171);"></div>
+        <div class="stat-card-premium-glow" style="background: var(--danger);"></div>
+        <div class="stat-card-premium-top">
+            <div class="stat-card-premium-icon" style="background: rgba(239,68,68,0.1); color: var(--danger);">👎</div>
+            <span class="stat-card-premium-badge" style="background: rgba(239,68,68,0.1); color: var(--danger);">Negative</span>
+        </div>
+        <div class="stat-card-premium-value" style="color: var(--danger);">{{ sentiment_counts.negative }}</div>
+        <div class="stat-card-premium-label">Needs Attention</div>
+        <div class="stat-card-premium-trend">
+            <span style="color: var(--text-secondary);">{{ (sentiment_counts.negative / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}% of total</span>
+        </div>
+    </div>
+    <div class="stat-card-premium animate-fade-in" style="animation-delay: 0.2s;">
+        <div class="stat-card-premium-accent" style="background: linear-gradient(90deg, var(--secondary), #94a3b8);"></div>
+        <div class="stat-card-premium-glow" style="background: var(--secondary);"></div>
+        <div class="stat-card-premium-top">
+            <div class="stat-card-premium-icon" style="background: rgba(107,114,128,0.1); color: var(--secondary);">😐</div>
+            <span class="stat-card-premium-badge" style="background: rgba(107,114,128,0.1); color: var(--secondary);">Neutral</span>
+        </div>
+        <div class="stat-card-premium-value" style="color: var(--secondary);">{{ sentiment_counts.neutral }}</div>
+        <div class="stat-card-premium-label">Neutral Feedback</div>
+        <div class="stat-card-premium-trend">
+            <span style="color: var(--text-secondary);">{{ (sentiment_counts.neutral / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}% of total</span>
+        </div>
+    </div>
+    <div class="stat-card-premium animate-fade-in" style="animation-delay: 0.3s;">
+        <div class="stat-card-premium-accent" style="background: linear-gradient(90deg, var(--primary), #60a5fa);"></div>
+        <div class="stat-card-premium-glow" style="background: var(--primary);"></div>
+        <div class="stat-card-premium-top">
+            <div class="stat-card-premium-icon" style="background: rgba(30,64,175,0.1); color: var(--primary);">📋</div>
+            <span class="stat-card-premium-badge" style="background: rgba(30,64,175,0.1); color: var(--primary);">Total</span>
+        </div>
+        <div class="stat-card-premium-value" style="color: var(--primary);">{{ total_feedback }}</div>
+        <div class="stat-card-premium-label">Total Feedback</div>
+        <div class="stat-card-premium-trend">
+            <span style="color: var(--text-secondary);">All time submissions</span>
+        </div>
+    </div>
+</div>
+
+<!-- Sentiment Distribution -->
+<div class="chart-card-premium mb-6 animate-slide-up">
+    <div class="chart-card-premium-header">
+        <div class="chart-card-premium-title">📊 Current Campus Sentiment Distribution</div>
+        <div class="chart-card-premium-stats">
+            <span class="chart-stat-dot chart-stat-dot-green">Positive {{ (sentiment_counts.positive / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}%</span>
+            <span class="chart-stat-dot chart-stat-dot-red">Negative {{ (sentiment_counts.negative / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}%</span>
+            <span class="chart-stat-dot chart-stat-dot-gray">Neutral {{ (sentiment_counts.neutral / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}%</span>
+        </div>
+    </div>
+    {% if total_feedback > 0 %}
+    <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+        <div style="position: relative; width: 180px; height: 180px; flex-shrink: 0; margin: 0 auto;">
+            <canvas id="sentimentDonutChart" width="180" height="180"></canvas>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <div class="progress-bar-premium mb-2" style="height: 0.75rem;">
+                <div class="progress-bar-premium-fill" style="width: {{ (sentiment_counts.positive / total_feedback * 100) }}%; background: linear-gradient(90deg, var(--success), #34d399);"></div>
+            </div>
+            <div class="flex justify-between text-xs text-secondary font-semibold mb-2">
+                <span>👍 Positive: {{ sentiment_counts.positive }}</span>
+                <span>{{ (sentiment_counts.positive / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}%</span>
+            </div>
+            <div class="progress-bar-premium mb-2" style="height: 0.75rem;">
+                <div class="progress-bar-premium-fill" style="width: {{ (sentiment_counts.negative / total_feedback * 100) }}%; background: linear-gradient(90deg, var(--danger), #f87171);"></div>
+            </div>
+            <div class="flex justify-between text-xs text-secondary font-semibold mb-2">
+                <span>👎 Negative: {{ sentiment_counts.negative }}</span>
+                <span>{{ (sentiment_counts.negative / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}%</span>
+            </div>
+            <div class="progress-bar-premium mb-2" style="height: 0.75rem;">
+                <div class="progress-bar-premium-fill" style="width: {{ (sentiment_counts.neutral / total_feedback * 100) }}%; background: linear-gradient(90deg, var(--secondary), #94a3b8);"></div>
+            </div>
+            <div class="flex justify-between text-xs text-secondary font-semibold">
+                <span>😐 Neutral: {{ sentiment_counts.neutral }}</span>
+                <span>{{ (sentiment_counts.neutral / total_feedback * 100)|round(1) if total_feedback > 0 else 0 }}%</span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-center py-4 text-secondary">No feedback data available yet.</p>
+    {% endif %}
+</div>
+
+<!-- Top Complaints & Category Sentiment -->
+<div class="charts-row-premium mb-6">
+    <!-- Top Complaints -->
+    <div class="chart-card-premium animate-slide-up">
+        <div class="chart-card-premium-header">
+            <div class="chart-card-premium-title">⚠️ Top Complaints Being Addressed</div>
+        </div>
+        {% if top_complaints %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 440px; overflow-y: auto;">
+            {% for c in top_complaints %}
+            <div class="feedback-card-premium" style="margin-bottom: 0;">
+                <div class="feedback-card-premium-inner">
+                    <div class="feedback-card-premium-accent" style="background: linear-gradient(180deg, var(--danger), #f87171);"></div>
+                    <div class="feedback-card-premium-body">
+                        <div class="feedback-card-premium-top">
+                            <div class="feedback-card-premium-badges">
+                                <span class="badge badge-info">📁 {{ c.category }}</span>
+                                <span class="urgency-badge {% if c.urgency_score >= 4 %}urgency-critical{% elif c.urgency_score >= 3 %}urgency-high{% else %}urgency-medium{% endif %}">
+                                    ⚡ {{ c.urgency_score }}/5
+                                </span>
+                                <span class="badge badge-neutral">{{ c.status }}</span>
+                            </div>
+                            <span class="feedback-card-premium-time">{{ c.created_at.strftime('%b %d') }}</span>
+                        </div>
+                        <div class="feedback-card-premium-text">
+                            "{{ c.feedback_text[:150] }}{% if c.feedback_text|length > 150 %}...{% endif %}"
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state-premium" style="padding: 2rem;">
+            <span class="empty-state-premium-icon">🎉</span>
+            <h3 class="empty-state-premium-title">No Complaints</h3>
+            <p class="empty-state-premium-desc">All feedback has been positive! Great job HTU.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sentiment by Category -->
+    <div class="chart-card-premium animate-slide-up" style="animation-delay: 0.1s;">
+        <div class="chart-card-premium-header">
+            <div class="chart-card-premium-title">📊 Sentiment by Category</div>
+        </div>
+        {% if category_sentiment %}
+        <div style="display: flex; flex-direction: column; gap: 1.15rem;">
+            {% for cat, data in category_sentiment.items() %}
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="font-bold text-sm">{{ cat }}</span>
+                    <span class="text-xs font-semibold {% if data.negative > data.positive %}text-danger{% else %}text-success{% endif %}">
+                        👎 {{ (data.negative / data.total * 100)|round(0) if data.total > 0 else 0 }}% negative
+                    </span>
+                </div>
+                <div class="progress-bar-premium" style="height: 0.5rem;">
+                    <div class="progress-bar-premium-fill" style="width: {{ (data.positive / data.total * 100) if data.total > 0 else 0 }}%; background: linear-gradient(90deg, var(--success), #34d399); height: 100%;"></div>
+                </div>
+                <div class="flex justify-between text-xs mt-1 text-secondary">
+                    <span>👍 {{ data.positive }}</span>
+                    <span>👎 {{ data.negative }}</span>
+                    <span>😐 {{ data.neutral }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state-premium" style="padding: 2rem;">
+            <span class="empty-state-premium-icon">📭</span>
+            <h3 class="empty-state-premium-title">No Data Available</h3>
+            <p class="empty-state-premium-desc">No feedback has been submitted yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Forum Activity Summary -->
+<div class="chart-card-premium mb-6 animate-slide-up">
+    <div class="chart-card-premium-header">
+        <div class="chart-card-premium-title">📢 Forum Activity Summary</div>
+    </div>
+    <div class="stats-grid-premium" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1.25rem;">
+        <div class="stat-card-premium" style="padding: 1rem;">
+            <div class="stat-card-premium-value" style="font-size: 1.5rem; color: var(--primary);">{{ forum_summary.total_topics }}</div>
+            <div class="stat-card-premium-label">Topics Created</div>
+        </div>
+        <div class="stat-card-premium" style="padding: 1rem;">
+            <div class="stat-card-premium-value" style="font-size: 1.5rem; color: var(--primary);">{{ forum_summary.total_replies }}</div>
+            <div class="stat-card-premium-label">Replies Posted</div>
+        </div>
+        <div class="stat-card-premium" style="padding: 1rem;">
+            <div class="stat-card-premium-value" style="font-size: 1.5rem; color: var(--success);">{{ forum_summary.positive_topics }}</div>
+            <div class="stat-card-premium-label">Positive Topics</div>
+        </div>
+        <div class="stat-card-premium" style="padding: 1rem;">
+            <div class="stat-card-premium-value" style="font-size: 1.5rem; color: var(--danger);">{{ forum_summary.negative_topics }}</div>
+            <div class="stat-card-premium-label">Needs Attention</div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <div class="flex justify-between text-sm mb-1">
+            <span class="font-semibold">Forum Sentiment Distribution</span>
+            <span class="text-secondary text-xs">Positive: {{ forum_summary.positive_pct }}% | Negative: {{ forum_summary.negative_pct }}%</span>
+        </div>
+        <div class="progress-bar-premium" style="height: 0.6rem; display: flex;">
+            <div style="height: 100%; border-radius: var(--radius-full) 0 0 var(--radius-full); background: linear-gradient(90deg, var(--success), #34d399); width: {{ forum_summary.positive_pct }}%;"></div>
+            <div style="height: 100%; border-radius: 0 var(--radius-full) var(--radius-full) 0; background: linear-gradient(90deg, var(--danger), #f87171); width: {{ forum_summary.negative_pct }}%;"></div>
+        </div>
+    </div>
+    {% if forum_summary.hot_topics > 0 %}
+    <div class="text-center mt-3">
+        <span class="badge badge-danger">🔥 {{ forum_summary.hot_topics }} Hot Topics</span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- SRC Performance Metrics -->
+<div class="chart-card-premium mb-6 animate-slide-up">
+    <div class="chart-card-premium-header">
+        <div class="chart-card-premium-title">📊 SRC Performance Metrics</div>
+    </div>
+    <div class="stats-grid-premium" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="stat-card-premium text-center" style="padding: 1.25rem;">
+            <div class="stat-card-premium-value" style="font-size: 2rem; color: var(--primary);">{{ total_feedback }}</div>
+            <div class="stat-card-premium-label">Total Feedback Received</div>
+        </div>
+        <div class="stat-card-premium text-center" style="padding: 1.25rem;">
+            <div class="stat-card-premium-value" style="font-size: 2rem; color: var(--success);">{{ src_positive_rate|int }}%</div>
+            <div class="stat-card-premium-label">Positive Rate</div>
+        </div>
+        <div class="stat-card-premium text-center" style="padding: 1.25rem;">
+            <div class="stat-card-premium-value" style="font-size: 2rem; color: var(--warning);">{{ engagement_arrow }} {{ engagement_increase_pct }}%</div>
+            <div class="stat-card-premium-label">Engagement Change</div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer Note -->
+<div class="text-center mt-8 text-secondary text-sm">
+    <p>This data is updated automatically from anonymous student feedback and discussions.</p>
+    <p class="mt-1">Have feedback? <a href="/submit" style="color: var(--primary); font-weight: 600;">Submit here</a></p>
+</div>
+
+<!-- Chart.js Initialization -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var totalFeedback = {{ total_feedback }};
+    if (totalFeedback > 0) {
+        // --- Sentiment Donut Chart ---
+        var donutCtx = document.getElementById('sentimentDonutChart');
+        if (donutCtx) {
+            new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Positive', 'Negative', 'Neutral'],
+                    datasets: [{
+                        data: [{{ sentiment_counts.positive }}, {{ sentiment_counts.negative }}, {{ sentiment_counts.neutral }}],
+                        backgroundColor: ['#10b981', '#ef4444', '#6b7280'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'var(--card-bg)',
+                            titleColor: 'var(--text-primary)',
+                            bodyColor: 'var(--text-secondary)',
+                            borderColor: 'var(--border-color)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(ctx) {
+                                    var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                    var pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
+                                    return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}
+

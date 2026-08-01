@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section v2 with Campus Background -->
+<section class="landing-hero-v2 reveal hero-bg-wrapper">
+    <div class="hero-bg-image">
+        <img src="{{ url_for('static', filename='images/htu-pic.jpg') }}" alt="HTU Campus" loading="lazy">
+    </div>
+    <div class="hero-bg-overlay hero-bg-overlay-light"></div>
+    <div class="hero-bg-pattern"></div>
+    <div class="hero-bg-content" style="position: relative; z-index: 3;">
+        <div class="landing-particles">
+            <div class="landing-particle"></div>
+            <div class="landing-particle"></div>
+            <div class="landing-particle"></div>
+            <div class="landing-particle"></div>
+            <div class="landing-particle"></div>
+            <div class="landing-particle"></div>
+        </div>
+        <div class="landing-hero-badge-v2">
+            <span class="badge-dot"></span>
+            <span>🎓 HTU Student Representative Council</span>
+        </div>
+        <h1 class="landing-hero-title-v2">
+            Your Voice, <span class="title-gradient">Our Commitment</span>
+            <span class="title-wave">👋</span>
+        </h1>
+        <p class="landing-hero-subtitle-v2">
+            <span class="highlight-text">A Better HTU.</span> Share your feedback, suggestions or complaints. 
+            We listen, analyze, and take action — transparently and effectively.
+        </p>
+        <div class="landing-hero-actions-v2">
+            {% if session.student_id %}
+                <a href="/submit" class="landing-hero-btn-primary">
+                    ✏️ Submit Feedback
+                    <span class="btn-pulse"></span>
+                </a>
+                <a href="/student/dashboard" class="landing-hero-btn-secondary">👤 My Dashboard</a>
+            {% else %}
+                <a href="/student/login" class="landing-hero-btn-primary">
+                    🔑 Student Login
+                    <span class="btn-pulse"></span>
+                </a>
+                <a href="/student/register" class="landing-hero-btn-secondary">📝 Register</a>
+            {% endif %}
+            <a href="/public" class="landing-hero-btn-secondary">📊 Public Board</a>
+        </div>
+        {% if total_feedback > 0 %}
+        <div class="landing-stats-v2">
+            <div class="landing-stat-v2">
+                <div class="landing-stat-value-v2"><span class="counter" data-target="{{ total_feedback }}">0</span></div>
+                <div class="landing-stat-label-v2">Total Feedback</div>
+            </div>
+            <div class="landing-stat-v2">
+                <div class="landing-stat-value-v2"><span class="counter" data-target="{{ resolved_count }}">0</span></div>
+                <div class="landing-stat-label-v2">Issues Resolved</div>
+            </div>
+            <div class="landing-stat-v2">
+                <div class="landing-stat-value-v2"><span class="counter" data-target="{{ positive_rate|int }}">0</span><span class="counter-plus">%</span></div>
+                <div class="landing-stat-label-v2">Positive Rate</div>
+            </div>
+            <div class="landing-stat-v2">
+                <div class="landing-stat-value-v2"><span class="counter" data-target="{{ total_students }}">0</span></div>
+                <div class="landing-stat-label-v2">Active Students</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- How It Works Section v2 -->
+<section class="how-it-works-v2 reveal">
+    <div class="text-center">
+        <div class="section-label">🚀 How It Works</div>
+        <h2 class="section-title-center">From Your Voice to Real Action</h2>
+        <p class="section-subtitle-center">A simple 4-step process that ensures every student's voice is heard and addressed.</p>
+    </div>
+    <div class="steps-grid-v2">
+        <div class="step-card-v2 reveal reveal-delay-1">
+            <div class="step-number-v2">1</div>
+            <span class="step-icon-v2">✏️</span>
+            <h3 class="step-title-v2">Submit Feedback</h3>
+            <p class="step-desc-v2">Share your thoughts via text or voice. Choose a category and urgency level.</p>
+        </div>
+        <div class="step-card-v2 reveal reveal-delay-2">
+            <div class="step-number-v2">2</div>
+            <span class="step-icon-v2">🤖</span>
+            <h3 class="step-title-v2">AI Analysis</h3>
+            <p class="step-desc-v2">Our system analyzes sentiment, detects urgency, and recommends solutions.</p>
+        </div>
+        <div class="step-card-v2 reveal reveal-delay-3">
+            <div class="step-number-v2">3</div>
+            <span class="step-icon-v2">👥</span>
+            <h3 class="step-title-v2">SRC Review</h3>
+            <p class="step-desc-v2">The SRC team reviews, assigns, and takes action on every submission.</p>
+        </div>
+        <div class="step-card-v2 reveal reveal-delay-4">
+            <div class="step-number-v2">4</div>
+            <span class="step-icon-v2">✅</span>
+            <h3 class="step-title-v2">Resolution</h3>
+            <p class="step-desc-v2">Track progress and see real-time updates on the public board.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Announcements v2 -->
+{% if recent_announcements %}
+<section class="landing-announcements-v2 reveal">
+    <div class="text-center mb-6">
+        <div class="section-label">📢 Latest Announcements</div>
+        <h2 class="section-title-center">Stay Updated</h2>
+    </div>
+    <div class="announcements-list-v2">
+        {% for announcement in recent_announcements %}
+        <div class="announcement-item-v2 {% if loop.first %}gradient-border{% endif %}">
+            <div class="announcement-item-content-v2">
+                <div class="announcement-item-title-v2">{{ announcement.title }}</div>
+                <div class="announcement-item-preview-v2">{{ announcement.content[:150] }}{% if announcement.content|length > 150 %}...{% endif %}</div>
+            </div>
+            <div class="announcement-item-meta-v2">
+                <span class="announcement-item-badge-v2">📢 New</span>
+                <span class="announcement-item-date-v2">{{ announcement.created_at.strftime('%b %d, %Y') }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% if recent_announcements|length >= 3 %}
+    <div class="text-center mt-4">
+        <a href="/announcements" class="btn btn-ghost">View All Announcements →</a>
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+
+<!-- CTA Section v2 -->
+<section class="landing-cta-v2 reveal">
+    <h2 class="landing-cta-title-v2">Ready to Make a Difference?</h2>
+    <p class="landing-cta-desc-v2">Join hundreds of HTU students who are already shaping the future of our university.</p>
+    <div class="landing-cta-actions-v2">
+        {% if session.student_id %}
+            <a href="/submit" class="landing-cta-btn-primary">✏️ Submit Feedback Now</a>
+            <a href="/forum" class="landing-hero-btn-secondary">💬 Join Discussion</a>
+        {% else %}
+            <a href="/student/register" class="landing-cta-btn-primary">📝 Get Started Now</a>
+            <a href="/student/login" class="landing-hero-btn-secondary">🔑 Sign In</a>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Trust Section -->
+<div class="alert alert-info text-center reveal">
+    <p>🔐 <strong>HTU Students Only:</strong> Login with your school email (e.g., 0322080001@htu.edu.gh) to submit feedback.</p>
+</div>
+{% endblock %}
+

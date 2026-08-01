@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-layout">
+    <aside class="admin-sidebar" aria-label="Admin dashboard sidebar">
+        <div class="admin-sidebar-title">
+            🛡️ SRC Admin
+            <span class="sub">Control & review</span>
+        </div>
+        <nav class="admin-sidebar-nav">
+            <a href="/admin/dashboard" class="admin-sidebar-link admin-sidebar-link-active">📋 Dashboard</a>
+            <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
+            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+            <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
+            <a href="/admin/chat/rooms" class="admin-sidebar-link">💬 Chat Rooms</a>
+            <a href="/admin/chat/messages" class="admin-sidebar-link">📨 Chat Messages</a>
+            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+        </nav>
+        <div style="margin-top: 1.25rem;">
+            <a href="/admin/logout" class="btn-logout btn-logout--student student-sidebar-logout">
+                <span class="btn-logout-icon">⏻</span>
+                <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+            </a>
+        </div>
+    </aside>
+    <section class="student-content">
+        <div class="admin-hero">
+            <div class="admin-hero-content">
+                <div class="admin-hero-title">👋 Welcome back, {{ admin_name }}</div>
+                <div class="admin-hero-subtitle">Here's what's happening with your feedback system today.</div>
+            </div>
+            <div class="admin-hero-actions">
+                <a href="/admin/analytics" class="btn-hero btn-hero-primary">📈 View Analytics</a>
+                <a href="/admin/export/excel" class="btn-hero">📊 Export Data</a>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--primary);"></div>
+                <div class="stat-card-icon stat-card-icon-blue">📋</div>
+                <div class="stat-card-value">{{ stats.total }}</div>
+                <div class="stat-card-label">Total Feedback</div>
+                <div class="stat-card-trend stat-card-trend-up">● {{ stats.resolution_rate }}% resolved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--danger);"></div>
+                <div class="stat-card-icon stat-card-icon-red">⚠️</div>
+                <div class="stat-card-value" style="color: var(--danger);">{{ stats.urgent }}</div>
+                <div class="stat-card-label">Urgent Issues</div>
+                <div class="stat-card-trend stat-card-trend-down">🔴 Needs attention</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--success);"></div>
+                <div class="stat-card-icon stat-card-icon-green">✅</div>
+                <div class="stat-card-value" style="color: var(--success);">{{ stats.resolved }}</div>
+                <div class="stat-card-label">Resolved</div>
+                <div class="stat-card-trend stat-card-trend-up">📈 {{ stats.resolution_rate }}% rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: #8b5cf6;"></div>
+                <div class="stat-card-icon stat-card-icon-purple">📊</div>
+                <div class="stat-card-value">{{ stats.resolution_rate }}%</div>
+                <div class="stat-card-label">Resolution Rate</div>
+                <div class="stat-card-trend stat-card-trend-up">⚡ System health</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: #14b8a6;"></div>
+                <div class="stat-card-icon stat-card-icon-teal">👥</div>
+                <div class="stat-card-value">{{ stats.total_students }}</div>
+                <div class="stat-card-label">Students</div>
+                <div class="stat-card-trend stat-card-trend-up">🎓 Registered</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--warning);"></div>
+                <div class="stat-card-icon stat-card-icon-amber">💬</div>
+                <div class="stat-card-value">{% set total_sentiment = stats.positive + stats.negative + stats.neutral %}{% if total_sentiment > 0 %}{{ (stats.positive / total_sentiment * 100) | round }}{% else %}0{% endif %}%</div>
+                <div class="stat-card-label">Positive Sentiment</div>
+                <div class="stat-card-trend stat-card-trend-up">😊 Student mood</div>
+            </div>
+        </div>
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">📈 Sentiment Trend (Last 6 Months)</div>
+                    <select class="chart-period-selector" id="trendPeriod">
+                        <option>6 Months</option>
+                        <option>3 Months</option>
+                        <option>1 Month</option>
+                    </select>
+                </div>
+                <canvas id="trendChart" height="100"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">🎯 Sentiment Breakdown</div>
+                </div>
+                <div style="position: relative; height: 200px; display: flex; align-items: center; justify-content: center;">
+                    <canvas id="sentimentDonutChart"></canvas>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 0.75rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600;"><span style="width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--success); display: inline-block;"></span> Positive {{ stats.positive }}</div>
+                    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600;"><span style="width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--danger); display: inline-block;"></span> Negative {{ stats.negative }}</div>
+                    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600;"><span style="width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--secondary); display: inline-block;"></span> Neutral {{ stats.neutral }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="filter-bar-enhanced">
+            <span class="filter-label">🔍 Filter</span>
+            <input type="text" id="searchInput" placeholder="Search feedback..." class="filter-input">
+            <select id="categoryFilter" class="filter-select">
+                <option value="">All Categories</option>{% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+            </select>
+            <select id="statusFilter" class="filter-select">
+                <option value="">All Status</option><option value="Pending">⏳ Pending</option><option value="Acknowledged">👀 Acknowledged</option><option value="In Progress">🔄 In Progress</option><option value="Resolved">✅ Resolved</option><option value="Escalated">🚨 Escalated</option>
+            </select>
+            <select id="urgencyFilter" class="filter-select">
+                <option value="">All Urgency</option><option value="4">⚠️ Urgent (4+)</option><option value="5">🚨 Emergency (5)</option>
+            </select>
+            <button class="filter-clear" onclick="clearFilters()">✕ Clear</button>
+        </div>
+        <div class="section-header">
+            <div class="section-title"><span class="section-title-icon">📋</span> All Feedback <span class="badge badge-neutral" style="margin-left: 0.5rem;">{{ pagination.total if pagination else feedbacks|length }} total</span></div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;"><span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Showing {{ feedbacks|length }} items</span></div>
+        </div>
+        <div class="table-modern-container admin-table-wrapper">
+            <table class="table-modern">
+                <thead>
+                    <tr><th style="width: 40px;">🚨</th><th>Feedback</th><th>Cleaned Text</th><th>Category</th><th>Sentiment</th><th>Urgency</th><th>Status</th><th>Assigned To</th><th style="width: 140px;">Actions</th></tr>
+                </thead>
+                <tbody id="feedbackTableBody">
+                    {% for f in feedbacks %}
+                    <tr>
+                        <td>{% if f.urgency_score >= 4 %}<span style="font-size: 1.1rem;" title="High urgency">🚨</span>{% elif f.urgency_score >= 3 %}<span style="font-size: 1.1rem;" title="Medium urgency">⚠️</span>{% else %}<span style="font-size: 1.1rem; opacity: 0.3;">·</span>{% endif %}</td>
+                        <td><div class="feedback-text-cell" title="{{ f.feedback_text }}">{{ f.feedback_text[:80] }}{% if f.feedback_text|length > 80 %}...{% endif %}{% if f.has_profanity %}<span class="badge badge-danger" style="margin-left:0.35rem;font-size:0.65rem;">🤬 Profanity</span>{% endif %}</div></td>
+                        <td><div class="feedback-text-cell" title="{{ f.cleaned_text or '' }}" style="max-width:180px;">{% if f.cleaned_text %}{{ f.cleaned_text[:80] }}{% if f.cleaned_text|length > 80 %}...{% endif %}{% else %}<em style="color:var(--text-muted);font-size:0.8rem;">N/A</em>{% endif %}</div></td>
+                        <td><span class="badge badge-info">{{ f.category }}</span></td>
+                        <td><span class="sentiment-dot sentiment-dot-{{ f.sentiment.lower() }}">{{ f.sentiment }}</span></td>
+                        <td>{% set u = f.urgency_score %}{% if u >= 5 %}<span class="urgency-badge urgency-critical">🔴 {{ u }}/5</span>{% elif u >= 4 %}<span class="urgency-badge urgency-high">🟠 {{ u }}/5</span>{% elif u >= 3 %}<span class="urgency-badge urgency-medium">🟡 {{ u }}/5</span>{% else %}<span class="urgency-badge urgency-low">🟢 {{ u }}/5</span>{% endif %}</td>
+                        <td><form method="POST" action="/admin/update/{{ f.id }}"><select name="status" onchange="this.form.submit()" class="status-select status-{{ f.status.lower().replace(' ', '-') }}">{% for s in ['Pending', 'Acknowledged', 'In Progress', 'Resolved', 'Escalated'] %}<option value="{{ s }}" {% if f.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></form></td>
+                        <td><form method="POST" action="/admin/update/{{ f.id }}" style="display: flex; gap: 0.25rem; align-items: center;"><input type="text" name="assigned_to" value="{{ f.assigned_to or '' }}" placeholder="Assign" style="padding: 0.25rem 0.5rem; border: 1px solid var(--border-color); border-radius: 0.4rem; font-size: 0.8rem; width: 85px; background: var(--card-bg); color: var(--text-primary);"><button type="submit" class="action-btn" title="Save assignment">💾</button></form></td>
+                        <td><div class="action-btn-group"><button onclick="showAnalyzeModal({{ f.id }})" class="action-btn" title="Analyze sentiment">🔍</button><button onclick="showSolutionModal({{ f.id }})" class="action-btn" title="View recommendations">💡</button><button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn" title="Add response">💬</button><form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Are you sure you want to permanently delete this feedback?')" style="display:inline; margin:0;"><button type="submit" class="action-btn action-btn-danger" title="Delete feedback">🗑️</button></form></div></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);"><div style="font-size: 2rem; margin-bottom: 0.5rem;">📭</div><div style="font-weight: 700; font-size: 1rem;">No feedback found</div><div style="font-size: 0.85rem; margin-top: 0.25rem;">Feedback submissions will appear here.</div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if pagination and pagination.pages > 1 %}
+        <div class="pagination-modern">
+            {% if pagination.has_prev %}<a href="{{ url_for('admin_dashboard', page=pagination.prev_num, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="page-btn">← Prev</a>{% endif %}
+            {% for p in range(1, pagination.pages + 1) %}{% if p == pagination.page %}<span class="page-btn page-btn-active">{{ p }}</span>{% elif p >= pagination.page - 2 and p <= pagination.page + 2 %}<a href="{{ url_for('admin_dashboard', page=p, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="page-btn">{{ p }}</a>{% elif p == 1 or p == pagination.pages %}<a href="{{ url_for('admin_dashboard', page=p, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="page-btn">{{ p }}</a>{% elif p == pagination.page - 3 or p == pagination.page + 3 %}<span class="page-btn" style="border: none; cursor: default;">…</span>{% endif %}{% endfor %}
+            {% if pagination.has_next %}<a href="{{ url_for('admin_dashboard', page=pagination.next_num, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="page-btn">Next →</a>{% endif %}
+            <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        </div>
+        {% endif %}
+        <div id="responseModal" class="modal"><div class="modal-content"><div class="modal-header">💬 Add SRC Response</div><form method="POST" id="responseForm"><textarea name="src_response" rows="4" class="form-textarea mb-3" placeholder="Write your official response here..."></textarea><div class="flex justify-end gap-2"><button type="button" onclick="closeResponseModal()" class="btn btn-secondary">Cancel</button><button type="submit" class="btn btn-primary">✉️ Submit Response</button></div></form></div></div>
+<div id="analyzeModal" class="modal"><div class="modal-content"><div class="modal-header">🔍 Feedback Analysis</div><div class="mb-3"><div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;"><span class="badge badge-info" id="analyzeSentimentBadge">Sentiment</span><span class="badge badge-warning" id="analyzeUrgencyBadge">Urgency</span></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎭 Emotion & Confidence</h4><div id="analyzeEmotion" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🧠 Sentiment Explanation</h4><div id="sentimentExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Urgency Explanation</h4><div id="urgencyExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeAnalyzeModal()" class="btn btn-secondary">Close</button></div></div></div>
+        <div id="solutionModal" class="modal"><div class="modal-content"><div class="modal-header">💡 Solution Recommendations</div><div class="mb-3"><div id="solutionDepartment" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; margin-bottom: 0.75rem; border: 1px solid var(--border-color);"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🏷️ Matched Keywords</h4><div id="solutionKeywords" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color); min-height: 50px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⏱️ Short-Term Solution</h4><div id="solutionShortTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Long-Term Solution</h4><div id="solutionLongTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeSolutionModal()" class="btn btn-secondary">Close</button></div></div></div>
+        <script>
+        var explanationsById = {{ explanations_by_id | default({}) | tojson }};
+        var recommendationsById = {{ recommendations_by_id | default({}) | tojson }};
+        var trendData = {
+            labels: {{ trend_data|map(attribute='month')|list|tojson }},
+            positive: {{ trend_data|map(attribute='positive')|list|tojson }},
+            negative: {{ trend_data|map(attribute='negative')|list|tojson }},
+            neutral: {{ trend_data|map(attribute='neutral')|list|tojson }}
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+            var trendCtx = document.getElementById('trendChart');
+            if (trendCtx) {
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: trendData.labels,
+                        datasets: [
+                            { label: 'Positive', data: trendData.positive, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
+                            { label: 'Negative', data: trendData.negative, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
+                            { label: 'Neutral', data: trendData.neutral, borderColor: '#6b7280', backgroundColor: 'rgba(107,114,128,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, weight: '600' } } },
+                            tooltip: { backgroundColor: 'var(--card-bg)', titleColor: 'var(--text-primary)', bodyColor: 'var(--text-secondary)', borderColor: 'var(--border-color)', borderWidth: 1, cornerRadius: 8 }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, stepSize: 1 } }
+                        }
+                    }
+                });
+            }
+            var donutCtx = document.getElementById('sentimentDonutChart');
+            if (donutCtx) {
+                new Chart(donutCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['Positive', 'Negative', 'Neutral'], datasets: [{ data: [{{ stats.positive }}, {{ stats.negative }}, {{ stats.neutral }}], backgroundColor: ['#10b981', '#ef4444', '#6b7280'], borderWidth: 0, hoverOffset: 8 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: true, cutout: '65%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'var(--card-bg)', titleColor: 'var(--text-primary)', bodyColor: 'var(--text-secondary)', borderColor: 'var(--border-color)', borderWidth: 1, cornerRadius: 8,
+                                callbacks: { label: function(ctx) { var t = ctx.dataset.data.reduce(function(a,b){return a+b;},0); var p = t > 0 ? Math.round(ctx.parsed / t * 100) : 0; return ctx.label + ': ' + ctx.parsed + ' (' + p + '%)'; } }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        function filterTable() {
+            var s = document.getElementById('searchInput').value.toLowerCase();
+            var c = document.getElementById('categoryFilter').value;
+            var t = document.getElementById('statusFilter').value;
+            var u = document.getElementById('urgencyFilter').value;
+            document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
+                var text = row.cells[1]?.innerText.toLowerCase() || '';
+                var cat = row.cells[2]?.innerText || '';
+                var stat = row.cells[5]?.querySelector('select')?.value || row.cells[5]?.innerText || '';
+                var urgMatch = (row.cells[4]?.innerText || '').match(/(\d+)\/5/);
+                var urgScore = urgMatch ? parseInt(urgMatch[1]) : 0;
+                var match = text.includes(s);
+                if (c && cat !== c) match = false;
+                if (t && stat !== t) match = false;
+                if (u === '4' && urgScore < 4) match = false;
+                if (u === '5' && urgScore < 5) match = false;
+                row.style.display = match ? '' : 'none';
+            });
+        }
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('urgencyFilter').value = '';
+            filterTable();
+        }
+        document.getElementById('searchInput').addEventListener('keyup', filterTable);
+        document.getElementById('categoryFilter').addEventListener('change', filterTable);
+        document.getElementById('statusFilter').addEventListener('change', filterTable);
+        document.getElementById('urgencyFilter').addEventListener('change', filterTable);
+        function renderEmotionBlock(eb, data) {
+            if (!eb) return;
+            if (!data || (!data.dominant_emotion && data.confidence_score === undefined && data.confidence_score === null && (!data.emotion_intensities || Object.keys(data.emotion_intensities).length === 0))) {
+                eb.innerHTML = '<em style="color:var(--text-secondary);">No emotion data available.</em>';
+                return;
+            }
+            var emotion = (data.dominant_emotion || 'neutral').toLowerCase();
+            var emoji = data.emotion_emoji || '😐';
+            var label = emotion.charAt(0).toUpperCase() + emotion.slice(1);
+            var html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:0.6rem;">';
+            html += '<span class="emotion-badge emotion-' + emotion + '">' + emoji + ' ' + label + '</span>';
+            if (data.compound_mood) {
+                html += '<span class="emotion-badge emotion-neutral">🌗 ' + data.compound_mood.replace(/_/g, ' ').replace(/\b\w/g, function(c){return c.toUpperCase();}) + '</span>';
+            }
+            if (data.confidence_score !== undefined && data.confidence_score !== null) {
+                var conf = Math.round(data.confidence_score);
+                var confBadge = conf >= 75 ? 'badge-success' : (conf >= 50 ? 'badge-warning' : 'badge-danger');
+                html += '<span class="badge ' + confBadge + '">🎯 ' + conf + '% confidence</span>';
+            }
+            html += '</div>';
+            if (data.confidence_score !== undefined && data.confidence_score !== null) {
+                var conf = Math.round(data.confidence_score);
+                var confClass = conf >= 75 ? 'confidence-high' : (conf >= 50 ? 'confidence-medium' : 'confidence-low');
+                html += '<div class="confidence-bar" style="margin-bottom:0.6rem;"><div class="confidence-bar-fill ' + confClass + '" style="width:' + conf + '%;"></div></div>';
+            }
+            var intensities = data.emotion_intensities || {};
+            var entries = Object.keys(intensities).filter(function(k) { return intensities[k] > 0; }).map(function(k) { return [k, intensities[k]]; });
+            entries.sort(function(a, b) { return b[1] - a[1]; });
+            if (entries.length) {
+                var negEmotions = ['anger', 'fear', 'sadness', 'disgust'];
+                var posEmotions = ['joy', 'trust', 'love', 'gratitude', 'optimism'];
+                html += '<div>';
+                entries.forEach(function(e) {
+                    var name = e[0];
+                    var val = Math.round(e[1] * 100);
+                    var color = negEmotions.indexOf(name) !== -1 ? '#ef4444' : (posEmotions.indexOf(name) !== -1 ? '#10b981' : '#3b82f6');
+                    var label = name.charAt(0).toUpperCase() + name.slice(1);
+                    html += '<div class="emotion-intensity-item"><span class="emotion-intensity-label">' + label + '</span>';
+                    html += '<div class="emotion-intensity-bar"><div class="emotion-intensity-fill" style="width:' + val + '%;background:' + color + ';"></div></div>';
+                    html += '<span class="emotion-intensity-value">' + val + '%</span></div>';
+                });
+                html += '</div>';
+            }
+            eb.innerHTML = html;
+        }
+
+        function showAnalyzeModal(id) {
+            var modal = document.getElementById('analyzeModal');
+            var sb = document.getElementById('sentimentExplanation');
+            var ub = document.getElementById('urgencyExplanation');
+            var eb = document.getElementById('analyzeEmotion');
+            var sbg = document.getElementById('analyzeSentimentBadge');
+            var ubg = document.getElementById('analyzeUrgencyBadge');
+            if (!modal || !sb || !ub) return;
+            var data = explanationsById && explanationsById[id] ? explanationsById[id] : null;
+            renderEmotionBlock(eb, data);
+            if (!data) {
+                sb.innerHTML = '<em style="color:var(--text-secondary);">No analysis available.</em>';
+                ub.innerHTML = '<em style="color:var(--text-secondary);">No analysis available.</em>';
+                if (sbg) sbg.textContent = 'N/A';
+                if (ubg) ubg.textContent = 'N/A';
+            } else {
+                if (data.sentiment_explanation && data.sentiment_explanation.length) {
+                    sb.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + data.sentiment_explanation.map(function(x) {
+                        return '<span class="keyword-chip">' + x.word + ' <span class="keyword-chip-impact">(' + x.impact + ')</span></span>';
+                    }).join('') + '</div>';
+                } else {
+                    sb.innerHTML = '<em style="color:var(--text-secondary);">No sentiment influencers detected.</em>';
+                }
+                var ue = data.urgency_explanation || {};
+                var urgHtml = '<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">';
+                urgHtml += '<div><strong>Final urgency:</strong> <span class="urgency-badge ' + (ue.final_urgency >= 4 ? 'urgency-high' : ue.final_urgency >= 3 ? 'urgency-medium' : 'urgency-low') + '" style="font-size:0.85rem;">' + (ue.final_urgency || 'N/A') + '/5</span></div>';
+                urgHtml += '<div><strong>Base:</strong> ' + (ue.base_urgency_from_keywords || 'N/A') + '/5</div></div>';
+                if (ue.sentiment_boost_applied) {
+                    urgHtml += '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:0.5rem;padding:0.5rem 0.75rem;margin-bottom:0.75rem;font-size:0.85rem;font-weight:600;color:var(--danger);">⚠️ Sentiment boost applied</div>';
+                }
+                urgHtml += '<div style="margin-top:0.5rem;"><strong>Keywords:</strong></div>';
+                if (ue.urgency_keywords_detected && ue.urgency_keywords_detected.length) {
+                    urgHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.35rem;">' + ue.urgency_keywords_detected.map(function(k) {
+                        return '<span class="keyword-chip">' + k + '</span>';
+                    }).join('') + '</div>';
+                } else {
+                    urgHtml += '<em style="color:var(--text-secondary);">None</em>';
+                }
+                ub.innerHTML = urgHtml;
+                if (sbg) sbg.textContent = '🔍 ' + (data.sentiment_explanation && data.sentiment_explanation.length > 0 ? 'Analyzed' : 'N/A');
+                if (ubg) {
+                    var v = ue.final_urgency || 'N/A';
+                    ubg.textContent = '⚡ ' + v + '/5';
+                    ubg.className = 'badge ' + (ue.final_urgency >= 4 ? 'badge-danger' : ue.final_urgency >= 3 ? 'badge-warning' : 'badge-neutral');
+                }
+            }
+            modal.classList.add('active');
+        }
+        function closeAnalyzeModal() { document.getElementById('analyzeModal').classList.remove('active'); }
+        function showSolutionModal(id) {
+            var modal = document.getElementById('solutionModal');
+            var db = document.getElementById('solutionDepartment');
+            var kb = document.getElementById('solutionKeywords');
+            var stb = document.getElementById('solutionShortTerm');
+            var ltb = document.getElementById('solutionLongTerm');
+            if (!modal || !db || !kb || !stb || !ltb) return;
+            var rec = recommendationsById && recommendationsById[id] ? recommendationsById[id] : null;
+            if (!rec) {
+                db.innerHTML = '<em style="color:var(--text-secondary);">No recommendations available.</em>';
+                kb.innerHTML = ''; stb.innerHTML = ''; ltb.innerHTML = '';
+            } else {
+                var dept = rec.responsible_department || 'N/A';
+                var eta = rec.estimated_time || 'N/A';
+                var st = rec.short_term_solution || '';
+                var lt = rec.long_term_solution || '';
+                var kws = (rec.recommended_keywords || '').split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+                db.innerHTML = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;"><div><span class="dept-badge">🏢 ' + dept + '</span></div><div><span style="font-weight:600;font-size:0.85rem;">⏱️ Est:</span> <strong>' + eta + '</strong></div></div>';
+                kb.innerHTML = kws.length ? '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + kws.map(function(k) { return '<span class="keyword-chip">' + k + '</span>'; }).join('') + '</div>' : '<em style="color:var(--text-secondary);">None</em>';
+                stb.innerHTML = st ? '<div style="color:var(--text-secondary);line-height:1.6;">' + st + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+                ltb.innerHTML = lt ? '<div style="color:var(--text-secondary);line-height:1.6;">' + lt + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+            }
+            modal.classList.add('active');
+        }
+        function closeSolutionModal() { document.getElementById('solutionModal').classList.remove('active'); }
+        function showResponseModal(id, response) {
+            var modal = document.getElementById('responseModal');
+            var form = document.getElementById('responseForm');
+            if (modal && form) {
+                form.action = '/admin/update/' + id;
+                var ta = form.querySelector('textarea');
+                if (ta) ta.value = response || '';
+                modal.classList.add('active');
+            }
+        }
+        function closeResponseModal() { document.getElementById('responseModal').classList.remove('active'); }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') { closeResponseModal(); closeAnalyzeModal(); closeSolutionModal(); }
+        });
+        document.getElementById('trendPeriod')?.addEventListener('change', function() {
+            this.style.borderColor = 'var(--primary)';
+            setTimeout(function() { document.getElementById('trendPeriod').style.borderColor = 'var(--border-color)'; }, 500);
+        });
+        </script>
+    </section>
+</div>
+{% endblock %}

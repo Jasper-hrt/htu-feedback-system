@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card max-w-md mx-auto text-center" style="padding: 2.5rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+    <h2 class="text-2xl font-bold" style="color: var(--danger); margin-bottom: 0.5rem;">Oops! Something went wrong</h2>
+    <p style="color: var(--secondary); margin-bottom: 1.5rem;">{{ error }}</p>
+    <div class="flex flex-col gap-3">
+        <a href="/student/dashboard" class="btn btn-primary">Go to Dashboard</a>
+        <a href="/" class="btn btn-secondary">Go to Homepage</a>
+    </div>
+    <div class="mt-6 pt-4" style="border-top: 1px solid var(--border-color);">
+        <p class="text-xs" style="color: var(--text-secondary);">If the problem persists, please contact SRC IT support.</p>
+    </div>
+{% endblock %}

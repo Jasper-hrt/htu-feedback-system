@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-layout">
+    <aside class="admin-sidebar" aria-label="Admin analytics sidebar">
+        <div class="admin-sidebar-title">
+            📈 Analytics
+            <span class="sub">Deep insights & predictions</span>
+        </div>
+        <nav class="admin-sidebar-nav">
+            <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
+            <a href="/admin/analytics" class="admin-sidebar-link admin-sidebar-link-active">📈 Analytics</a>
+            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+            <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
+            <a href="/admin/chat/rooms" class="admin-sidebar-link">💬 Chat Rooms</a>
+            <a href="/admin/chat/messages" class="admin-sidebar-link">📨 Chat Messages</a>
+            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+        </nav>
+        <div style="margin-top: 1.25rem;">
+            <a href="/admin/logout" class="btn-logout btn-logout--student student-sidebar-logout">
+                <span class="btn-logout-icon">⏻</span>
+                <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+            </a>
+        </div>
+    </aside>
+    <section class="student-content">
+
+        <!-- 🎯 Hero Section with Early Warning -->
+        <div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #162d50 100%); position: relative; overflow: hidden;">
+            <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 600px 400px at 80% 20%, rgba(96,165,250,0.06) 0%, transparent 70%), radial-gradient(ellipse 300px 300px at 20% 80%, rgba(59,130,246,0.08) 0%, transparent 70%); pointer-events: none;"></div>
+            <div style="position: relative; z-index: 1;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                    <div class="admin-hero-title" style="font-size: 1.5rem; display: flex; align-items: center; gap: 0.6rem;">
+                        📈 Advanced Analytics
+                    </div>
+                    {% if predictions %}
+                    <span class="badge badge-danger" style="font-size: 0.7rem; padding: 0.3rem 0.75rem; animation: badgePulse 2s ease-in-out infinite;">
+                        🚨 {{ max_confidence }}% Risk Level
+                    </span>
+                    <span style="font-size: 0.75rem; color: rgba(255,255,255,0.7); font-weight: 600;">{{ early_warning_level }}</span>
+                    {% else %}
+                    <span class="badge badge-success" style="font-size: 0.7rem; padding: 0.25rem 0.65rem;">✅ All Clear</span>
+                    {% endif %}
+                </div>
+                <div class="admin-hero-subtitle">Deep insights into feedback patterns, performance metrics, and predictive early warnings</div>
+            </div>
+            <div class="admin-hero-actions" style="position: relative; z-index: 1;">
+                <a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
+                <a href="/admin/export/excel" class="btn-hero btn-hero-primary">📊 Export Data</a>
+            </div>
+        </div>
+
+        <!-- 📊 Key Metrics Grid -->
+        <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--primary);"></div>
+                <div class="stat-card-icon stat-card-icon-blue">📋</div>
+                <div class="stat-card-value" style="color: var(--primary);">{{ total }}</div>
+                <div class="stat-card-label">Total Feedback</div>
+                <div class="stat-card-trend stat-card-trend-up">📈 All time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--success);"></div>
+                <div class="stat-card-icon stat-card-icon-green">✅</div>
+                <div class="stat-card-value" style="color: var(--success);">{{ resolved_count }}</div>
+                <div class="stat-card-label">Resolved</div>
+                <div class="stat-card-trend stat-card-trend-up">{{ (resolved_count / total * 100) | round if total > 0 else 0 }}% rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--warning);"></div>
+                <div class="stat-card-icon stat-card-icon-amber">⏳</div>
+                <div class="stat-card-value" style="color: var(--warning);">{{ pending_count }}</div>
+                <div class="stat-card-label">Pending</div>
+                <div class="stat-card-trend stat-card-trend-up">⏰ Needs action</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--info);"></div>
+                <div class="stat-card-icon stat-card-icon-blue">🔄</div>
+                <div class="stat-card-value" style="color: var(--info);">{{ in_progress_count }}</div>
+                <div class="stat-card-label">In Progress</div>
+                <div class="stat-card-trend stat-card-trend-up">⚡ Being handled</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--danger);"></div>
+                <div class="stat-card-icon stat-card-icon-red">🚨</div>
+                <div class="stat-card-value" style="color: var(--danger);">{{ urgent_count }}</div>
+                <div class="stat-card-label">Urgent (4+)</div>
+                <div class="stat-card-trend stat-card-trend-down">🔴 High priority</div>
+            </div>
+        </div>
+
+        <!-- 🚨 Predictive Analytics Alerts -->
+        {% if predictions %}
+        <div class="chart-card" style="border-left: 4px solid var(--danger);">
+            <div class="chart-card-header">
+                <div class="chart-card-title">🚨 Predictive Early Warnings</div>
+                <span class="badge badge-danger">AI-Powered</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for pred in predictions %}
+                <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+                            <strong style="font-size: 0.95rem; color: var(--text-primary);">{{ pred.event }}</strong>
+                            <span class="badge {% if pred.confidence >= 80 %}badge-danger{% elif pred.confidence >= 55 %}badge-warning{% else %}badge-success{% endif %}">{{ pred.confidence }}% confidence</span>
+                        </div>
+                        {% if pred.evidence %}
+                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+                            {% for ev in pred.evidence %}
+                            <span>📌 {{ ev }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if pred.recommended_actions %}
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem;">
+                            {% for action in pred.recommended_actions[:2] %}
+                            <span class="keyword-chip">💡 {{ action }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div style="flex-shrink: 0;">
+                        <div style="width: 3rem; height: 3rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900;
+                            {% if pred.confidence >= 80 %}background: rgba(239,68,68,0.1); color: var(--danger); border: 2px solid rgba(239,68,68,0.2);
+                            {% elif pred.confidence >= 55 %}background: rgba(245,158,11,0.1); color: var(--warning); border: 2px solid rgba(245,158,11,0.2);
+                            {% else %}background: rgba(16,185,129,0.1); color: var(--success); border: 2px solid rgba(16,185,129,0.2);{% endif %}">
+                            {{ pred.confidence }}%
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Resolution Summary Row -->
+        <div class="grid grid-cols-2 gap-6">
+            <!-- Sentiment Trend (30 days) -->
+            <div class="chart-card-premium">
+                <div class="chart-card-premium-header">
+                    <div class="chart-card-premium-title">📈 Sentiment Trend (30 Days)</div>
+                    <div class="chart-card-premium-stats">
+                        <span class="chart-stat-dot chart-stat-dot-green">Positive</span>
+                        <span class="chart-stat-dot chart-stat-dot-red">Negative</span>
+                        <span class="chart-stat-dot chart-stat-dot-gray">Neutral</span>
+                    </div>
+                </div>
+                <canvas id="sentimentTrendChart" height="120"></canvas>
+            </div>
+
+            <!-- Resolution Summary -->
+            <div class="progress-card-premium">
+                <div class="progress-card-premium-header">
+                    <div class="progress-card-premium-title">⏱️ Resolution Summary</div>
+                    <div class="progress-card-premium-value">{{ avg_resolution_time }}h</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem;">
+                    <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem; text-align: center;">
+                        <div style="font-size: 1.25rem; font-weight: 900; color: var(--primary);">{{ resolved_count }}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Resolved</div>
+                    </div>
+                    <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem; text-align: center;">
+                        <div style="font-size: 1.25rem; font-weight: 900; color: var(--success);">{{ (resolved_count / total * 100) | round if total > 0 else 0 }}%</div>
+                        <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Resolution Rate</div>
+                    </div>
+                    <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem; text-align: center;">
+                        <div style="font-size: 1.25rem; font-weight: 900; color: var(--info);">{{ category_stats|length }}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Categories</div>
+                    </div>
+                    <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem; text-align: center;">
+                        <div style="font-size: 1.25rem; font-weight: 900; color: var(--warning);">{{ total }}</div>
+                        <div style="font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Total Items</div>
+                    </div>
+                </div>
+                {% if resolved_count > 0 %}
+                <div class="progress-bar-premium" style="margin-top: 0.75rem;">
+                    <div class="progress-bar-premium-fill" style="width: {{ (resolved_count / total * 100) | round if total > 0 else 0 }}%;"></div>
+                </div>
+                <div class="progress-card-premium-info">
+                    <span>🏁 Resolution Progress</span>
+                    <span>{{ (resolved_count / total * 100) | round if total > 0 else 0 }}% complete</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 📊 Category Performance -->
+        <div class="chart-card" style="margin-top: 1.5rem;">
+            <div class="chart-card-header">
+                <div class="chart-card-title">📊 Category Performance Comparison</div>
+                <span class="badge badge-neutral">{{ category_stats|length }} categories</span>
+            </div>
+            <div class="table-modern-container">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Total</th>
+                            <th>Positive</th>
+                            <th>Negative</th>
+                            <th>Neutral</th>
+                            <th>Avg Urgency</th>
+                            <th>Resolution Rate</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cat, stats in category_stats.items() %}
+                        <tr>
+                            <td><strong style="font-size: 0.85rem;">{{ cat }}</strong></td>
+                            <td><span class="badge badge-neutral">{{ stats.total }}</span></td>
+                            <td><span class="sentiment-dot sentiment-dot-positive">{{ stats.positive }} ({{ stats.positive_pct }}%)</span></td>
+                            <td><span class="sentiment-dot sentiment-dot-negative">{{ stats.negative }} ({{ stats.negative_pct }}%)</span></td>
+                            <td><span class="badge badge-neutral">{{ stats.neutral }}</span></td>
+                            <td>
+                                <span class="urgency-badge {% if stats.avg_urgency >= 4 %}urgency-high{% elif stats.avg_urgency >= 3 %}urgency-medium{% else %}urgency-low{% endif %}">
+                                    {{ stats.avg_urgency }}/5
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if stats.resolution_rate >= 70 %}badge-success{% elif stats.resolution_rate >= 40 %}badge-warning{% else %}badge-danger{% endif %}">
+                                    {{ stats.resolution_rate }}%
+                                </span>
+                            </td>
+                            <td style="min-width: 120px;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill {% if stats.resolution_rate >= 70 %}progress-green{% else %}progress-red{% endif %}" style="width: {{ stats.resolution_rate }}%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Charts Grid: Hourly + Daily + Locations -->
+        <div class="grid grid-cols-3 gap-6" style="margin-top: 1.5rem;">
+            <!-- Feedback by Hour -->
+            <div class="chart-card" style="margin-bottom: 0;">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">⏰ Feedback by Hour</div>
+                </div>
+                <canvas id="hourChart" height="120"></canvas>
+            </div>
+
+            <!-- Feedback by Day -->
+            <div class="chart-card" style="margin-bottom: 0;">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">📅 Feedback by Day</div>
+                </div>
+                <canvas id="dayChart" height="120"></canvas>
+            </div>
+
+            <!-- Top Locations -->
+            <div class="chart-card" style="margin-bottom: 0;">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">📍 Top Complaint Locations</div>
+                </div>
+                <div style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem;">
+                    {% if top_locations %}
+                    {% set max_count = top_locations[0][1] if top_locations else 1 %}
+                    {% for loc, count in top_locations %}
+                    <div style="display: flex; align-items: center; gap: 0.65rem; padding: 0.5rem 0.65rem; background: var(--bg-color); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <span style="font-weight: 600; font-size: 0.82rem; min-width: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📍 {{ loc }}</span>
+                        <div style="flex: 1; max-width: 80px; height: 0.5rem; background: var(--border-color); border-radius: var(--radius-full); overflow: hidden;">
+                            <div style="height: 100%; width: {{ (count / max_count * 100) | round }}%; background: linear-gradient(90deg, var(--danger), #f87171); border-radius: var(--radius-full); transition: width 0.3s ease;"></div>
+                        </div>
+                        <span class="badge badge-danger" style="flex-shrink: 0;">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="empty-state" style="padding: 1.5rem;">
+                        <div class="empty-state-icon" style="font-size: 2rem;">📍</div>
+                        <div class="empty-state-title" style="font-size: 0.9rem;">No location data</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 🏢 Department Performance -->
+        {% if dept_performance %}
+        <div class="chart-card" style="margin-top: 1.5rem;">
+            <div class="chart-card-header">
+                <div class="chart-card-title">🏢 Department Performance</div>
+                <span class="badge badge-neutral">{{ dept_performance|length }} departments</span>
+            </div>
+            <div class="table-modern-container">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Department</th>
+                            <th>Total Cases</th>
+                            <th>Resolved</th>
+                            <th>Resolution Rate</th>
+                            <th>Avg Time</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dept in dept_performance %}
+                        <tr>
+                            <td>
+                                <span class="dept-badge" style="font-size: 0.8rem;">🏢 {{ dept.name }}</span>
+                            </td>
+                            <td><span class="badge badge-neutral">{{ dept.total }}</span></td>
+                            <td><span class="badge badge-success">{{ dept.resolved }}</span></td>
+                            <td>
+                                <span class="badge {% if dept.resolution_rate >= 70 %}badge-success{% elif dept.resolution_rate >= 40 %}badge-warning{% else %}badge-danger{% endif %}">
+                                    {{ dept.resolution_rate }}%
+                                </span>
+                            </td>
+                            <td>
+                                <span class="urgency-badge {% if dept.avg_time_hours > 48 %}urgency-high{% elif dept.avg_time_hours > 24 %}urgency-medium{% else %}urgency-low{% endif %}">
+                                    {{ dept.avg_time_hours }}h
+                                </span>
+                            </td>
+                            <td style="min-width: 100px;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill {% if dept.resolution_rate >= 70 %}progress-green{% else %}progress-red{% endif %}" style="width: {{ dept.resolution_rate }}%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Charts Scripts -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sentiment Trend Chart
+            var trendLabels = {{ sentiment_trend|map(attribute='date')|list|tojson }};
+            var trendPositive = {{ sentiment_trend|map(attribute='positive')|list|tojson }};
+            var trendNegative = {{ sentiment_trend|map(attribute='negative')|list|tojson }};
+            var trendNeutral = {{ sentiment_trend|map(attribute='neutral')|list|tojson }};
+
+            var trendCtx = document.getElementById('sentimentTrendChart');
+            if (trendCtx) {
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: trendLabels,
+                        datasets: [
+                            {
+                                label: 'Positive',
+                                data: trendPositive,
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16,185,129,0.08)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointBackgroundColor: '#10b981',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Negative',
+                                data: trendNegative,
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239,68,68,0.08)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointBackgroundColor: '#ef4444',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Neutral',
+                                data: trendNeutral,
+                                borderColor: '#6b7280',
+                                backgroundColor: 'rgba(107,114,128,0.08)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 3,
+                                pointBackgroundColor: '#6b7280',
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 8,
+                                    font: { size: 10, weight: '600' }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'var(--card-bg)',
+                                titleColor: 'var(--text-primary)',
+                                bodyColor: 'var(--text-secondary)',
+                                borderColor: 'var(--border-color)',
+                                borderWidth: 1,
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 9 }, maxTicksLimit: 15 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(0,0,0,0.05)' },
+                                ticks: { font: { size: 10 }, stepSize: 1 }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            }
+
+            // Hour Chart
+            new Chart(document.getElementById('hourChart'), {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, function(_, i) { return i + ':00'; }),
+                    datasets: [{
+                        label: 'Feedback Count',
+                        data: {{ hour_distribution|tojson }},
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'var(--card-bg)',
+                            titleColor: 'var(--text-primary)',
+                            bodyColor: 'var(--text-secondary)',
+                            borderColor: 'var(--border-color)',
+                            borderWidth: 1,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 9 }, maxTicksLimit: 12 }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { font: { size: 10 }, stepSize: 1 }
+                        }
+                    }
+                }
+            });
+
+            // Day Chart
+            new Chart(document.getElementById('dayChart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Feedback Count',
+                        data: {{ day_distribution|tojson }},
+                        backgroundColor: '#10b981',
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'var(--card-bg)',
+                            titleColor: 'var(--text-primary)',
+                            bodyColor: 'var(--text-secondary)',
+                            borderColor: 'var(--border-color)',
+                            borderWidth: 1,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { font: { size: 10 }, stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        });
+        </script>
+
+        <style>
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+        }
+        </style>
+
+    </section>
+</div>
+{% endblock %}

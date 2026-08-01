@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center flex-wrap gap-3">
+        <div>
+            <h2 class="text-2xl font-bold" style="color: var(--primary);">🔍 Search Results</h2>
+            <p class="text-sm text-secondary">Showing results for: "<strong>{{ query }}</strong>"</p>
+        </div>
+        <a href="/forum" class="btn-back" style="display: inline-flex;">
+            <span class="btn-back-icon">←</span>
+            <span class="btn-back-text">Back to Forum</span>
+        </a>
+    </div>
+
+    <!-- Search again -->
+    <div class="filter-bar-premium mt-4">
+        <span class="filter-bar-premium-label">Search again:</span>
+        <form action="/forum/search" method="GET" class="flex gap-2 flex-1">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search topics..."
+                   class="form-input-enhanced" style="flex: 1; min-width: 150px;">
+            <button type="submit" class="btn btn-primary">🔍 Search</button>
+        </form>
+    </div>
+</div>
+
+{% if topics %}
+<div class="flex flex-col gap-3">
+    {% for topic in topics %}
+    <div class="topic-card animate-fade-in">
+        <div class="topic-card-header">
+            <div style="flex: 1; min-width: 0;">
+                <div class="flex flex-wrap gap-1 mb-1">
+                    <span class="badge badge-info" style="font-size: 0.7rem;">{{ topic.category }}</span>
+                    {% if topic.is_hot %}<span class="badge badge-danger" style="font-size: 0.7rem;">🔥 Hot</span>{% endif %}
+                    {% if topic.is_pinned %}<span class="badge badge-warning" style="font-size: 0.7rem;">📌 Pinned</span>{% endif %}
+                </div>
+                <a href="/forum/topic/{{ topic.id }}" class="topic-card-title">{{ topic.title }}</a>
+                <div class="topic-card-preview">{{ topic.content[:150] }}{% if topic.content|length > 150 %}...{% endif %}</div>
+                <div class="topic-card-meta">
+                    <span>👤 {{ topic.student.full_name.split()[0] if topic.student else 'Student' }}</span>
+                    <span>💬 {{ topic.replies|length }} replies</span>
+                    <span>👁️ {{ topic.view_count }} views</span>
+                    <span>📅 {{ topic.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+            </div>
+            <div class="topic-card-sentiment">
+                {% if topic.sentiment == 'Positive' %}
+                <span class="badge badge-success">😊</span>
+                {% elif topic.sentiment == 'Negative' %}
+                <span class="badge badge-danger">😞</span>
+                {% else %}
+                <span class="badge badge-neutral">😐</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state-premium">
+    <span class="empty-state-premium-icon">🔍</span>
+    <div class="empty-state-premium-title">No Results Found</div>
+    <div class="empty-state-premium-desc">No topics match your search "<strong>{{ query }}</strong>". Try different keywords.</div>
+    <a href="/forum" class="btn btn-primary btn-lg">Browse All Topics</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="/chat" class="btn-back">
+        <span class="btn-back-icon">←</span>
+        <span class="btn-back-text">Back to Chat</span>
+    </a>
+</div>
+
+<div class="feedback-form-card" style="max-width: 40rem; margin: 0 auto;">
+    <div class="feedback-form-header">
+        <h2>💬 Create New Chat Room</h2>
+        <p>Start a new real-time discussion space for students</p>
+    </div>
+    <form method="POST">
+        <div class="form-group-enhanced">
+            <label class="form-label">Room Name <span style="color: var(--danger);">*</span></label>
+            <input type="text" name="name" required class="form-input-enhanced" placeholder="e.g., Azania Hall Water Issues" style="font-weight: 600;">
+        </div>
+        <div class="form-group-enhanced">
+            <label class="form-label">Description</label>
+            <textarea name="description" rows="3" class="form-textarea-enhanced" placeholder="What is this room about? What topics will be discussed?"></textarea>
+        </div>
+        <div class="form-group-enhanced">
+            <label class="form-label">Category <span style="color: var(--danger);">*</span></label>
+            <select name="category" class="form-select-enhanced" required>
+                <option value="Academics">📚 Academics</option>
+                <option value="Accommodation">🏠 Accommodation</option>
+                <option value="Catering">🍽️ Catering</option>
+                <option value="Facilities">🏢 Facilities</option>
+                <option value="ICT/Wi-Fi">💻 ICT/Wi-Fi</option>
+                <option value="Safety">🛡️ Safety</option>
+                <option value="Transport">🚌 Transport</option>
+                <option value="Mental Health">🧠 Mental Health</option>
+                <option value="General">💬 General Discussion</option>
+            </select>
+        </div>
+        <div class="alert alert-info flex items-center gap-2" style="padding: 0.85rem 1rem; border-radius: var(--radius-lg); margin-bottom: 1.25rem;">
+            <span style="font-size: 1.2rem;">💡</span>
+            <div>
+                <p style="font-size: 0.85rem; font-weight: 600; margin: 0;">All chat messages are automatically analyzed for sentiment and flagged if urgent.</p>
+                <p style="font-size: 0.78rem; font-weight: 500; margin: 0.15rem 0 0; opacity: 0.85;">Flagged messages will be highlighted for SRC attention.</p>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" style="padding: 0.8rem; font-size: 1rem; font-weight: 800; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            ➕ Create Room
+        </button>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-top-actions">
+    <a href="/student/dashboard" class="btn-back"><span class="btn-back-icon">←</span><span class="btn-back-text">Back to Dashboard</span></a>
+</div>
+
+<div class="feedback-form-card" style="max-width: 42rem; margin: 0 auto;">
+    <div class="feedback-form-header">
+        <h2>✏️ Edit Feedback</h2>
+        <p>You can only edit within 1 hour of submission</p>
+    </div>
+    <div class="alert mb-4" style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.15); border-radius: 0.75rem; padding: 0.75rem 1rem;">
+        <p style="font-size: 0.85rem; color: var(--warning); font-weight: 600;">⚠️ You can only edit within 1 hour of submission</p>
+    </div>
+    <form method="POST">
+        <div class="form-group-enhanced">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-select-enhanced" required>
+                <option value="Academics" {% if feedback.category == 'Academics' %}selected{% endif %}>📚 Academics</option>
+                <option value="Accommodation" {% if feedback.category == 'Accommodation' %}selected{% endif %}>🏠 Accommodation</option>
+                <option value="Catering" {% if feedback.category == 'Catering' %}selected{% endif %}>🍽️ Catering</option>
+                <option value="Facilities" {% if feedback.category == 'Facilities' %}selected{% endif %}>🏢 Facilities</option>
+                <option value="ICT/Wi-Fi" {% if feedback.category == 'ICT/Wi-Fi' %}selected{% endif %}>💻 ICT/Wi-Fi</option>
+                <option value="Safety" {% if feedback.category == 'Safety' %}selected{% endif %}>🛡️ Safety</option>
+                <option value="Transport" {% if feedback.category == 'Transport' %}selected{% endif %}>🚌 Transport</option>
+                <option value="Mental Health" {% if feedback.category == 'Mental Health' %}selected{% endif %}>🧠 Mental Health</option>
+            </select>
+        </div>
+        <div class="form-group-enhanced">
+            <label class="form-label">Location</label>
+            <input type="text" name="location" value="{{ feedback.location or '' }}" class="form-input-enhanced" placeholder="e.g., Azania Hall, Library 3rd floor">
+        </div>
+        <div class="form-group-enhanced">
+            <label class="form-label">Feedback</label>
+            <textarea name="feedback_text" rows="6" class="form-textarea-enhanced" required>{{ feedback.feedback_text }}</textarea>
+        </div>
+        <div class="form-group-enhanced">
+            <label class="form-label">Urgency (1-5)</label>
+            <div class="urgency-container">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--success);">Low</span>
+                <input type="range" name="user_urgency" id="urgencySlider" min="1" max="5" value="{{ feedback.urgency_score }}" class="urgency-slider">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--danger);">Emergency</span>
+            </div>
+            <div class="urgency-meter">
+                <span style="font-size: 0.8rem; font-weight: 600;">Urgency:</span>
+                <div class="urgency-meter-bar"><div class="urgency-meter-fill" id="urgencyFill" style="width: {{ ((feedback.urgency_score - 1) / 4) * 100 }}%; background: var(--warning);"></div>
+                <span class="urgency-meter-label" id="urgencyValue">{{ feedback.urgency_score }}/5</span>
+            </div>
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+            <a href="/student/dashboard" class="btn btn-secondary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem;">← Back</a>
+            <button type="submit" class="btn btn-primary" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem; font-weight: 800;">💾 Save Changes</button>
+        </div>
+    </form>
+</div>
+
+<script>
+var slider = document.getElementById('urgencySlider');
+var span = document.getElementById('urgencyValue');
+var fill = document.getElementById('urgencyFill');
+if (slider) {
+    slider.addEventListener('input', function() {
+        var val = parseInt(this.value);
+        span.textContent = val + '/5';
+        var pct = ((val - 1) / 4) * 100;
+        fill.style.width = pct + '%';
+        if (val <= 2) fill.style.background = 'var(--success)';
+        else if (val <= 3) fill.style.background = 'var(--warning)';
+        else if (val <= 4) fill.style.background = '#f97316';
+        else fill.style.background = 'var(--danger)';
+    });
+}
+</script>
+{% endblock %}

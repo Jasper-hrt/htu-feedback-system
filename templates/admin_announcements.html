@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-layout">
+    <!-- Admin Sidebar -->
+    <aside class="admin-sidebar" aria-label="Admin dashboard sidebar">
+        <div class="admin-sidebar-title">
+            🛡️ SRC Admin
+            <span class="sub">Control & review</span>
+        </div>
+        <nav class="admin-sidebar-nav">
+            <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
+            <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
+            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+            <a href="/admin/announcements" class="admin-sidebar-link admin-sidebar-link-active">📢 Announcements</a>
+            <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
+            <a href="/admin/chat/rooms" class="admin-sidebar-link">💬 Chat Rooms</a>
+            <a href="/admin/chat/messages" class="admin-sidebar-link">📨 Chat Messages</a>
+            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+        </nav>
+        <div style="margin-top: 1.25rem;">
+            <a href="/admin/logout" class="btn-logout btn-logout--student student-sidebar-logout">
+                <span class="btn-logout-icon">⏻</span>
+                <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <section class="student-content">
+        <!-- Hero Banner -->
+        <div class="admin-hero" style="background: linear-gradient(135deg, #10b981, #059669);">
+            <div class="admin-hero-content">
+                <div class="admin-hero-title" style="display: flex; align-items: center; gap: 0.6rem;">
+                    📢 Manage Announcements
+                    <span class="badge badge-neutral" style="background: rgba(255,255,255,0.15); color: #fff; font-size: 0.7rem;">
+                        {{ announcements|length }} total
+                    </span>
+                </div>
+                <div class="admin-hero-subtitle" style="color: rgba(255,255,255,0.8);">
+                    Create, manage, and publish official SRC announcements
+                </div>
+            </div>
+            <div class="admin-hero-actions">
+                <a href="/admin/dashboard" class="btn-hero" style="background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2);">
+                    ← Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <!-- Split Panel: Create Form + Existing List -->
+        <div class="split-panel">
+            <!-- LEFT: Create Announcement -->
+            <div class="split-panel-left">
+                <div class="chart-card" style="margin-bottom: 0;">
+                    <div class="chart-card-header">
+                        <div class="chart-card-title">📝 Create New Announcement</div>
+                    </div>
+                    <form method="POST" id="announcementForm">
+                        <!-- Title -->
+                        <div class="form-group-enhanced">
+                            <label class="form-label">📌 Title</label>
+                            <input type="text" name="title" id="annTitle" required 
+                                   class="form-input-enhanced" 
+                                   placeholder="Enter announcement title..."
+                                   maxlength="200">
+                            <div class="char-counter" style="display: flex; justify-content: space-between; margin-top: 0.25rem;">
+                                <span class="char-counter-hint" style="font-size: 0.75rem; color: var(--text-secondary);">Be clear and concise</span>
+                                <span class="char-counter-count" id="titleCharCount" style="font-size: 0.75rem; color: var(--text-secondary);">0/200</span>
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="form-group-enhanced">
+                            <label class="form-label">🏷️ Category</label>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <label class="filter-pill" style="cursor: pointer; border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.06);" onclick="selectCategory(this, 'General')">
+                                    <input type="radio" name="category" value="General" style="display: none;" checked>
+                                    📢 General
+                                </label>
+                                <label class="filter-pill" style="cursor: pointer;" onclick="selectCategory(this, 'Academic')">
+                                    <input type="radio" name="category" value="Academic" style="display: none;">
+                                    📚 Academic
+                                </label>
+                                <label class="filter-pill" style="cursor: pointer;" onclick="selectCategory(this, 'Event')">
+                                    <input type="radio" name="category" value="Event" style="display: none;">
+                                    🎉 Event
+                                </label>
+                                <label class="filter-pill" style="cursor: pointer;" onclick="selectCategory(this, 'Urgent')">
+                                    <input type="radio" name="category" value="Urgent" style="display: none;">
+                                    🚨 Urgent
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="form-group-enhanced">
+                            <label class="form-label">💬 Content</label>
+                            <textarea name="content" id="annContent" rows="6" required 
+                                      class="form-textarea-enhanced" 
+                                      placeholder="Write your announcement content here..."
+                                      maxlength="2000"
+                                      style="min-height: 140px;"></textarea>
+                            <div class="char-counter" style="display: flex; justify-content: space-between; margin-top: 0.25rem;">
+                                <span class="char-counter-hint" style="font-size: 0.75rem; color: var(--text-secondary);">Provide detailed information</span>
+                                <span class="char-counter-count" id="contentCharCount" style="font-size: 0.75rem; color: var(--text-secondary);">0/2000</span>
+                            </div>
+                        </div>
+
+                        <!-- Priority Level -->
+                        <div class="form-group-enhanced">
+                            <label class="form-label">⚡ Priority Level</label>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <label class="filter-pill" style="cursor: pointer;" onclick="selectPriority(this, 1)">
+                                    <input type="radio" name="priority" value="1" style="display: none;">
+                                    🟢 Low
+                                </label>
+                                <label class="filter-pill active" style="cursor: pointer; background: linear-gradient(135deg, var(--warning), #d97706); color: #fff; border-color: var(--warning);" onclick="selectPriority(this, 2)">
+                                    <input type="radio" name="priority" value="2" style="display: none;" checked>
+                                    🟡 Medium
+                                </label>
+                                <label class="filter-pill" style="cursor: pointer;" onclick="selectPriority(this, 3)">
+                                    <input type="radio" name="priority" value="3" style="display: none;">
+                                    🟠 High
+                                </label>
+                                <label class="filter-pill" style="cursor: pointer;" onclick="selectPriority(this, 4)">
+                                    <input type="radio" name="priority" value="4" style="display: none;">
+                                    🔴 Urgent
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Expiry -->
+                        <div class="form-group-enhanced">
+                            <label class="form-label">⏳ Expires After</label>
+                            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <input type="number" name="expires_days" class="form-input-enhanced" 
+                                       placeholder="Days" min="1" max="365"
+                                       style="width: 100px;">
+                                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">days</span>
+                                <label class="checkbox-label" style="padding: 0.35rem 0.75rem; background: transparent; border: none;">
+                                    <input type="checkbox" id="noExpiry" checked onchange="toggleExpiry(this)">
+                                    <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">No expiry</span>
+                                </label>
+                            </div>
+                            <span class="form-label-hint">Announcements will automatically hide after expiry</span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-full flex items-center justify-center gap-2" 
+                                style="padding: 0.75rem; font-weight: 800; border-radius: 0.65rem; font-size: 0.95rem;">
+                            📢 Publish Announcement
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- RIGHT: Existing Announcements -->
+            <div class="split-panel-right">
+                <div class="chart-card" style="margin-bottom: 0;">
+                    <div class="chart-card-header">
+                        <div class="chart-card-title">📋 Existing Announcements</div>
+                        <span class="badge badge-neutral" style="font-size: 0.7rem;">{{ announcements|length }} items</span>
+                    </div>
+
+                    <!-- Search & Filter Bar -->
+                    <div class="filter-bar-enhanced" style="margin-bottom: 1rem; padding: 0.75rem 1rem;">
+                        <span class="filter-label" style="font-size: 0.75rem;">🔍</span>
+                        <input type="text" id="announcementSearch" class="filter-input" 
+                               placeholder="Search announcements..." 
+                               style="min-width: 120px; padding: 0.4rem 0.65rem; font-size: 0.8rem;">
+                        <div class="announcements-filter-pills" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                            <span class="announcements-filter-pill active" data-filter="all" onclick="filterAnnouncements(this, 'all')" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;">All</span>
+                            <span class="announcements-filter-pill" data-filter="General" onclick="filterAnnouncements(this, 'General')" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;">📢 General</span>
+                            <span class="announcements-filter-pill" data-filter="Academic" onclick="filterAnnouncements(this, 'Academic')" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;">📚 Academic</span>
+                            <span class="announcements-filter-pill" data-filter="Event" onclick="filterAnnouncements(this, 'Event')" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;">🎉 Event</span>
+                            <span class="announcements-filter-pill" data-filter="Urgent" onclick="filterAnnouncements(this, 'Urgent')" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;">🚨 Urgent</span>
+                        </div>
+                    </div>
+
+                    {% if announcements %}
+                    <div class="announcements-list" style="max-height: 520px; overflow-y: auto; padding-right: 0.25rem;">
+                        {% for a in announcements %}
+                        {% set now = datetime.utcnow() %}
+                        {% set is_expired = a.expires_at and a.expires_at < now %}
+                        {% set is_active = a.is_active and not is_expired %}
+                        <div class="announcement-admin-card announcement-list-item"
+                             data-title="{{ a.title|lower }}"
+                             data-content="{{ a.content|lower }}"
+                             data-category="{{ a.category or 'General' }}"
+                             data-active="{{ 'true' if is_active else 'false' }}"
+                             style="{% if is_expired %}opacity: 0.5;{% endif %}">
+                            <div class="flex justify-between items-start gap-3">
+                                <div style="flex: 1; min-width: 0;">
+                                    <!-- Top row: badges -->
+                                    <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+                                        {% if a.category %}
+                                        <span class="announcement-card-category-v2 announcement-card-category-{{ a.category|lower }}" 
+                                              style="font-size: 0.65rem; padding: 0.1rem 0.45rem;">
+                                            {% if a.category == 'Academic' %}📚{% elif a.category == 'Event' %}🎉{% elif a.category == 'Urgent' %}🚨{% else %}📢{% endif %}
+                                            {{ a.category }}
+                                        </span>
+                                        {% endif %}
+                                        {% if is_active %}
+                                        <span class="badge badge-success" style="font-size: 0.6rem; padding: 0.1rem 0.4rem;">● Active</span>
+                                        {% elif is_expired %}
+                                        <span class="badge badge-danger" style="font-size: 0.6rem; padding: 0.1rem 0.4rem;">● Expired</span>
+                                        {% else %}
+                                        <span class="badge badge-neutral" style="font-size: 0.6rem; padding: 0.1rem 0.4rem;">● Inactive</span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Title -->
+                                    <strong style="font-size: 0.95rem; color: var(--text-primary); display: block; margin-bottom: 0.2rem;">
+                                        {{ a.title }}
+                                    </strong>
+
+                                    <!-- Meta -->
+                                    <p style="font-size: 0.73rem; color: var(--text-secondary); margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                        <span>👤 {{ a.author }}</span>
+                                        <span>📅 {{ a.created_at.strftime('%Y-%m-%d') }}</span>
+                                        {% if a.expires_at %}
+                                        <span style="color: {% if is_expired %}var(--danger){% else %}var(--warning){% endif %}; font-weight: 600;">
+                                            ⏳ {{ 'Expired' if is_expired else 'Expires' }}: {{ a.expires_at.strftime('%Y-%m-%d') }}
+                                        </span>
+                                        {% endif %}
+                                    </p>
+
+                                    <!-- Content preview -->
+                                    <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5;">
+                                        {{ a.content[:150] }}{% if a.content|length > 150 %}...{% endif %}
+                                    </p>
+                                </div>
+
+                                <!-- Actions -->
+                                <div style="display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0;">
+                                    <a href="/admin/announcements/delete/{{ a.id }}" 
+                                       class="btn btn-danger btn-sm" 
+                                       style="font-size: 0.7rem; padding: 0.25rem 0.6rem;"
+                                       onclick="return confirm('⚠️ Delete this announcement?\n\n\"{{ a.title }}\"\n\nThis action cannot be undone. Are you sure?')">
+                                        🗑️ Delete
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <!-- Empty state -->
+                    <div class="empty-state-premium" style="padding: 2.5rem 1.5rem;">
+                        <span class="empty-state-premium-icon" style="font-size: 3rem;">📭</span>
+                        <div class="empty-state-premium-title" style="font-size: 1.05rem;">No announcements yet</div>
+                        <div class="empty-state-premium-desc" style="font-size: 0.85rem;">
+                            Create your first announcement using the form on the left.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- No Results Message (hidden by default) -->
+<div id="noAnnouncementsMsg" class="empty-state-premium" style="display: none; margin-top: 1rem; padding: 2rem 1.5rem;">
+    <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">🔍</span>
+    <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">No matching announcements</div>
+    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
+        Try adjusting your search or filter criteria.
+    </div>
+</div>
+
+<script>
+// ============================================
+// 📝 Character Counters
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const titleInput = document.getElementById('annTitle');
+    const contentTextarea = document.getElementById('annContent');
+    const titleCount = document.getElementById('titleCharCount');
+    const contentCount = document.getElementById('contentCharCount');
+
+    if (titleInput && titleCount) {
+        titleInput.addEventListener('input', function() {
+            const len = this.value.length;
+            const max = this.maxLength;
+            titleCount.textContent = len + '/' + max;
+            titleCount.style.color = len > max * 0.9 ? 'var(--warning)' : len > max * 0.75 ? 'var(--text-secondary)' : 'var(--text-secondary)';
+        });
+    }
+
+    if (contentTextarea && contentCount) {
+        contentTextarea.addEventListener('input', function() {
+            const len = this.value.length;
+            const max = this.maxLength;
+            contentCount.textContent = len + '/' + max;
+            contentCount.style.color = len > max * 0.9 ? 'var(--danger)' : len > max * 0.75 ? 'var(--warning)' : 'var(--text-secondary)';
+        });
+    }
+});
+
+// ============================================
+// 🏷️ Category Selector
+// ============================================
+function selectCategory(el, category) {
+    document.querySelectorAll('[onclick^="selectCategory"]').forEach(function(pill) {
+        pill.classList.remove('active');
+        pill.style.background = '';
+        pill.style.color = '';
+        pill.style.borderColor = '';
+    });
+    el.classList.add('active');
+    el.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-dark))';
+    el.style.color = '#fff';
+    el.style.borderColor = 'var(--primary)';
+    el.querySelector('input[type="radio"]').checked = true;
+}
+
+// ============================================
+// ⚡ Priority Selector
+// ============================================
+function selectPriority(el, priority) {
+    document.querySelectorAll('[onclick^="selectPriority"]').forEach(function(pill) {
+        pill.classList.remove('active');
+        pill.style.background = '';
+        pill.style.color = '';
+        pill.style.borderColor = '';
+    });
+    el.classList.add('active');
+    const colors = ['', 'var(--success)', 'var(--warning)', '#f97316', 'var(--danger)'];
+    const bgColors = ['', 'rgba(16,185,129,0.1)', 'rgba(245,158,11,0.1)', 'rgba(249,115,22,0.1)', 'rgba(239,68,68,0.1)'];
+    el.style.background = 'linear-gradient(135deg, ' + colors[priority] + ', ' + colors[priority].replace('var(', '').replace(')', '').trim() + '70)';
+    el.style.color = '#fff';
+    el.style.borderColor = colors[priority];
+    el.querySelector('input[type="radio"]').checked = true;
+}
+
+// ============================================
+// ⏳ Toggle Expiry
+// ============================================
+function toggleExpiry(checkbox) {
+    const input = document.querySelector('input[name="expires_days"]');
+    if (input) {
+        input.disabled = checkbox.checked;
+        if (checkbox.checked) {
+            input.value = '';
+            input.style.opacity = '0.4';
+        } else {
+            input.style.opacity = '1';
+            input.focus();
+        }
+    }
+}
+
+// ============================================
+// 🔍 Announcement Search & Filter
+// ============================================
+function filterAnnouncements(el, filter) {
+    // Update active pill
+    document.querySelectorAll('.announcements-filter-pill').forEach(function(pill) {
+        pill.classList.remove('active');
+        pill.style.background = '';
+        pill.style.color = '';
+        pill.style.borderColor = '';
+    });
+    el.classList.add('active');
+    el.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-dark))';
+    el.style.color = '#fff';
+    el.style.borderColor = 'var(--primary)';
+
+    applyFilters();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('announcementSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+});
+
+function applyFilters() {
+    const search = (document.getElementById('announcementSearch')?.value || '').toLowerCase();
+    const activePill = document.querySelector('.announcements-filter-pill.active');
+    const filter = activePill ? activePill.dataset.filter : 'all';
+    const items = document.querySelectorAll('.announcement-list-item');
+    const noResults = document.getElementById('noAnnouncementsMsg');
+    let visibleCount = 0;
+
+    items.forEach(function(item) {
+        const title = (item.dataset.title || '').toLowerCase();
+        const content = (item.dataset.content || '').toLowerCase();
+        const category = item.dataset.category || '';
+
+        const matchesSearch = !search || title.includes(search) || content.includes(search);
+        const matchesFilter = filter === 'all' || category === filter;
+
+        const visible = matchesSearch && matchesFilter;
+        item.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+    });
+
+    if (noResults) {
+        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+}
+
+// ============================================
+// ✨ Form Submit Enhancement
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('announcementForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.innerHTML = '⏳ Publishing...';
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            }
+        });
+    }
+
+    // Init categories - set General as active by default
+    const defaultCat = document.querySelector('[onclick*="\'General\'"]');
+    if (defaultCat) {
+        defaultCat.classList.add('active');
+        defaultCat.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-dark))';
+        defaultCat.style.color = '#fff';
+        defaultCat.style.borderColor = 'var(--primary)';
+    }
+
+    // Init no expiry checkbox state
+    const noExpiryCheckbox = document.getElementById('noExpiry');
+    if (noExpiryCheckbox) {
+        toggleExpiry(noExpiryCheckbox);
+    }
+});
+</script>
+
+<style>
+/* ---- Announcement list item enhancements ---- */
+.announcement-list-item {
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+}
+.announcement-list-item:hover {
+    border-left-color: var(--primary);
+    transform: translateX(2px);
+}
+.announcement-list-item[data-category="Urgent"]:hover {
+    border-left-color: var(--danger);
+}
+.announcement-list-item[data-category="Academic"]:hover {
+    border-left-color: #6366f1;
+}
+.announcement-list-item[data-category="Event"]:hover {
+    border-left-color: var(--warning);
+}
+
+/* ---- Filter pill responsive ---- */
+@media (max-width: 768px) {
+    .announcements-filter-pills {
+        flex-wrap: wrap;
+    }
+}
+
+/* ---- Scrollbar for announcement list ---- */
+.announcements-list::-webkit-scrollbar {
+    width: 4px;
+}
+.announcements-list::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 4px;
+}
+.announcements-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+</style>
+{% endblock %}
+

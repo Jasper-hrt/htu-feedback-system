@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-particles">
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+    </div>
+    <div class="auth-card auth-card-admin">
+        <div class="auth-brand-badge">🔐 SRC ADMIN</div>
+        <div class="auth-header">
+            <div class="auth-header-icon" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 8px 28px rgba(16, 185, 129, 0.25);">🛡️</div>
+            <h1 class="auth-title" style="color: #e2e8f0;">SRC Admin Login</h1>
+            <p class="auth-subtitle" style="color: #94a3b8;">Secure administrative access panel</p>
+        </div>
+        {% if error %}<div class="auth-alert auth-alert-error">{{ error }}</div>{% endif %}
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label class="form-label" style="color: #cbd5e1;">👤 Username</label>
+                <input type="text" name="username" required class="form-input" placeholder="Enter admin username" style="background: rgba(15, 23, 42, 0.6); border-color: rgba(148, 163, 184, 0.2); color: #e2e8f0;">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="color: #cbd5e1;">🔒 Password</label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="adminPassword2" required class="form-input" placeholder="Enter admin password" style="background: rgba(15, 23, 42, 0.6); border-color: rgba(148, 163, 184, 0.2); color: #e2e8f0;">
+                    <button type="button" class="password-toggle" onclick="togglePassword('adminPassword2', this)" tabindex="-1">👁️</button>
+                </div>
+            </div>
+            <button type="submit" class="auth-btn" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);">
+                Access Dashboard
+                <span class="auth-btn-pulse"></span>
+            </button>
+        </form>
+        <div class="auth-demo">
+            🔑 Demo: <code>admin</code> / <code>admin123</code>
+        </div>
+        <div class="auth-footer" style="border-top-color: rgba(148, 163, 184, 0.15);">
+            <p><a href="/" style="color: #60a5fa;">← Back to Home</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

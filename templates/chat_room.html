@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex justify-between items-start mb-3 flex-wrap gap-3">
+    <div>
+        <a href="/chat" class="btn-back">
+            <span class="btn-back-icon">←</span>
+            <span class="btn-back-text">All Rooms</span>
+        </a>
+    </div>
+</div>
+
+<div class="chat-enhanced-container">
+    <!-- Enhanced Header -->
+    <div class="chat-enhanced-header">
+        <div class="chat-enhanced-header-left">
+            <div style="width: 2.5rem; height: 2.5rem; border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; color: #fff; flex-shrink: 0;">💬</div>
+            <div>
+                <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-primary);">{{ room.name }}</div>
+                <div style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 500;">{{ room.description }}</div>
+            </div>
+        </div>
+        <div class="chat-enhanced-header-right">
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">
+                <span>📁 {{ room.category }}</span>
+                <span>👥 {{ room.members|length }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: var(--radius-full); background: {% if sentiment_summary.sentiment_score >= 0.05 %}rgba(16,185,129,0.1); color: var(--success);{% elif sentiment_summary.sentiment_score <= -0.05 %}rgba(239,68,68,0.1); color: var(--danger);{% else %}var(--light); color: var(--text-secondary);{% endif %}">
+                {% if sentiment_summary.sentiment_score >= 0.05 %}😊 Positive{% elif sentiment_summary.sentiment_score <= -0.05 %}😞 Negative{% else %}😐 Neutral{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div class="chat-enhanced-messages" id="chatMessages">
+        {% for msg in messages %}
+        {% set is_own = msg.student_id == session.student_id %}
+        <div class="chat-bubble {% if is_own %}own{% endif %} {% if msg.is_flagged %}chat-bubble-flagged{% endif %}" data-message-id="{{ msg.id }}">
+            {% if not is_own %}
+            <div class="chat-bubble-avatar">{{ (msg.student.full_name.split()[0][0] if msg.student else 'S') }}</div>
+            {% endif %}
+            <div class="chat-bubble-body">
+                {% if not is_own %}
+                <div class="chat-bubble-author">{{ msg.student.full_name.split()[0] if msg.student else 'Student' }}</div>
+                {% endif %}
+                <div class="chat-bubble-text">
+                    {{ msg.message }}
+                    {% if msg.is_flagged %}
+                    <span style="display: inline-flex; align-items: center; gap: 0.2rem; margin-left: 0.3rem; font-size: 0.65rem; font-weight: 700; color: var(--danger);">⚠️</span>
+                    {% endif %}
+                </div>
+                <div class="chat-bubble-time">
+                    {{ msg.created_at.strftime('%H:%M') }}
+                    {% if msg.sentiment == 'Positive' %}
+                    <span style="margin-left: 0.25rem;">😊</span>
+                    {% elif msg.sentiment == 'Negative' %}
+                    <span style="margin-left: 0.25rem;">😞</span>
+                    {% else %}
+                    <span style="margin-left: 0.25rem;">😐</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% if is_own %}
+            <div class="chat-bubble-avatar" style="background: linear-gradient(135deg, var(--success), #059669);">{{ session.student_name.split()[0][0] }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Enhanced Input Bar -->
+    <div class="chat-enhanced-input">
+        <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+        <button class="voice-btn" id="voiceChatBtn" title="Voice input">🎤</button>
+        <button class="send-btn" id="sendBtn" title="Send message">➤</button>
+    </div>
+</div>
+
+<script>
+var socket = io();
+var roomId = {{ room.id }};
+var studentName = "{{ session.student_name.split()[0] }}";
+var studentInitial = "{{ session.student_name.split()[0][0] }}";
+socket.emit('join', { room_id: roomId, username: studentName });
+
+function sendMessage() {
+    var inp = document.getElementById('messageInput');
+    var msg = inp.value.trim();
+    if (msg) { socket.emit('send_message', { room_id: roomId, message: msg }); inp.value = ''; }
+}
+document.getElementById('sendBtn').onclick = sendMessage;
+document.getElementById('messageInput').onkeypress = function(e) { if (e.key === 'Enter') sendMessage(); };
+
+function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+var md = document.getElementById('chatMessages');
+md.scrollTop = md.scrollHeight;
+
+socket.on('new_message', function(data) {
+    var isOwn = data.username === studentName;
+    var d = document.createElement('div');
+    d.className = 'chat-bubble';
+    if (isOwn) d.classList.add('own');
+    if (data.is_flagged) d.classList.add('chat-bubble-flagged');
+
+    var flagHtml = data.is_flagged ? ' <span style="display:inline-flex;align-items:center;gap:0.2rem;margin-left:0.3rem;font-size:0.65rem;font-weight:700;color:var(--danger);">⚠️</span>' : '';
+    var sentimentEmoji = data.sentiment === 'Positive' ? '😊' : data.sentiment === 'Negative' ? '😞' : '😐';
+
+    var avatarInitial = data.username.charAt(0).toUpperCase();
+
+    if (!isOwn) {
+        d.innerHTML = '<div class="chat-bubble-avatar">' + esc(avatarInitial) + '</div>' +
+            '<div class="chat-bubble-body">' +
+                '<div class="chat-bubble-author">' + esc(data.username) + '</div>' +
+                '<div class="chat-bubble-text">' + esc(data.message) + flagHtml + '</div>' +
+                '<div class="chat-bubble-time">' + data.timestamp + ' ' + sentimentEmoji + '</div>' +
+            '</div>';
+    } else {
+        d.innerHTML = '<div class="chat-bubble-body">' +
+                '<div class="chat-bubble-text">' + esc(data.message) + flagHtml + '</div>' +
+                '<div class="chat-bubble-time">' + data.timestamp + ' ' + sentimentEmoji + '</div>' +
+            '</div>' +
+            '<div class="chat-bubble-avatar" style="background:linear-gradient(135deg,var(--success),#059669);">' + esc(studentInitial) + '</div>';
+    }
+
+    md.appendChild(d);
+    md.scrollTop = md.scrollHeight;
+});
+
+socket.on('user_joined', function(data) {
+    var n = document.createElement('div');
+    n.className = 'chat-system-notice';
+    n.innerHTML = '✨ ' + esc(data.username) + ' joined';
+    md.appendChild(n);
+    md.scrollTop = md.scrollHeight;
+});
+
+socket.on('user_left', function(data) {
+    var n = document.createElement('div');
+    n.className = 'chat-system-notice';
+    n.innerHTML = '👋 ' + esc(data.username) + ' left';
+    md.appendChild(n);
+    md.scrollTop = md.scrollHeight;
+});
+
+(function() {
+    var recognition = null, isListening = false;
+    var vb = document.getElementById('voiceChatBtn');
+    if ('webkitSpeechRecognition' in window) {
+        var SR = window.webkitSpeechRecognition;
+        recognition = new SR();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        vb.onclick = function() {
+            if (isListening) { recognition.stop(); isListening = false; this.textContent = '🎤'; this.classList.remove('recording'); }
+            else { recognition.start(); isListening = true; this.textContent = '🔴'; this.classList.add('recording'); }
+        };
+        recognition.onresult = function(event) {
+            document.getElementById('messageInput').value = event.results[0][0].transcript;
+            sendMessage();
+            isListening = false;
+            vb.textContent = '🎤';
+            vb.classList.remove('recording');
+        };
+        recognition.onend = function() { isListening = false; vb.textContent = '🎤'; vb.classList.remove('recording'); };
+    } else { vb.style.display = 'none'; }
+})();
+</script>
+{% endblock %}
+

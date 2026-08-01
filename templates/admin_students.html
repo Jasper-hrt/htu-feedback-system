@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
+        <div>
+            <h2 class="text-2xl font-bold" style="color: var(--primary);">👥 Registered Students</h2>
+            <p class="text-sm text-secondary">Manage and view all registered HTU students</p>
+        </div>
+        <a href="/admin/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+<div class="chart-card">
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+        <div><span class="badge badge-info" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;">Total Students: {{ students|length }}</span></div>
+        <div><input type="text" id="searchStudent" placeholder="Search by name or ID..." class="filter-input" style="width: 280px;"></div>
+    <div class="table-modern-container">
+        <table class="table-modern">
+            <thead>
+                <tr><th>Student ID</th><th>Full Name</th><th>Email</th><th>Department</th><th>Year</th><th>Registered</th><th>Last Login</th><th>Status</th></tr>
+            </thead>
+            <tbody id="studentTableBody">
+                {% for s in students %}
+                <tr>
+                    <td><strong style="font-size: 0.85rem; color: var(--primary);">{{ s.student_id }}</strong></td>
+                    <td>{{ s.full_name }}</td>
+                    <td style="font-size: 0.8rem;">{{ s.email }}</td>
+                    <td><span class="badge badge-neutral">{{ s.department or '-' }}</span></td>
+                    <td>Year {{ s.year_of_study or '-' }}</td>
+                    <td style="font-size: 0.8rem;">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td style="font-size: 0.8rem;">{{ s.last_login.strftime('%Y-%m-%d %H:%M') if s.last_login else 'Never' }}</td>
+                    <td>{% if s.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-danger">Inactive</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+<script>
+document.getElementById('searchStudent').addEventListener('keyup', function() {
+    var term = this.value.toLowerCase();
+    document.querySelectorAll('#studentTableBody tr').forEach(function(row) {
+        row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

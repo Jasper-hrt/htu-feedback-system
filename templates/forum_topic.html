@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-top-actions">
+    <a href="/forum" class="btn-back">
+        <span class="btn-back-icon">←</span>
+        <span class="btn-back-text">Back to Forum</span>
+    </a>
+</div>
+
+{% if error %}
+<div class="alert alert-error mb-4">{{ error }}</div>
+{% endif %}
+
+<!-- ==================== TOPIC DETAIL HEADER ==================== -->
+<div class="topic-detail-header">
+    <div class="topic-detail-badges">
+        <span class="badge badge-info">{{ topic.category }}</span>
+        {% if topic.is_pinned %}<span class="badge badge-warning">📌 Pinned</span>{% endif %}
+        {% if topic.is_locked %}<span class="badge badge-danger">🔒 Locked</span>{% endif %}
+        {% if topic.is_hot %}<span class="badge badge-danger">🔥 Hot</span>{% endif %}
+    </div>
+    <div class="flex justify-between items-start gap-4 flex-wrap">
+        <div style="flex: 1; min-width: 0;">
+            <h1 class="topic-detail-title">{{ topic.title }}</h1>
+            <div class="topic-detail-meta">
+                <span>👤 Posted by <strong>{{ topic.student.full_name.split()[0] if topic.student else 'Student' }}</strong></span>
+                <span>📅 {{ topic.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <span>👁️ {{ topic.view_count }} views</span>
+            </div>
+        </div>
+        <div style="text-align: center; flex-shrink: 0;">
+            {% if topic.sentiment == 'Positive' %}
+            <span class="badge badge-success" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">😊 Positive</span>
+            {% elif topic.sentiment == 'Negative' %}
+            <span class="badge badge-danger" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">😞 Negative</span>
+            {% else %}
+            <span class="badge badge-neutral" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">😐 Neutral</span>
+            {% endif %}
+            {% if topic.urgency_score >= 4 %}
+            <div style="margin-top: 0.4rem;">
+                <span class="badge badge-danger">⚠️ Urgency {{ topic.urgency_score }}/5</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="topic-detail-content">{{ topic.content }}</div>
+
+    <!-- Voting Controls -->
+    <div class="voting-controls">
+        <button id="upvoteBtn" class="vote-btn {% if user_vote and user_vote.vote_type == 'up' %}upvoted{% endif %}" onclick="vote('up')">
+            <span>👍</span> <span>Upvote</span>
+        </button>
+        <span class="vote-count" id="netVotes">{{ topic.vote_count }}</span>
+        <button id="downvoteBtn" class="vote-btn {% if user_vote and user_vote.vote_type == 'down' %}downvoted{% endif %}" onclick="vote('down')">
+            <span>👎</span> <span>Downvote</span>
+        </button>
+    </div>
+</div>
+
+<!-- ==================== REPLIES SECTION ==================== -->
+<div class="section-header">
+    <h3 class="section-title">💬 Replies ({{ replies|length }})</h3>
+</div>
+
+<div id="repliesContainer" class="flex flex-col gap-3">
+    {% for reply in replies %}
+    <div class="reply-card" id="reply-{{ reply.id }}">
+        <div class="reply-card-header">
+            <div class="reply-avatar">{{ reply.student.full_name.split()[0][0] if reply.student else 'S' }}</div>
+            <span class="reply-author">{{ reply.student.full_name.split()[0] if reply.student else 'Student' }}</span>
+            <span class="reply-time">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+            <span class="reply-sentiment">
+                {% if reply.sentiment == 'Positive' %}😊
+                {% elif reply.sentiment == 'Negative' %}😞
+                {% else %}😐{% endif %}
+            </span>
+            {% if reply.is_flagged %}<span class="badge badge-danger" style="font-size: 0.65rem;">⚠️ Flagged</span>{% endif %}
+            {% if reply.is_edited %}<span style="font-size: 0.7rem; color: var(--text-secondary);">(edited)</span>{% endif %}
+        </div>
+        <div class="reply-content">{{ reply.content }}</div>
+        {% if reply.student_id == session.student_id %}
+        <div class="reply-actions">
+            <button class="btn btn-secondary btn-sm" onclick="editReply({{ reply.id }})">✏️ Edit</button>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state-premium" style="padding: 2rem 1rem;">
+        <span class="empty-state-premium-icon" style="font-size: 2.5rem;">💬</span>
+        <div class="empty-state-premium-title" style="font-size: 1rem;">No replies yet</div>
+        <div class="empty-state-premium-desc" style="font-size: 0.85rem;">Be the first to respond!</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ==================== REPLY FORM ==================== -->
+{% if not topic.is_locked %}
+<div class="reply-form">
+    <h4>💬 Post a Reply</h4>
+    <form method="POST">
+        <div class="form-group-enhanced" style="margin-bottom: 0.75rem;">
+            <textarea name="content" rows="4" required class="form-textarea-enhanced" placeholder="Type your reply here..." style="min-height: 100px;"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary flex items-center gap-2" style="font-weight: 800;">📤 Post Reply</button>
+    </form>
+</div>
+{% else %}
+<div class="alert text-center mt-4" style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.15); border-radius: var(--radius-lg); padding: 0.85rem 1rem;">
+    <p style="font-size: 0.9rem; color: var(--warning); font-weight: 600;">🔒 This topic is locked. No new replies are allowed.</p>
+</div>
+{% endif %}
+
+<!-- ==================== SCRIPTS ==================== -->
+<script>
+function vote(voteType) {
+    fetch('/forum/topic/{{ topic.id }}/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vote_type: voteType })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            document.getElementById('netVotes').textContent = data.net_votes;
+            var upBtn = document.getElementById('upvoteBtn');
+            var downBtn = document.getElementById('downvoteBtn');
+            if (data.action === 'added' && voteType === 'up') {
+                upBtn.classList.add('upvoted');
+                downBtn.classList.remove('upvoted', 'downvoted');
+            } else if (data.action === 'added' && voteType === 'down') {
+                downBtn.classList.add('downvoted');
+                upBtn.classList.remove('upvoted', 'downvoted');
+            } else if (data.action === 'removed') {
+                upBtn.classList.remove('upvoted', 'downvoted');
+                downBtn.classList.remove('upvoted', 'downvoted');
+            } else if (data.action === 'changed') {
+                if (voteType === 'up') {
+                    upBtn.classList.add('upvoted');
+                    downBtn.classList.remove('upvoted', 'downvoted');
+                } else {
+                    downBtn.classList.add('downvoted');
+                    upBtn.classList.remove('upvoted', 'downvoted');
+                }
+            }
+        }
+    });
+}
+
+function editReply(replyId) {
+    var rd = document.getElementById('reply-' + replyId);
+    var cd = rd.querySelector('.reply-content');
+    var cc = cd.innerText;
+    cd.innerHTML = '<textarea id="et" class="form-textarea-enhanced" rows="3">' + cc + '</textarea>' +
+        '<div class="flex gap-2 mt-2">' +
+        '<button class="btn btn-primary btn-sm" onclick="saveEdit(' + replyId + ')">💾 Save</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="cancelEdit(' + replyId + ')">Cancel</button>' +
+        '</div>';
+}
+
+function saveEdit(replyId) {
+    var nc = document.getElementById('et').value;
+    fetch('/forum/reply/' + replyId + '/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: nc })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) location.reload();
+        else alert('Error: ' + d.error);
+    });
+}
+
+function cancelEdit(replyId) { location.reload(); }
+</script>
+{% endblock %}

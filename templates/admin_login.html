@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container auth-bg-wrapper">
+    <!-- Background Image -->
+    <div class="auth-bg-image">
+        <img src="{{ url_for('static', filename='images/htu-pic.jpg') }}" alt="HTU Campus" loading="lazy">
+    </div>
+
+    <!-- Animated particles -->
+    <div class="auth-particles" style="z-index: 2;">
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+        <div class="auth-particle"></div>
+    </div>
+
+    <div class="auth-card gradient-border" style="z-index: 3;">
+        <!-- Status badge -->
+        <div class="auth-brand-badge" style="background: rgba(30, 64, 175, 0.08); border-color: rgba(30, 64, 175, 0.15); color: var(--primary); gap: 0.75rem;">
+            <img src="{{ url_for('static', filename='images/htu-logo.png') }}" alt="HTU Logo" style="height:24px;width:auto;">
+            <span class="badge-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; animation: dotPulse 2s ease-in-out infinite;"></span>
+            SYSTEM ONLINE
+            <span style="margin-left: 0.25rem; font-size: 0.65rem; opacity: 0.6;">v2.0</span>
+        </div>
+
+        <div class="auth-header">
+            <div class="auth-header-icon" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: 0 8px 28px rgba(30, 64, 175, 0.3); position: relative;">
+                🛡️
+                <span style="position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; background: #4ade80; border: 2px solid #fff; animation: dotPulse 2s ease-in-out infinite;"></span>
+            </div>
+            <h1 class="auth-title" style="color: var(--text-primary);">SRC Admin Access</h1>
+            <p class="auth-subtitle" style="color: var(--text-secondary);">
+                Secure administrative panel for managing the 
+                <span style="color: var(--text-primary); font-weight: 600;">HTU SRC Feedback System</span>
+            </p>
+        </div>
+
+        {% if error %}
+        <div class="auth-alert auth-alert-error" style="animation: slideUp 0.3s ease;">
+            <span>⚠️</span>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form method="POST" class="auth-form" id="adminLoginForm" autocomplete="off">
+            <div class="form-group">
+                <label class="form-label" style="color: var(--text-primary);">
+                    <span>👤</span> Username
+                </label>
+                <div class="input-wrapper" style="position: relative;">
+                    <input type="text" name="username" id="adminUsername" required class="form-input floating-input" 
+                           placeholder="Enter admin username" autocomplete="username"
+                           style="background: var(--bg-color); border-color: var(--border-color); color: var(--text-primary); padding-left: 2.5rem;">
+                    <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.95rem; opacity: 0.5; pointer-events: none;">🔑</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" style="color: var(--text-primary);">
+                    <span>🔒</span> Password
+                </label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="adminPassword" required class="form-input floating-input" 
+                           placeholder="Enter admin password" autocomplete="current-password"
+                           style="background: var(--bg-color); border-color: var(--border-color); color: var(--text-primary); padding-left: 2.5rem;">
+                    <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.95rem; opacity: 0.5; pointer-events: none;">🔐</span>
+                    <button type="button" class="password-toggle" onclick="togglePassword('adminPassword', this)" tabindex="-1" style="color: var(--text-secondary);">👁️</button>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label class="checkbox-label" style="background: var(--bg-color); border-color: var(--border-color); padding: 0.5rem 0.85rem;">
+                    <input type="checkbox" name="remember" id="rememberMe">
+                    <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">🔐 Keep me signed in</span>
+                </label>
+            </div>
+
+            <button type="submit" class="auth-btn" id="loginButton" 
+                    style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); box-shadow: 0 6px 20px rgba(30, 64, 175, 0.25);">
+                <span class="auth-btn-text">Access Dashboard</span>
+                <span class="auth-btn-pulse"></span>
+                <span class="btn-loading-spinner" style="display: none; width: 1.2rem; height: 1.2rem; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite;"></span>
+            </button>
+        </form>
+
+        <div class="auth-demo" style="background: rgba(30, 64, 175, 0.06); border-color: rgba(30, 64, 175, 0.12);">
+            <span>🔑</span>
+            <span>Demo Credentials:</span>
+            <code id="demoUsername" style="cursor: pointer;" onclick="copyText('admin')" title="Click to copy">admin</code>
+            <span style="opacity: 0.5;">/</span>
+            <code id="demoPassword" style="cursor: pointer;" onclick="copyText('admin123')" title="Click to copy">admin123</code>
+            <span style="font-size: 0.65rem; opacity: 0.5; margin-left: 0.25rem;">(click to copy)</span>
+        </div>
+
+        <div class="auth-trust" style="background: rgba(30, 64, 175, 0.04); border-color: rgba(30, 64, 175, 0.08);">
+            <span class="auth-trust-icon">🛡️</span>
+            <span>SSL Secured Connection</span>
+            <span style="opacity: 0.3;">•</span>
+            <span>Role-Based Access</span>
+            <span style="opacity: 0.3;">•</span>
+            <span>2FA Ready</span>
+        </div>
+
+        <div class="auth-footer" style="border-top-color: var(--border-color);">
+            <p>
+                <a href="/" style="color: var(--primary);">← Back to Home</a>
+                <span style="opacity: 0.3; margin: 0 0.5rem;">•</span>
+                <a href="/student/login" style="color: var(--text-secondary); font-weight: 600;">Student Login</a>
+            </p>
+            <p style="margin-top: 0.5rem; font-size: 0.72rem; color: var(--text-muted);">
+                HTU SRC Feedback System v2.0 • Need help? Contact <span style="color: var(--primary);">IT Support</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ---- Input wrapper enhancements ---- */
+.input-wrapper .form-input {
+    transition: all 0.2s ease;
+}
+.input-wrapper .form-input:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1) !important;
+    background: var(--card-bg) !important;
+}
+
+/* ---- Password toggle hover ---- */
+.password-toggle:hover {
+    color: var(--primary) !important;
+}
+
+/* ---- Checkbox label enhancements ---- */
+.checkbox-label input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ---- Button loading state ---- */
+.auth-btn.loading .auth-btn-text {
+    opacity: 0.6;
+}
+.auth-btn.loading .btn-loading-spinner {
+    display: inline-block !important;
+}
+.auth-btn.loading .auth-btn-pulse {
+    display: none;
+}
+
+/* ---- Demo code copy tooltip ---- */
+.auth-demo code {
+    transition: all 0.15s ease;
+    position: relative;
+}
+.auth-demo code:hover {
+    background: rgba(30, 64, 175, 0.1);
+    color: var(--primary);
+}
+.auth-demo code:active {
+    transform: scale(0.95);
+}
+.auth-demo code::after {
+    content: '📋';
+    position: absolute;
+    top: -1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+.auth-demo code:hover::after {
+    opacity: 0.7;
+}
+
+/* ---- Trust badge ---- */
+.auth-trust {
+    animation: fadeIn 0.6s ease 0.3s both;
+}
+
+/* ---- Back link hover ---- */
+.auth-footer a {
+    transition: all 0.15s ease;
+}
+.auth-footer a:hover {
+    opacity: 0.8;
+    text-decoration: underline !important;
+}
+
+/* ---- Background Image Enhancement ---- */
+.auth-bg-image {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.auth-bg-image::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(15, 23, 42, 0.88) 0%,
+        rgba(30, 41, 59, 0.82) 50%,
+        rgba(15, 23, 42, 0.9) 100%
+    );
+}
+
+.auth-bg-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+html.theme-dark .auth-bg-image::after {
+    background: linear-gradient(
+        135deg,
+        rgba(2, 6, 23, 0.92) 0%,
+        rgba(15, 23, 42, 0.88) 50%,
+        rgba(2, 6, 23, 0.94) 100%
+    );
+}
+
+/* ---- White card fill override for gradient border ---- */
+.auth-card.gradient-border::after {
+    background: var(--card-bg) !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('adminLoginForm');
+    const loginBtn = document.getElementById('loginButton');
+    const usernameInput = document.getElementById('adminUsername');
+
+    // Auto-focus username field
+    if (usernameInput) {
+        setTimeout(function() { usernameInput.focus(); }, 100);
+    }
+
+    // Loading state on form submit
+    if (loginForm && loginBtn) {
+        loginForm.addEventListener('submit', function(e) {
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            
+            if (!username || !password) {
+                e.preventDefault();
+                // Shake animation for empty fields
+                if (!username) {
+                    document.getElementById('adminUsername').style.borderColor = '#ef4444';
+                    document.getElementById('adminUsername').style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                }
+                if (!password) {
+                    document.getElementById('adminPassword').style.borderColor = '#ef4444';
+                    document.getElementById('adminPassword').style.boxShadow = '0 0 0 3px rgba(239,68,68,0.1)';
+                }
+                return;
+            }
+            loginBtn.classList.add('loading');
+            loginBtn.querySelector('.auth-btn-text').textContent = 'Authenticating...';
+        });
+
+        // Clear error states on input
+        document.querySelectorAll('.floating-input').forEach(function(input) {
+            input.addEventListener('input', function() {
+                this.style.borderColor = '';
+                this.style.boxShadow = '';
+            });
+        });
+    }
+});
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Briefly flash copied indicator
+        const el = event.target;
+        const original = el.textContent;
+        el.textContent = '✅ Copied!';
+        setTimeout(function() { el.textContent = original; }, 1200);
+    }).catch(function() {
+        // Fallback
+        alert('Copied: ' + text);
+    });
+}
+</script>
+{% endblock %}
+

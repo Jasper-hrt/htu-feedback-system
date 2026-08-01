@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.temp-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 1.35rem 1.5rem; transition: all var(--transition-normal); position: relative; overflow: hidden; cursor: pointer; }
+.temp-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: rgba(59,130,246,0.2); }
+.temp-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; border-radius: 0 2px 2px 0; transition: opacity var(--transition-fast); }
+.temp-card:hover::before { opacity: 1; }
+.temp-card-accent-wifi::before { background: linear-gradient(to bottom, #3b82f6, #1d4ed8); }
+.temp-card-accent-maint::before { background: linear-gradient(to bottom, #f59e0b, #d97706); }
+.temp-card-accent-conduct::before { background: linear-gradient(to bottom, #8b5cf6, #7c3aed); }
+.temp-card-accent-safety::before { background: linear-gradient(to bottom, #ef4444, #dc2626); }
+.temp-card-accent-accom::before { background: linear-gradient(to bottom, #14b8a6, #0d9488); }
+.temp-card-accent-cater::before { background: linear-gradient(to bottom, #f97316, #ea580c); }
+.temp-card-accent-general::before { background: linear-gradient(to bottom, #6b7280, #4b5563); }
+.temp-card-accent-resolved::before { background: linear-gradient(to bottom, #10b981, #059669); }
+.temp-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.65rem; flex-wrap: wrap; }
+.temp-card-title { font-size: 1rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; }
+.temp-card-preview { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.75rem 1rem; margin-bottom: 0.65rem; }
+.temp-card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.form-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); }
+.form-card-header { font-size: 1rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+.form-card-sub { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500; }
+.no-results { display: none; text-align: center; padding: 2.5rem 2rem; background: var(--card-bg); border: 1px dashed var(--border-color); border-radius: var(--radius-xl); }
+.no-results.visible { display: block; }
+</style>
+
+<div class="mb-6">
+    <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
+        <div>
+            <h2 class="text-2xl font-bold" style="color: var(--primary);">📝 Response Templates</h2>
+            <p class="text-sm text-secondary">Pre-written responses for common feedback types</p>
+        </div>
+        <a href="/admin/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
+    </div>
+
+    <!-- Hero Info -->
+    <div class="alert alert-info mb-6 flex items-center gap-2" style="padding: 0.85rem 1rem; border-radius: 0.75rem;">
+        <span style="font-size: 1.2rem;">💡</span>
+        <p class="text-sm" style="font-weight: 600;">Click any template to copy. Use these when responding to student feedback. <strong>{{ templates|length }} templates available</strong>.</p>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="filter-bar-enhanced mb-4">
+        <span class="filter-label">🔍</span>
+        <input type="text" id="searchTemplate" placeholder="Search templates by name or content..." class="filter-input" style="min-width: 200px;">
+        <button class="btn btn-primary btn-sm" onclick="toggleAddForm()">➕ Add Template</button>
+    </div>
+
+    <!-- Add Template Form (hidden by default) -->
+    <div id="addForm" class="form-card" style="display: none;">
+        <div class="form-card-header">📋 Add New Template</div>
+        <div class="form-card-sub">Create a new response template for commonly used replies.</div>
+        <form method="POST" action="/admin/templates">
+            <div class="form-group">
+                <label class="form-label">Template Name</label>
+                <input type="text" name="template_key" class="form-input" placeholder="e.g., Library Issues" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Template Content</label>
+                <textarea name="template_value" class="form-textarea" rows="3" placeholder="Write the response template text here..." required></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn btn-primary">💾 Save Template</button>
+                <button type="button" class="btn btn-secondary" onclick="toggleAddForm()">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Template Grid -->
+    <div class="grid grid-cols-2 gap-4" id="templateGrid">
+        {% set accent_map = {
+            'Wi-Fi': 'wifi',
+            'Maintenance': 'maint',
+            'Conduct': 'conduct',
+            'Safety': 'safety',
+            'Accommodation': 'accom',
+            'Catering': 'cater',
+            'General': 'general',
+            'Resolved': 'resolved'
+        } %}
+        {% for key, value in templates.items() %}
+        {% set accent = 'general' %}
+        {% for kw, ac in accent_map.items() %}
+            {% if kw in key %}{% set accent = ac %}{% endif %}
+        {% endfor %}
+        <div class="temp-card temp-card-accent-{{ accent }}" data-name="{{ key.lower() }}" data-content="{{ value.lower() }}" data-key="{{ key|e }}" data-value="{{ value|e }}">
+            <div class="temp-card-top">
+                <div class="temp-card-title">{{ key }}</div>
+                <span class="badge badge-info" style="cursor: pointer;">📋 Click to copy</span>
+            </div>
+            <div class="temp-card-preview">{{ value[:200] }}{% if value|length > 200 %}...{% endif %}</div>
+            <div class="temp-card-actions">
+                <button class="btn btn-primary btn-sm copy-btn">📋 Copy</button>
+                <button class="btn btn-secondary btn-sm edit-btn">✏️ Edit</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- No Results -->
+    <div id="noResults" class="no-results">
+        <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">🔍</span>
+        <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No Templates Found</div>
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">Try a different search term or create a new template.</div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal" id="editModal">
+    <div class="modal-content" style="max-width: 40rem;">
+        <div class="modal-header">✏️ Edit Template</div>
+        <form method="POST" action="/admin/templates" id="editForm">
+            <div class="form-group">
+                <label class="form-label">Template Name</label>
+                <input type="text" name="template_key" id="editKey" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Template Content</label>
+                <textarea name="template_value" id="editValue" class="form-textarea" rows="4" required></textarea>
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function copyTemplate(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        showToast('✅ Template copied to clipboard!', 'success');
+    }).catch(function() {
+        showToast('❌ Failed to copy. Please select and copy manually.', 'error');
+    });
+}
+
+function editTemplate(key, value) {
+    document.getElementById('editKey').value = key;
+    document.getElementById('editValue').value = value;
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+
+function toggleAddForm() {
+    var form = document.getElementById('addForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function showToast(msg, type) {
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;padding:0.85rem 1.25rem;border-radius:0.75rem;font-weight:700;font-size:0.9rem;z-index:9999;background:' + (type === 'success' ? 'var(--success)' : 'var(--danger)') + ';color:#fff;box-shadow:0 10px 30px rgba(0,0,0,0.2);animation:fadeInUp 0.3s ease;max-width:400px;';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, 2500);
+}
+
+// Search
+document.getElementById('searchTemplate').addEventListener('keyup', function() {
+    var term = this.value.toLowerCase();
+    var cards = document.querySelectorAll('.temp-card');
+    var visible = 0;
+    cards.forEach(function(card) {
+        var match = card.getAttribute('data-name').includes(term) || card.getAttribute('data-content').includes(term);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+    document.getElementById('noResults').classList.toggle('visible', visible === 0);
+});
+
+// Event delegation: copy and edit buttons
+document.getElementById('templateGrid').addEventListener('click', function(e) {
+    var target = e.target.closest('.copy-btn, .edit-btn');
+    if (!target) return;
+    e.stopPropagation();
+
+    var card = target.closest('.temp-card');
+    if (!card) return;
+
+    var key = card.getAttribute('data-key');
+    var value = card.getAttribute('data-value');
+
+    if (target.classList.contains('copy-btn')) {
+        copyTemplate(value);
+    } else if (target.classList.contains('edit-btn')) {
+        editTemplate(key, value);
+    }
+});
+
+// Click to copy on card (click anywhere on card)
+document.querySelectorAll('.temp-card').forEach(function(card) {
+    card.addEventListener('click', function(e) {
+        // Ignore clicks on buttons and the badge since they handle their own events
+        if (e.target.closest('.copy-btn, .edit-btn')) return;
+        var value = this.getAttribute('data-value');
+        copyTemplate(value);
+    });
+});
+</script>
+{% endblock %}
+
