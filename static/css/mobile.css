@@ -278,20 +278,49 @@
 }
 
 /* ============================================ */
-/* 🧭 Student Side-Menu → Premium Mobile Chip Bar
+/* 🧭 Student Side-Menu → Organized Premium Mobile Layout
 /* ============================================ */
 @media (max-width: 768px) {
+    /*
+      Override the desktop @max-width:992px row layout from style.css
+      that crams header + navs + logout into one disorganized line.
+    */
     .student-side-menu {
-        border-radius: var(--radius-lg);
-        padding: 0.5rem 0.6rem;
+        width: 100%;
+        flex: 0 0 auto;
+        position: relative;
+        top: auto;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 0.75rem;
         margin-bottom: 0.85rem;
+        border-radius: var(--radius-lg);
         box-shadow: var(--shadow-md);
         border: 1px solid var(--border-color);
         background: linear-gradient(135deg, var(--card-bg), rgba(59, 130, 246, 0.02));
+        overflow: hidden;
     }
 
+    .student-side-menu::before {
+        display: block;
+        height: 3px;
+        background: linear-gradient(90deg, var(--primary-light), var(--primary), transparent);
+        margin: -0.75rem -0.75rem 0.6rem;
+    }
+
+    /* ---- Header: avatar + name on its own row ---- */
     .student-side-menu-header {
-        padding: 0.15rem 0.25rem 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        width: 100%;
+        flex: 0 0 auto;
+        padding: 0 0.25rem 0.6rem;
+        border-bottom: 1px solid var(--border-color);
+        background: transparent;
+        margin-bottom: 0.5rem;
     }
 
     .student-side-menu-avatar {
@@ -299,10 +328,51 @@
         height: 2.1rem;
         font-size: 0.85rem;
         box-shadow: 0 2px 10px rgba(30, 64, 175, 0.16);
+        flex-shrink: 0;
     }
 
+    .student-side-menu-user {
+        display: block;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .student-side-menu-name {
+        font-size: 0.85rem;
+    }
+
+    .student-side-menu-id {
+        font-size: 0.68rem;
+    }
+
+    .student-side-menu-toggle {
+        display: none;
+    }
+
+    /* ---- Section labels reinstated ---- */
+    .student-side-menu-label {
+        display: block;
+        font-size: 0.66rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0.35rem 0.25rem 0.3rem;
+        border-bottom: none;
+    }
+
+    /* ---- Nav groups: stacked, chips wrap neatly ---- */
     .student-side-menu-nav {
-        gap: 0.35rem;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        flex: 0 0 auto;
+        width: 100%;
+        align-items: stretch;
+        gap: 0.4rem;
+        padding: 0.1rem 0 0.4rem;
+        overflow: visible;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
     }
@@ -312,8 +382,12 @@
     }
 
     .student-side-menu-link {
-        padding: 0.5rem 0.75rem;
+        flex: 1 1 calc(50% - 0.4rem);
+        min-width: 7rem;
+        justify-content: flex-start;
+        padding: 0.5rem 0.7rem;
         font-size: 0.8rem;
+        white-space: nowrap;
         border-radius: var(--radius-full);
         background: var(--bg-color);
         border: 1px solid var(--border-color);
@@ -323,6 +397,10 @@
 
     .student-side-menu-link:active {
         transform: scale(0.96);
+    }
+
+    .student-side-menu-link.active::before {
+        display: none;
     }
 
     .student-side-menu-link.active {
@@ -340,13 +418,38 @@
         width: 1.85rem;
         height: 1.85rem;
         font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    /* ---- Footer: full-width logout ---- */
+    .student-side-menu-footer {
+        display: block;
+        flex: 0 0 auto;
+        width: 100%;
+        padding: 0.4rem 0 0;
+        border-top: 1px solid var(--border-color);
     }
 
     .student-side-menu-logout {
-        padding: 0.5rem 0.75rem;
+        justify-content: flex-start;
+        width: 100%;
+        padding: 0.55rem 0.75rem;
         font-size: 0.8rem;
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-lg);
         box-shadow: 0 4px 12px rgba(239, 68, 68, 0.14);
+    }
+
+    /* Collapsed state is irrelevant on mobile — force full layout */
+    .student-side-menu.collapsed .student-side-menu-header,
+    .student-side-menu.collapsed .student-side-menu-user,
+    .student-side-menu.collapsed .student-side-menu-nav,
+    .student-side-menu.collapsed .student-side-menu-link,
+    .student-side-menu.collapsed .student-side-menu-link-text,
+    .student-side-menu.collapsed .student-side-menu-label,
+    .student-side-menu.collapsed .student-side-menu-footer,
+    .student-side-menu.collapsed .student-side-menu-logout,
+    .student-side-menu.collapsed .student-side-menu-logout-text {
+        display: revert;
     }
 }
 
@@ -968,6 +1071,79 @@
     .feedback-card {
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-md);
+    }
+}
+
+/* ============================================ */
+/* 🛠️ Responsive Overflow & Break Fixes
+/* (Additive only — no existing rules duplicated)
+/* ============================================ */
+
+/* ---- Guarantee single-line compact header on mobile ----
+   style.css sets flex-wrap: wrap on .navbar-container at ≤768px.
+   With only brand + hamburger visible, wrapping can push the
+   hamburger to a second row and make the sticky header taller. */
+@media (max-width: 768px) {
+    .navbar-container {
+        flex-wrap: nowrap;
+    }
+}
+
+/* ---- Allow long button labels to wrap instead of overflowing ----
+   .btn and .btn-logout-subtext use white-space: nowrap. On small
+   screens full-width hero/action buttons with long labels
+   ("Back to Dashboard", "Export Data") can force horizontal scroll. */
+@media (max-width: 480px) {
+    .btn,
+    .btn-logout-subtext {
+        white-space: normal;
+        text-align: center;
+    }
+    .btn-logout-subtext {
+        display: inline;
+    }
+}
+
+/* ---- Collapse chart-heavy grids to a single column ----
+   admin_analytics.html uses inline .grid-cols-3 (Hour/Day/Location)
+   and .grid-cols-2 (sentiment trend / resolution). style.css only
+   collapses these to 2 columns at ≤768px, which is too cramped
+   for canvases and leaves an orphan card. */
+@media (max-width: 768px) {
+    .grid.grid-cols-2.gap-6,
+    .grid.grid-cols-3.gap-6 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---- Urgency labels: allow wrapping on very narrow phones ----
+   Three space-between labels can collide on 320px screens. */
+@media (max-width: 480px) {
+    .urgency-labels {
+        flex-wrap: wrap;
+        gap: 0.25rem 0.5rem;
+    }
+}
+
+/* ---- Modal alignment on short/keyboard-open screens ----
+   align-items: center can push the modal header off-screen.
+   Align to top with breathing room instead. */
+@media (max-width: 480px) {
+    .modal {
+        align-items: flex-start;
+        padding-top: 1rem;
+    }
+}
+
+/* ---- Stacked-table fallback for cells without data-label ----
+   Tables that lack data-label attributes (e.g. admin_students.html)
+   still get clean stacked cards: inherit font-weight so the first
+   cell reads like a title, and keep the rest body-styled. */
+@media (max-width: 768px) {
+    .table-modern tbody td:first-child,
+    .table tbody td:first-child {
+        font-weight: 700;
+        color: var(--text-primary);
     }
 }
 
