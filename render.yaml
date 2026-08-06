@@ -26,6 +26,4 @@ databases:
     plan: free
     databaseName: htu_src_feedback
     user: htu_src_user
-</｜｜DSML｜｜parameter>
-</invoke>
-</create_file>
+
