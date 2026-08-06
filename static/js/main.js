@@ -203,6 +203,75 @@ function initThemeToggle() {
 
 
 // ============================================
+// 🍔 Navbar Mobile Menu Toggle
+// ============================================
+function initNavbarMobileMenu() {
+    const hamburger = document.getElementById('navbarHamburger');
+    const menu = document.getElementById('navbarMobileMenu');
+    if (!hamburger || !menu) return;
+
+    function setMenu(open) {
+        menu.classList.toggle('open', open);
+        hamburger.classList.toggle('active', open);
+        hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    hamburger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        setMenu(!menu.classList.contains('open'));
+    });
+
+    // Close when a link inside the mobile menu is clicked
+    menu.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() {
+            setMenu(false);
+        });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+        if (menu.classList.contains('open') &&
+            !menu.contains(e.target) &&
+            !hamburger.contains(e.target)) {
+            setMenu(false);
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && menu.classList.contains('open')) {
+            setMenu(false);
+        }
+    });
+
+// Sync mobile theme toggle with the main theme toggle
+    const mainToggle = document.getElementById('themeToggle');
+    const mobileToggle = document.getElementById('themeToggleMobile');
+    if (mainToggle && mobileToggle) {
+        // Sync the mobile toggle's initial state with the main toggle on load
+        mobileToggle.checked = mainToggle.checked;
+        const mobileThemeUi = mobileToggle.closest('.theme-toggle')?.querySelector('.theme-toggle-ui');
+        if (mobileThemeUi) mobileThemeUi.textContent = mainToggle.checked ? '🌙 Dark' : '☀️ Light';
+
+        // Keep both checkboxes in sync
+        mainToggle.addEventListener('change', function() {
+            mobileToggle.checked = mainToggle.checked;
+            if (mobileThemeUi) mobileThemeUi.textContent = mainToggle.checked ? '🌙 Dark' : '☀️ Light';
+        });
+        mobileToggle.addEventListener('change', function() {
+            mainToggle.checked = mobileToggle.checked;
+            // Trigger the theme change
+            const dark = this.checked;
+            document.documentElement.classList.toggle('theme-dark', dark);
+            localStorage.setItem('theme', dark ? 'dark' : 'light');
+            const themeUi = document.querySelector('.theme-toggle-ui');
+            if (themeUi) themeUi.textContent = dark ? '🌙 Dark' : '☀️ Light';
+            if (mobileThemeUi && mobileThemeUi !== themeUi) mobileThemeUi.textContent = dark ? '🌙 Dark' : '☀️ Light';
+        });
+    }
+}
+
+// ============================================
 // 🎬 Scroll Reveal Animations
 // ============================================
 function initScrollReveal() {
@@ -498,6 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initFollowupToggle();
     initAdminFilters();
     initThemeToggle();
+    initNavbarMobileMenu();
     initScrollReveal();
     initCounters();
     initAnnouncementFilters();

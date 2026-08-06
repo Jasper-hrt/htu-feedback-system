@@ -46,6 +46,27 @@
                     <span class="theme-toggle-ui">🌙 Dark</span>
                 </label>
             </div>
+
+            <button class="navbar-hamburger" id="navbarHamburger" type="button" aria-label="Toggle navigation" aria-expanded="false">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div class="navbar-mobile-menu" id="navbarMobileMenu">
+            <a href="/">🏠 Home</a>
+            <a href="/announcements">📢 Announcements</a>
+            <a href="/public">📊 Public Board</a>
+            {% if not session.student_id %}
+            <a href="/student/login">🔑 Login</a>
+            {% endif %}
+            <a href="/admin/login">🔐 SRC Admin</a>
+            <label class="theme-toggle mobile-theme-toggle" title="Toggle theme">
+                <input id="themeToggleMobile" type="checkbox" />
+                <span class="theme-toggle-ui">🌙 Dark</span>
+            </label>
         </div>
     </nav>
     
