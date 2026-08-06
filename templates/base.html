@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HTU SRC Feedback System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ asset_version }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ asset_version }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forum.css') }}?v={{ asset_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}?v={{ asset_version }}">
     <style>
         /* Quick utility to ensure consistent page headers */
         .page-header { margin-bottom: 1.5rem; }
@@ -134,7 +135,36 @@
             </section>
         </div>
         {% endif %}
-    </main>
+</main>
+
+    <!-- Mobile App-Style Bottom Navigation -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+        <div class="mobile-bottom-nav-inner">
+            <a href="/" class="mobile-bottom-nav-item" data-mbpage="home">
+                <span class="bnav-icon">🏠</span>
+                <span>Home</span>
+            </a>
+            <a href="/forum" class="mobile-bottom-nav-item" data-mbpage="forum">
+                <span class="bnav-icon">💬</span>
+                <span>Forum</span>
+            </a>
+            <a href="/chat" class="mobile-bottom-nav-item" data-mbpage="chat">
+                <span class="bnav-icon">💬</span>
+                <span>Chat</span>
+            </a>
+            <a href="/announcements" class="mobile-bottom-nav-item" data-mbpage="announcements">
+                <span class="bnav-icon">📢</span>
+                <span>News</span>
+            </a>
+            <a href="/public" class="mobile-bottom-nav-item" data-mbpage="public">
+                <span class="bnav-icon">🧾</span>
+                <span>Board</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Floating Submit Button (mobile only) -->
+    <a href="/submit" class="mobile-fab" title="Submit Feedback" aria-label="Submit Feedback">✏️</a>
     
     <footer class="footer">
         <div class="footer-brand">

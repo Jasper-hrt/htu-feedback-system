@@ -562,6 +562,48 @@ function initStudentSideMenu() {
     });
 }
 
+// ============================================
+// 📱 Mobile Bottom Navigation & FAB
+// ============================================
+function initMobileBottomNav() {
+    const items = document.querySelectorAll('.mobile-bottom-nav-item');
+    if (items.length === 0) return;
+
+    const path = window.location.pathname;
+    let activePage = '';
+
+    if (path === '/' || path === '/index') {
+        activePage = 'home';
+    } else if (path.startsWith('/forum')) {
+        activePage = 'forum';
+    } else if (path.startsWith('/chat')) {
+        activePage = 'chat';
+    } else if (path.startsWith('/announcements')) {
+        activePage = 'announcements';
+    } else if (path.startsWith('/public')) {
+        activePage = 'public';
+    }
+
+    // Default to home highlight if no match (e.g., dashboard, submit)
+    if (!activePage) activePage = 'home';
+
+    items.forEach(item => {
+        if (item.dataset.mbpage === activePage) {
+            item.classList.add('active');
+        }
+    });
+}
+
+function initMobileFab() {
+    const fab = document.querySelector('.mobile-fab');
+    if (!fab) return;
+    const path = window.location.pathname;
+    // Hide the FAB on the submit/edit pages to avoid redundancy
+    if (path.startsWith('/submit') || path.startsWith('/edit-feedback')) {
+        fab.style.display = 'none';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initUrgencySlider();
     initFollowupToggle();
@@ -576,6 +618,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initStudentDropdown();
     initStudentSideMenu();
     initActivePageHighlight();
+    initMobileBottomNav();
+    initMobileFab();
 });
 
 
