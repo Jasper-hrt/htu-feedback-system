@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, Response
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
@@ -264,29 +267,22 @@ def _repair_feedback_schema_if_needed():
 def _ensure_nltk_data():
     """Ensure required NLTK corpora are available at runtime.
 
-If the build step (download_nltk_data.py) was skipped or failed,
+    If the build step (download_nltk_data.py) was skipped or failed,
     this provides a fallback download at first app startup.
     """
     import nltk
-    # NOTE: punkt and averaged_perceptron_tagger live under tokenizers/ and
-    # taggers/ in NLTK 3.8+ (not corpora/). Using the correct paths avoids
-    # unnecessary re-downloads on every cold start.
     nltk_resources = [
-        ('corpora/wordnet', 'wordnet'),
-        ('tokenizers/punkt', 'punkt'),
-        ('taggers/averaged_perceptron_tagger', 'averaged_perceptron_tagger'),
-        ('corpora/sentiwordnet', 'sentiwordnet'),
-        ('corpora/omw-1.4', 'omw-1.4'),
+        'wordnet', 'punkt', 'averaged_perceptron_tagger', 'omw-1.4',
     ]
-    for find_path, download_name in nltk_resources:
+    for resource in nltk_resources:
         try:
-            nltk.data.find(find_path)
+            nltk.data.find(f'corpora/{resource}')
         except LookupError:
             try:
-                nltk.download(download_name, quiet=True)
-                print(f"[NLTK] Downloaded missing resource: {download_name}")
+                nltk.download(resource, quiet=True)
+                print(f"[NLTK] Downloaded missing resource: {resource}")
             except Exception as e:
-                print(f"[NLTK] WARNING: Could not download {download_name}: {e}")
+                print(f"[NLTK] WARNING: Could not download {resource}: {e}")
 
 
 with app.app_context():
@@ -1695,10 +1691,6 @@ def set_theme():
         db.session.commit()
     return jsonify({'success': True})
 
-if __name__ == "__main__":
-    log_system_action(
-        "System",
-        "Startup",
-        "HTU SRC Feedback System started"
-    )
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+if __name__ == '__main__':
+    log_system_action('System', 'Startup', 'HTU SRC Feedback System started with all features')
+    socketio.run(app, debug=True)
