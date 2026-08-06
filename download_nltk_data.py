@@ -18,6 +18,7 @@ NLTK_DATA = [
     'wordnet',
     'punkt',
     'averaged_perceptron_tagger',
+    'sentiwordnet',  # required by sentiment/sentiwordnet_engine.py
     'omw-1.4',  # Open Multilingual WordNet (required for sentiwordnet)
 ]
 
