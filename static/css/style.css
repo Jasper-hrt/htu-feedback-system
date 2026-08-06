@@ -3484,11 +3484,34 @@ html.theme-dark .dept-badge {
         flex-direction: column;
     }
 
-    .student-sidebar {
+    .student-side-menu,
+    .student-side-menu.collapsed {
         width: 100%;
         flex: 0 0 auto;
         position: relative;
         top: auto;
+    }
+
+    .student-side-menu.collapsed .student-side-menu-user,
+    .student-side-menu.collapsed .student-side-menu-link-text,
+    .student-side-menu.collapsed .student-side-menu-logout-text,
+    .student-side-menu.collapsed .student-side-menu-label {
+        display: revert;
+    }
+
+    .student-side-menu-toggle {
+        display: none;
+    }
+
+    .student-side-menu-nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .student-side-menu-link {
+        flex: 1 1 auto;
+        justify-content: center;
     }
 
     .admin-sidebar {
