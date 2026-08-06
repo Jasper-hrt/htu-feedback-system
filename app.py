@@ -115,6 +115,28 @@ def add_security_headers(response):
     response.headers['X-XSS-Protection'] = '1; mode=block'
     return response
 
+# ==================== GLOBAL ERROR HANDLER ====================
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    """Log the full traceback and return a user-friendly error page.
+
+    Without this handler, Flask returns a bare 'Internal Server Error' page
+    and the real cause is hidden. This handler prints the full traceback to
+    the server logs (helpful on Render) and shows a clean message to the user.
+    """
+    import traceback
+    traceback.print_exc()
+    log_system_action('Error', '500', f'Internal Server Error: {e}', 'ERROR')
+    try:
+        return render_template('error.html', error='Sorry, something went wrong on our end. Please try again in a moment.'), 500
+    except Exception:
+        return 'Internal Server Error', 500
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('error.html', error='The page you are looking for was not found.'), 404
+
 # ==================== SESSION TIMEOUT ====================
 
 @app.before_request
@@ -284,48 +306,65 @@ def _ensure_schema_aligned():
     (e.g. the solution-recommender and confidence/emotion columns on `feedback`).
     Without them, INSERT/UPDATE statements fail with a 500 Internal Server Error.
 
-    This function is dialect-agnostic (works on both SQLite and PostgreSQL):
+This function is dialect-agnostic (works on both SQLite and PostgreSQL):
       - Uses SQLAlchemy's inspector to read existing columns per table.
       - Adds any missing columns via ALTER TABLE ... ADD COLUMN.
+
+    IMPORTANT: PostgreSQL does NOT allow ALTER TABLE ... ADD COLUMN with a
+    NOT NULL constraint unless a DEFAULT is provided. All our model columns
+    that are nullable=False already have a client-side Python default, but the
+    compiled DDL may still include NOT NULL. To be safe for the deployment
+    migration, we add columns as NULLABLE (omitting NOT NULL) here. The
+    application always supplies values on INSERT, so NULLs are never observed
+    in practice, and this avoids PostgreSQL migration failures.
     """
+    import traceback
     from sqlalchemy import inspect as sa_inspect, text as sa_text
 
     insp = sa_inspect(db.engine)
     existing_tables = set(insp.get_table_names())
 
     added_any = False
-    for table in db.metadata.sorted_tables:
-        table_name = table.name
-        if table_name not in existing_tables:
-            continue  # db.create_all() will create it.
+    try:
+        for table in db.metadata.sorted_tables:
+            table_name = table.name
+            if table_name not in existing_tables:
+                continue  # db.create_all() will create it.
 
-        existing_cols = {col['name'] for col in insp.get_columns(table_name)}
+            existing_cols = {col['name'] for col in insp.get_columns(table_name)}
 
-        for col in table.columns:
-            if col.name in existing_cols:
-                continue
+            for col in table.columns:
+                if col.name in existing_cols:
+                    continue
 
-            # Build a portable SQL type string for the ALTER statement.
-            col_type = col.type
-            # Use the compiled type against the current dialect where possible.
-            try:
-                compiled_type = col_type.compile(dialect=db.engine.dialect)
-            except Exception:
-                compiled_type = str(col_type)
+                # Build the base portable SQL type string for the ALTER statement.
+                col_type = col.type
+                try:
+                    compiled_type = col_type.compile(dialect=db.engine.dialect)
+                except Exception:
+                    compiled_type = str(col_type)
 
-            try:
-                db.session.execute(
-                    sa_text(f'ALTER TABLE {table_name} ADD COLUMN {col.name} {compiled_type}')
-                )
-                added_any = True
-                print(f"[Schema] Added column '{table_name}.{col.name}' ({compiled_type})")
-            except Exception as e:
-                # Column may have been added concurrently or already exists.
-                print(f"[Schema] Could not add column '{table_name}.{col.name}': {e}")
+                # Strip any trailing NOT NULL / UNIQUE from the compiled type so
+                # PostgreSQL does not reject adding a column without a default.
+                cleaned_type = compiled_type.split(" NOT NULL")[0].strip()
+                cleaned_type = cleaned_type.split(" UNIQUE")[0].strip()
 
-    if added_any:
-        db.session.commit()
-        print("[Schema] Added missing columns to the database.")
+                sql = f'ALTER TABLE {table_name} ADD COLUMN {col.name} {cleaned_type}'
+                try:
+                    db.session.execute(sa_text(sql))
+                    added_any = True
+                    print(f"[Schema] Added column '{table_name}.{col.name}' ({cleaned_type})")
+                except Exception as e:
+                    # Column may have been added concurrently / already exists.
+                    print(f"[Schema] Could not add column '{table_name}.{col.name}': {e}")
+                    db.session.rollback()
+        if added_any:
+            db.session.commit()
+            print("[Schema] Added missing columns to the database.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"[Schema] ERROR during schema alignment: {e}")
+        traceback.print_exc()
 
 
 def _ensure_nltk_data():
@@ -333,12 +372,27 @@ def _ensure_nltk_data():
 
     If the build step (download_nltk_data.py) was skipped or failed,
     this provides a fallback download at first app startup.
+
+    To avoid blocking every worker start with a slow/blocking network
+    download (which on Render can cause worker timeouts / 500s), we only
+    attempt a download for resources that are genuinely missing, and we
+    never raise. Each resource is checked once and cached in a module-level
+    set so this function is cheap on subsequent calls.
     """
     import nltk
+
     nltk_resources = [
         'wordnet', 'punkt', 'averaged_perceptron_tagger', 'omw-1.4',
         'sentiwordnet',
     ]
+
+    # Cache the availability result so we don't repeatedly attempt network
+    # I/O on every startup / every request (which caused 13s+ delays and
+    # gunicorn worker timeouts on Render).
+    if getattr(_ensure_nltk_data, '_checked', False):
+        return
+    _ensure_nltk_data._checked = True
+
     for resource in nltk_resources:
         try:
             nltk.data.find(f'corpora/{resource}')

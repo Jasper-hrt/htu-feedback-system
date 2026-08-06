@@ -1,17 +1,14 @@
-# TODO - Fix Feedback Submission 500 Error After Deploy
+# TODO - Fix 500 Internal Server Error
 
 ## Root Cause
-The app runs on **PostgreSQL** when deployed to Render, but the schema-repair logic
-(`_repair_feedback_schema_if_needed`) is SQLite-only and is skipped on PostgreSQL.
-`db.create_all()` only creates missing **tables**, NOT missing **columns** on existing
-tables. So the deployed `feedback` table is missing columns that the submission
-INSERT needs (`confidence_score`, `dominant_emotion`, `emotion_intensities`,
-`recommended_keywords`, `short_term_solution`, etc.), causing a 500 error.
+The 500 "Internal Server Error" occurs on the deployed **PostgreSQL (Render)**
+environment because the `feedback` table may be missing newer columns that the
+submission INSERT requires, and the SentiWordNet/NLTK pipeline can be slow or fail.
 
 ## Steps
-- [ ] Add a dialect-agnostic `_ensure_feedback_columns()` in `app.py` that adds
-      missing `feedback` columns on BOTH SQLite and PostgreSQL.
-- [ ] Call `_ensure_feedback_columns()` in the startup block for all environments.
-- [ ] Add `sentiwordnet` to the runtime NLTK safety-net list for robustness.
+- [ ] Harden `_ensure_schema_aligned()` to be robust on PostgreSQL (proper transaction handling, rollback on failure).
+- [ ] Add a global error handler in app.py that logs the full traceback and returns a user-friendly error page.
+- [ ] Make the SentiWordNet engine resilient (caching + graceful fallback when NLTK data is unavailable).
+- [ ] Improve NLTK data handling so the app avoids re-downloading resources on every request (which causes slow responses/timeouts).
 - [ ] Test locally with SQLite to confirm no regression.
-- [ ] Verify the fix handles the deployed PostgreSQL schema.
+- [ ] Verify the fixes handle the deployed PostgreSQL schema.
