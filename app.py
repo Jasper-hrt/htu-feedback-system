@@ -275,6 +275,59 @@ def _repair_feedback_schema_if_needed():
 
 # ==================== NLTK DATA SAFETY NET ====================
 
+def _ensure_schema_aligned():
+    """Ensure every model table has all columns required by its SQLAlchemy model.
+
+    db.create_all() only creates MISSING tables; it does NOT add new columns to
+    EXISTING tables. On the deployed PostgreSQL database (Render), tables may
+    have been originally created by an older release and be missing newer columns
+    (e.g. the solution-recommender and confidence/emotion columns on `feedback`).
+    Without them, INSERT/UPDATE statements fail with a 500 Internal Server Error.
+
+    This function is dialect-agnostic (works on both SQLite and PostgreSQL):
+      - Uses SQLAlchemy's inspector to read existing columns per table.
+      - Adds any missing columns via ALTER TABLE ... ADD COLUMN.
+    """
+    from sqlalchemy import inspect as sa_inspect, text as sa_text
+
+    insp = sa_inspect(db.engine)
+    existing_tables = set(insp.get_table_names())
+
+    added_any = False
+    for table in db.metadata.sorted_tables:
+        table_name = table.name
+        if table_name not in existing_tables:
+            continue  # db.create_all() will create it.
+
+        existing_cols = {col['name'] for col in insp.get_columns(table_name)}
+
+        for col in table.columns:
+            if col.name in existing_cols:
+                continue
+
+            # Build a portable SQL type string for the ALTER statement.
+            col_type = col.type
+            # Use the compiled type against the current dialect where possible.
+            try:
+                compiled_type = col_type.compile(dialect=db.engine.dialect)
+            except Exception:
+                compiled_type = str(col_type)
+
+            try:
+                db.session.execute(
+                    sa_text(f'ALTER TABLE {table_name} ADD COLUMN {col.name} {compiled_type}')
+                )
+                added_any = True
+                print(f"[Schema] Added column '{table_name}.{col.name}' ({compiled_type})")
+            except Exception as e:
+                # Column may have been added concurrently or already exists.
+                print(f"[Schema] Could not add column '{table_name}.{col.name}': {e}")
+
+    if added_any:
+        db.session.commit()
+        print("[Schema] Added missing columns to the database.")
+
+
 def _ensure_nltk_data():
     """Ensure required NLTK corpora are available at runtime.
 
@@ -284,6 +337,7 @@ def _ensure_nltk_data():
     import nltk
     nltk_resources = [
         'wordnet', 'punkt', 'averaged_perceptron_tagger', 'omw-1.4',
+        'sentiwordnet',
     ]
     for resource in nltk_resources:
         try:
@@ -303,6 +357,10 @@ with app.app_context():
         _repair_chat_messages_schema_if_needed()
         _repair_feedback_schema_if_needed()
     db.create_all()
+    # Dialect-agnostic: ensure every model table has all columns the model
+    # expects. Critical on PostgreSQL (Render) where db.create_all() does NOT
+    # add missing columns to an existing table.
+    _ensure_schema_aligned()
     log_system_action('Database', 'Initialization', 'Database tables created')
     
     if not SRCUser.query.filter_by(username='admin').first():
