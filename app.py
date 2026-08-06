@@ -67,6 +67,17 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'htu-src-secret-key-chan
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
+
+# Cache-busting version for static assets (CSS/JS). Changes on every process
+# start (i.e. every deploy), forcing browsers/mobile devices to fetch fresh
+# files instead of serving a stale cached copy.
+import time as _time
+ASSET_VERSION = str(int(_time.time()))
+
+@app.context_processor
+def inject_asset_version():
+    return {'asset_version': ASSET_VERSION}
+
 # On Render, DATABASE_URL / SQLALCHEMY_DATABASE_URI point to PostgreSQL.
 # Locally (no env var), fall back to the existing SQLite file.
 _DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('SQLALCHEMY_DATABASE_URI') or 'sqlite:///feedback.db'
