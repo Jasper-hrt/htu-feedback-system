@@ -197,12 +197,28 @@ class HybridSentimentEngine:
         # STEP 1: Clean
         cleaned_text = self.preprocessor.clean(text)
 
-        # STEP 2-6: Run analyzers
-        vader_score = self.vader.analyze(cleaned_text)["compound"]
-        textblob_score = self.textblob.analyze(cleaned_text)["polarity"]
-        afinn_score = self.afinn.analyze(cleaned_text)
-        sentiwordnet_score = self.sentiwordnet.analyze(cleaned_text)
-        custom_score = self.lexicon.calculate_score(cleaned_text)
+        # STEP 2-6: Run analyzers (each wrapped so a single-engine failure
+        # never crashes the whole feedback submission -- we fall back to 0.0).
+        try:
+            vader_score = self.vader.analyze(cleaned_text)["compound"]
+        except Exception:
+            vader_score = 0.0
+        try:
+            textblob_score = self.textblob.analyze(cleaned_text)["polarity"]
+        except Exception:
+            textblob_score = 0.0
+        try:
+            afinn_score = self.afinn.analyze(cleaned_text)
+        except Exception:
+            afinn_score = 0.0
+        try:
+            sentiwordnet_score = self.sentiwordnet.analyze(cleaned_text)
+        except Exception:
+            sentiwordnet_score = 0.0
+        try:
+            custom_score = self.lexicon.calculate_score(cleaned_text)
+        except Exception:
+            custom_score = 0.0
 
         # STEP 7: Emotions
         emotion_result = self.emotion.analyze(cleaned_text)

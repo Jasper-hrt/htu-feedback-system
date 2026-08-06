@@ -374,10 +374,15 @@ def _ensure_nltk_data():
     this provides a fallback download at first app startup.
 
     To avoid blocking every worker start with a slow/blocking network
-    download (which on Render can cause worker timeouts / 500s), we only
-    attempt a download for resources that are genuinely missing, and we
-    never raise. Each resource is checked once and cached in a module-level
-    set so this function is cheap on subsequent calls.
+    download (which on Render can cause worker timeouts / 500s), we:
+      - Search *all* NLTK data paths (not just the first), because the
+        actual corpus may live in a non-default path (e.g. %APPDATA%/nltk_data).
+      - Apply a short socket timeout so offline/slow startups fail fast
+        instead of hanging the whole app for minutes.
+      - Only attempt a download for resources that are genuinely missing,
+        and never retry a resource that we already tried (cached in a
+        module-level set). Each resource is checked once and cached so this
+        function is cheap on subsequent calls.
     """
     import nltk
 
@@ -393,19 +398,69 @@ def _ensure_nltk_data():
         return
     _ensure_nltk_data._checked = True
 
+    # Fail-fast: apply a short network timeout for any NLTK download attempt.
+    import socket
+    _previous_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(5)
+
+    # NLTK places resources under different subdirectories depending on type:
+    #   - corpora:  wordnet, sentiwordnet, omw-1.4, ...
+    #   - tokenizers: punkt
+    #   - taggers:  averaged_perceptron_tagger
+    _NLTK_SUBDIRS = ['corpora', 'tokenizers', 'taggers']
+
+    def _resource_available(resource):
+        """Check whether a resource exists in ANY configured NLTK data path.
+
+        NLTK groups resources by type (corpora/tokenizers/taggers), so we
+        search each possible subdirectory for both unzipped and zipped forms.
+        """
+        from pathlib import Path
+        for base in nltk.data.path:
+            for sub in _NLTK_SUBDIRS:
+                candidate = Path(base) / sub / resource
+                if candidate.exists():
+                    return True
+                # Support zipped resources (resource.zip)
+                if candidate.with_suffix('.zip').exists():
+                    return True
+        return False
+
     for resource in nltk_resources:
         try:
-            nltk.data.find(f'corpora/{resource}')
-        except LookupError:
+            if _resource_available(resource):
+                continue
+        except Exception:
+            # Fall back to nltk's own lookup; if it fails we'll try download.
             try:
-                nltk.download(resource, quiet=True)
-                print(f"[NLTK] Downloaded missing resource: {resource}")
-            except Exception as e:
-                print(f"[NLTK] WARNING: Could not download {resource}: {e}")
+                nltk.data.find(f'corpora/{resource}')
+                continue
+            except LookupError:
+                pass
+
+        # Resource is genuinely missing. Attempt a single download (with the
+        # short timeout). Never raise — a missing corpus should degrade the
+        # sentiment pipeline gracefully, not crash the app.
+        try:
+            nltk.download(resource, quiet=True)
+            print(f"[NLTK] Downloaded missing resource: {resource}")
+        except Exception as e:
+            print(f"[NLTK] WARNING: Could not download {resource}: {e}")
+
+    # Restore the previous default socket timeout.
+    if _previous_timeout is not None:
+        socket.setdefaulttimeout(_previous_timeout)
 
 
 with app.app_context():
-    _ensure_nltk_data()
+    # Run NLTK data downloads in a background daemon thread so they never
+    # block (or crash) web-worker startup. The sentiment pipeline already
+    # degrades gracefully when NLTK corpora are unavailable, so a slow or
+    # unreachable NLTK server must not prevent the app from booting.
+    import threading as _threading
+    _nltk_thread = _threading.Thread(target=_ensure_nltk_data, daemon=True)
+    _nltk_thread.start()
+
     # SQLite-only legacy schema repairs (skip on PostgreSQL/Render).
     if IS_SQLITE:
         _repair_chat_messages_schema_if_needed()
