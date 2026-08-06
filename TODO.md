@@ -29,3 +29,14 @@
 - [x] F. Link `mobile.css` in `base.html`
 - [x] G. Add bottom-nav markup + FAB in `base.html`
 - [x] H. Add `initMobileBottomNav()` + `initMobileFab()` in `main.js`
+
+## Premium Mobile UI Redesign (new)
+
+- [x] I. Premium floating bottom nav (glassmorphic pill, elevated above content, active pill highlight + icon pop + glow dot)
+- [x] J. Premium compact header (gradient nav, refined logo badge, glassy hamburger & theme toggle)
+- [x] K. Elevated stacked table cards (layered shadows, gradient accent bar, staggered slide-in animation)
+- [x] L. Premium chip bars for student & admin side menus (pill buttons, gradient active states, soft shadows)
+- [x] M. Enhanced FAB (larger, ring glow, springy load-in + press feedback)
+- [x] N. Refined hero/cards/chat/auth/modal styling with premium shadows & radius
+- [x] O. Full dark-mode parity for all new premium effects
+- [x] P. Small-phone (≤480px) refinements for nav, FAB, and grids
