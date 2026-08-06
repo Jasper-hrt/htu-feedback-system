@@ -12,12 +12,9 @@ services:
     # Use the eventlet worker class so Flask-SocketIO WebSockets work.
     # -w 1 is required: SocketIO rooms/state are in-memory, so multiple
     # workers would break real-time chat.
-    startCommand: gunicorn --worker-class eventlet -w 1 app:app
+    startCommand: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT app:app
 
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9
-
       - key: SECRET_KEY
         generateValue: true
 
@@ -37,3 +34,4 @@ databases:
     region: ohio
     databaseName: htu_src_feedback
     user: htu_src_user
+
