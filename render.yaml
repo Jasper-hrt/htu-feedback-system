@@ -2,19 +2,30 @@ services:
   - type: web
     name: htu-src-system
     runtime: python
-    region: ohio
     plan: free
-    buildCommand: pip install -r requirements.txt && python download_nltk_data.py
-    startCommand: gunicorn -k eventlet -w 1 --bind 0.0.0.0:$PORT app:app
+    region: ohio
+
+    buildCommand: |
+      pip install -r requirements.txt
+      python download_nltk_data.py
+
+    # Use the eventlet worker class so Flask-SocketIO WebSockets work.
+    # -w 1 is required: SocketIO rooms/state are in-memory, so multiple
+    # workers would break real-time chat.
+    startCommand: gunicorn --worker-class eventlet -w 1 app:app
+
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.9
+
       - key: SECRET_KEY
         generateValue: true
+
       - key: DATABASE_URL
         fromDatabase:
           name: htu-src-db
           property: connectionString
+
       - key: SQLALCHEMY_DATABASE_URI
         fromDatabase:
           name: htu-src-db
@@ -22,10 +33,7 @@ services:
 
 databases:
   - name: htu-src-db
-    region: ohio
     plan: free
+    region: ohio
     databaseName: htu_src_feedback
     user: htu_src_user
-</｜｜DSML｜｜parameter>
-</invoke>
-</create_file>
