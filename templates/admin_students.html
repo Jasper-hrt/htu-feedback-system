@@ -14,6 +14,7 @@
     <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
         <div><span class="badge badge-info" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;">Total Students: {{ students|length }}</span></div>
         <div><input type="text" id="searchStudent" placeholder="Search by name or ID..." class="filter-input" style="width: 280px;"></div>
+    </div>
     <div class="table-modern-container">
         <table class="table-modern">
             <thead>
@@ -22,19 +23,21 @@
             <tbody id="studentTableBody">
                 {% for s in students %}
                 <tr>
-                    <td><strong style="font-size: 0.85rem; color: var(--primary);">{{ s.student_id }}</strong></td>
-                    <td>{{ s.full_name }}</td>
-                    <td style="font-size: 0.8rem;">{{ s.email }}</td>
-                    <td><span class="badge badge-neutral">{{ s.department or '-' }}</span></td>
-                    <td>Year {{ s.year_of_study or '-' }}</td>
-                    <td style="font-size: 0.8rem;">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
-                    <td style="font-size: 0.8rem;">{{ s.last_login.strftime('%Y-%m-%d %H:%M') if s.last_login else 'Never' }}</td>
-                    <td>{% if s.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-danger">Inactive</span>{% endif %}</td>
+                    <td data-label="Student ID"><strong style="font-size: 0.85rem; color: var(--primary);">{{ s.student_id }}</strong></td>
+                    <td data-label="Full Name">{{ s.full_name }}</td>
+                    <td data-label="Email" style="font-size: 0.8rem;">{{ s.email }}</td>
+                    <td data-label="Department"><span class="badge badge-neutral">{{ s.department or '-' }}</span></td>
+                    <td data-label="Year">Year {{ s.year_of_study or '-' }}</td>
+                    <td data-label="Registered" style="font-size: 0.8rem;">{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td data-label="Last Login" style="font-size: 0.8rem;">{{ s.last_login.strftime('%Y-%m-%d %H:%M') if s.last_login else 'Never' }}</td>
+                    <td data-label="Status">{% if s.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-danger">Inactive</span>{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+</div>
+</div>
+</div>
 
 <script>
 document.getElementById('searchStudent').addEventListener('keyup', function() {

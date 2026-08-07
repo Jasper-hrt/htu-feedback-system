@@ -28,7 +28,6 @@
 
 {% if announcements %}
 <!-- Pinned Announcement (first one if marked) -->
-{% if announcements|length > 0 and loop.first %}
 <div class="announcement-pinned-v2">
     <div class="announcement-pinned-label-v2">📌 Pinned Announcement</div>
     <div class="announcement-pinned-title-v2">{{ announcements[0].title }}</div>

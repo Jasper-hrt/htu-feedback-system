@@ -563,6 +563,154 @@ function initStudentSideMenu() {
 }
 
 // ============================================
+// ☰ Mobile "More" Sheet Menu
+// ============================================
+function initMobileMoreMenu() {
+    const btn = document.getElementById('mobileMoreBtn');
+    const menu = document.getElementById('mobileMoreMenu');
+    const closeBtn = document.getElementById('mobileMoreClose');
+    const backdrop = document.getElementById('mobileMoreBackdrop');
+    if (!btn || !menu) return;
+
+    function setOpen(open) {
+        menu.classList.toggle('open', open);
+        if (backdrop) backdrop.classList.toggle('active', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) document.body.classList.add('sheet-open');
+        else document.body.classList.remove('sheet-open');
+    }
+
+    function closeAllMenus() {
+        setOpen(false);
+        // close hamburger navbar menu if open
+        const nm = document.getElementById('navbarMobileMenu');
+        const hb = document.getElementById('navbarHamburger');
+        if (nm && nm.classList.contains('open')) {
+            nm.classList.remove('open');
+            hb.classList.remove('active');
+        }
+    }
+
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeAllMenus();
+        setOpen(!menu.classList.contains('open'));
+    });
+
+    if (closeBtn) closeBtn.addEventListener('click', function() { setOpen(false); });
+    if (backdrop) backdrop.addEventListener('click', function() { setOpen(false); });
+
+    // Close when a link inside the menu is clicked
+    menu.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() { setOpen(false); });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && menu.classList.contains('open')) setOpen(false);
+    });
+
+    // Stop click propagation from menu to avoid accidental backdrop handling
+    menu.addEventListener('click', function(e) { e.stopPropagation(); });
+}
+
+// ============================================
+// 🛡️ Admin Mobile Drawer Toggle
+// ============================================
+function initAdminMobileDrawer() {
+    const btn = document.getElementById('navbarAdminMenuBtn');
+    const drawer = document.getElementById('mobileAdminDrawer');
+    const backdrop = document.getElementById('mobileAdminDrawerBackdrop');
+    const closeBtn = document.getElementById('mobileAdminDrawerClose');
+    if (!btn || !drawer) return;
+
+    function setDrawer(open) {
+        drawer.classList.toggle('open', open);
+        if (backdrop) backdrop.classList.toggle('active', open);
+        btn.classList.toggle('active', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) document.body.classList.add('admin-drawer-open');
+        else document.body.classList.remove('admin-drawer-open');
+    }
+
+    function closeAllDrawers() {
+        setDrawer(false);
+        // close the hamburger / more menus if open
+        const menu = document.getElementById('navbarMobileMenu');
+        const hamburger = document.getElementById('navbarHamburger');
+        if (menu && menu.classList.contains('open')) {
+            menu.classList.remove('open');
+            hamburger.classList.remove('active');
+        }
+        const moreMenu = document.getElementById('mobileMoreMenu');
+        const moreBackdrop = document.getElementById('mobileMoreBackdrop');
+        if (moreMenu && moreMenu.classList.contains('open')) {
+            moreMenu.classList.remove('open');
+            if (moreBackdrop) moreBackdrop.classList.remove('active');
+        }
+    }
+
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeAllDrawers();
+        setDrawer(!drawer.classList.contains('open'));
+    });
+
+    if (closeBtn) closeBtn.addEventListener('click', function() { setDrawer(false); });
+    if (backdrop) backdrop.addEventListener('click', function() { setDrawer(false); });
+
+    // Close when a drawer link is clicked
+    drawer.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() { setDrawer(false); });
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && drawer.classList.contains('open')) setDrawer(false);
+    });
+
+    // Stop click propagation inside the drawer
+    drawer.addEventListener('click', function(e) { e.stopPropagation(); });
+}
+
+// ============================================
+// 🎯 Admin Drawer Active Page Highlight
+// ============================================
+function initMobileAdminDrawerActive() {
+    const links = document.querySelectorAll('.mobile-admin-drawer-link[data-adminpage]');
+    if (links.length === 0) return;
+
+    const path = window.location.pathname;
+    let activePage = '';
+
+    if (path.startsWith('/admin/dashboard')) {
+        activePage = 'dashboard';
+    } else if (path.startsWith('/admin/analytics')) {
+        activePage = 'analytics';
+    } else if (path.startsWith('/admin/templates')) {
+        activePage = 'templates';
+    } else if (path.startsWith('/admin/students')) {
+        activePage = 'students';
+    } else if (path.startsWith('/admin/announcements')) {
+        activePage = 'announcements';
+    } else if (path.startsWith('/admin/logs')) {
+        activePage = 'logs';
+    } else if (path.startsWith('/admin/chat/rooms')) {
+        activePage = 'chat-rooms';
+    } else if (path.startsWith('/admin/chat/messages')) {
+        activePage = 'chat-messages';
+    }
+
+    if (!activePage) return;
+
+    links.forEach(function(link) {
+        if (link.dataset.adminpage === activePage) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// ============================================
 // 📱 Mobile Bottom Navigation & FAB
 // ============================================
 function initMobileBottomNav() {
@@ -604,6 +752,52 @@ function initMobileFab() {
     }
 }
 
+// ============================================
+// 🔔 Mobile Bottom Nav Unread Badges
+// ============================================
+function initMobileBadges() {
+    const badges = document.querySelectorAll('.bnav-badge[data-badge]');
+    if (badges.length === 0) return;
+
+    // Stored unread counts per badge key (forum/chat/announcements)
+    const saved = (function() {
+        try { return JSON.parse(localStorage.getItem('htu_mobile_badges') || '{}'); }
+        catch (e) { return {}; }
+    })();
+
+    // Default touches below persist a small demo count, but only if never set.
+    // In production wire these to real data (e.g. unread counts from the server).
+    const defaults = {};
+    badges.forEach(function(b) {
+        const key = b.dataset.badge;
+        if (!(key in saved)) defaults[key] = 0; // 0 = hidden
+    });
+
+    const counts = Object.keys(defaults).length ? Object.assign({}, defaults, saved) : saved;
+
+    function renderBadges() {
+        badges.forEach(function(b) {
+            const key = b.dataset.badge;
+            const n = parseInt(counts[key] || 0, 10);
+            if (n > 0) {
+                b.textContent = n > 99 ? '99+' : n;
+                b.classList.add('show');
+            } else {
+                b.classList.remove('show');
+            }
+        });
+    }
+
+    // Persist counts so they survive navigation
+    window.__setMobileBadge = function(key, n) {
+        counts[key] = parseInt(n, 10) || 0;
+        try { localStorage.setItem('htu_mobile_badges', JSON.stringify(counts)); } catch (e) {}
+        renderBadges();
+    };
+
+    renderBadges();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initUrgencySlider();
     initFollowupToggle();
@@ -618,8 +812,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initStudentDropdown();
     initStudentSideMenu();
     initActivePageHighlight();
-    initMobileBottomNav();
+    initMobileMoreMenu();
+    initAdminMobileDrawer();
+    initMobileAdminDrawerActive();
+initMobileBottomNav();
     initMobileFab();
+    initMobileBadges();
 });
 
 

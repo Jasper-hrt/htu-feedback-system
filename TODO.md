@@ -1,18 +1,28 @@
-# TODO - Fix 500 Internal Server Error
+# TODO — Mobile App-Style Redesign
 
-## Root Cause
-The 500 "Internal Server Error" occurs on the deployed **PostgreSQL (Render)**
-environment because the `feedback` table may be missing newer columns that the
-submission INSERT requires, and the SentiWordNet/NLTK pipeline can be slow or fail.
-The primary cause of the *startup* crash is the **eager NLTK import** in
-`sentiment/sentiwordnet_engine.py`, which fails when NLTK corpora
-(wordnet/sentiwordnet/punkt/omw-1.4) are missing on a fresh deploy.
+## Goal
+Transform the responsive website into a native-app feel on mobile widths (≤768px) across all pages, without touching the desktop layout.
 
 ## Steps
-- [x] Harden `_ensure_schema_aligned()` to be robust on PostgreSQL (proper transaction handling, rollback on failure).
-- [x] Add a global error handler in app.py that logs the full traceback and returns a user-friendly error page.
-- [x] Make the SentiWordNet engine resilient (lazy-load + graceful fallback when NLTK data is unavailable).
-- [x] Harden `HybridSentimentEngine` so a single engine failure never crashes feedback submission.
-- [x] Improve NLTK data handling so the app avoids re-downloading resources on every request (which causes slow responses/timeouts).
-- [x] Test locally with SQLite to confirm no regression.
-- [x] Verify the fixes handle the deployed PostgreSQL schema.
+- [x] **1. Hide desktop footer on mobile** — the floating bottom nav replaces it (app-like).
+- [x] **2. Tighten main container** — full-width, reduced padding on small screens.
+- [x] **3. App-style sticky header** — slim translucent bar, hide inline theme toggle text, subtle border.
+- [x] **4. Upgrade bottom nav** — "lifted" active pill, animated icon bump, badge dots for forum/chat/news.
+- [x] **5. Page transition** — fade/slide on `.main-container` across routes.
+- [x] **6. Compact app-style hero banners** — reduced padding, left-aligned, full-width.
+- [x] **7. Mobile polish** — hide `.footer-brand`, tighter cards/tables, safe-area handling, disable hover zoom.
+
+## Badge Fixes (this session)
+- Registered `initMobileBadges()` in the `DOMContentLoaded` handler in `static/js/main.js` (it existed but was never called).
+- Added `.bnav-badge` styling to `static/css/mobile.css` (position, error-red gradient, pop animation, dark-mode shadow) so the unread badges on the bottom nav actually render.
+- Verified `base.html` badge markup (`<span class="bnav-badge" data-badge="...">`) matches the JS/CSS selectors.
+- `node --check` passes on `main.js`.
+
+## Dependent Files
+- `static/css/mobile.css` (primary)
+- `templates/base.html` (badge dots on bottom nav)
+- `static/js/main.js` (sync active badge on route)
+
+## Follow-up
+- Verify no desktop regression.
+- Optionally run Flask to preview at mobile width.
