@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="student-layout">
+<div class="student-layout admin-analytics">
     <aside class="admin-sidebar" aria-label="Admin analytics sidebar">
         <div class="admin-sidebar-title">
             📈 Analytics
@@ -206,25 +206,25 @@
                             <th>Progress</th>
                         </tr>
                     </thead>
-                    <tbody>
+<tbody>
                         {% for cat, stats in category_stats.items() %}
                         <tr>
-                            <td><strong style="font-size: 0.85rem;">{{ cat }}</strong></td>
-                            <td><span class="badge badge-neutral">{{ stats.total }}</span></td>
-                            <td><span class="sentiment-dot sentiment-dot-positive">{{ stats.positive }} ({{ stats.positive_pct }}%)</span></td>
-                            <td><span class="sentiment-dot sentiment-dot-negative">{{ stats.negative }} ({{ stats.negative_pct }}%)</span></td>
-                            <td><span class="badge badge-neutral">{{ stats.neutral }}</span></td>
-                            <td>
+                            <td data-label="Category"><strong style="font-size: 0.85rem;">{{ cat }}</strong></td>
+                            <td data-label="Total"><span class="badge badge-neutral">{{ stats.total }}</span></td>
+                            <td data-label="Positive"><span class="sentiment-dot sentiment-dot-positive">{{ stats.positive }} ({{ stats.positive_pct }}%)</span></td>
+                            <td data-label="Negative"><span class="sentiment-dot sentiment-dot-negative">{{ stats.negative }} ({{ stats.negative_pct }}%)</span></td>
+                            <td data-label="Neutral"><span class="badge badge-neutral">{{ stats.neutral }}</span></td>
+                            <td data-label="Avg Urgency">
                                 <span class="urgency-badge {% if stats.avg_urgency >= 4 %}urgency-high{% elif stats.avg_urgency >= 3 %}urgency-medium{% else %}urgency-low{% endif %}">
                                     {{ stats.avg_urgency }}/5
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Resolution">
                                 <span class="badge {% if stats.resolution_rate >= 70 %}badge-success{% elif stats.resolution_rate >= 40 %}badge-warning{% else %}badge-danger{% endif %}">
                                     {{ stats.resolution_rate }}%
                                 </span>
                             </td>
-                            <td style="min-width: 120px;">
+                            <td data-label="Progress" style="min-width: 120px;">
                                 <div class="progress-bar">
                                     <div class="progress-fill {% if stats.resolution_rate >= 70 %}progress-green{% else %}progress-red{% endif %}" style="width: {{ stats.resolution_rate }}%;"></div>
                                 </div>
@@ -301,24 +301,24 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for dept in dept_performance %}
+{% for dept in dept_performance %}
                         <tr>
-                            <td>
+                            <td data-label="Department">
                                 <span class="dept-badge" style="font-size: 0.8rem;">🏢 {{ dept.name }}</span>
                             </td>
-                            <td><span class="badge badge-neutral">{{ dept.total }}</span></td>
-                            <td><span class="badge badge-success">{{ dept.resolved }}</span></td>
-                            <td>
+                            <td data-label="Total Cases"><span class="badge badge-neutral">{{ dept.total }}</span></td>
+                            <td data-label="Resolved"><span class="badge badge-success">{{ dept.resolved }}</span></td>
+                            <td data-label="Resolution Rate">
                                 <span class="badge {% if dept.resolution_rate >= 70 %}badge-success{% elif dept.resolution_rate >= 40 %}badge-warning{% else %}badge-danger{% endif %}">
                                     {{ dept.resolution_rate }}%
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Avg Time">
                                 <span class="urgency-badge {% if dept.avg_time_hours > 48 %}urgency-high{% elif dept.avg_time_hours > 24 %}urgency-medium{% else %}urgency-low{% endif %}">
                                     {{ dept.avg_time_hours }}h
                                 </span>
                             </td>
-                            <td style="min-width: 100px;">
+                            <td data-label="Progress" style="min-width: 100px;">
                                 <div class="progress-bar">
                                     <div class="progress-fill {% if dept.resolution_rate >= 70 %}progress-green{% else %}progress-red{% endif %}" style="width: {{ dept.resolution_rate }}%;"></div>
                                 </div>

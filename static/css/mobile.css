@@ -1782,3 +1782,5366 @@
         background: var(--bg-color);
     }
 }
+
+/* ============================================================ */
+/* 🏝️ LANDING PAGE → PREMIUM NATIVE MOBILE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   landing page (index.html) into a cohesive, app-like experience:
+     • Hero   → app splash card + 2×2 glass stat widgets
+     • How it → vertical timeline stepper
+     • News   → horizontal swipeable "stories" cards
+     • CTA    → full-bleed gradient banner
+     • Notice → glass info chip
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- Shared tokens for the landing mobile redesign ---- */
+@media (max-width: 768px) {
+    :root {
+        --mob-landing-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --mob-landing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+/* ============================================================ */
+/* 1. HERO → APP SPLASH CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .landing-hero-v2 {
+        margin: 0.25rem 0 1.1rem;
+        padding: 1.6rem 1.15rem 1.35rem;
+        border-radius: 1.6rem;
+        text-align: left;
+        align-items: flex-start;
+        gap: 0.9rem;
+        background:
+            radial-gradient(ellipse 480px 260px at 88% -8%, rgba(96,165,250,0.28) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(252,211,77,0.14) 0%, transparent 60%),
+            linear-gradient(135deg, #1e40af 0%, #1e3a8a 55%, #162d50 100%);
+        box-shadow: 0 18px 44px rgba(30, 64, 175, 0.32);
+        overflow: hidden;
+    }
+
+    /* Floating particles: keep subtle, slightly smaller on mobile */
+    .landing-hero-v2 .landing-particles .landing-particle {
+        width: 5px;
+        height: 5px;
+    }
+
+    /* Glass badge → compact pill */
+    .landing-hero-badge-v2 {
+        padding: 0.32rem 0.95rem;
+        font-size: 0.7rem;
+        gap: 0.4rem;
+        border-radius: var(--radius-full);
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.16);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .landing-hero-badge-v2 .badge-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    /* Title */
+    .landing-hero-title-v2 {
+        font-size: 1.9rem;
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+        text-align: left;
+        max-width: 100%;
+    }
+
+    /* Subtitle */
+    .landing-hero-subtitle-v2 {
+        font-size: 0.9rem;
+        line-height: 1.55;
+        text-align: left;
+        max-width: 100%;
+        color: rgba(255,255,255,0.8);
+    }
+
+    /* Stacked, full-width, touch-friendly CTAs */
+    .landing-hero-actions-v2 {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 0.15rem;
+    }
+
+    .landing-hero-actions-v2 > * {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem 1rem;
+        border-radius: var(--radius-lg);
+        font-size: 0.95rem;
+        min-height: 3rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .landing-hero-actions-v2 .landing-hero-btn-primary {
+        background: #fff;
+        color: var(--primary);
+        box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+    }
+
+    .landing-hero-actions-v2 .landing-hero-btn-secondary {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.22);
+    }
+
+    .landing-hero-actions-v2 > *:active {
+        transform: scale(0.97);
+    }
+
+    /* ---- 2×2 glass stat widgets ---- */
+    .landing-stats-v2 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+        margin-top: 0.35rem;
+        max-width: 100%;
+    }
+
+    .landing-stat-v2 {
+        padding: 0.85rem 0.6rem;
+        border-radius: 1rem;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        text-align: center;
+    }
+
+    .landing-stat-value-v2 {
+        font-size: 1.45rem;
+        letter-spacing: -0.02em;
+    }
+
+    .landing-stat-label-v2 {
+        font-size: 0.62rem;
+        letter-spacing: 0.04em;
+        color: rgba(255,255,255,0.7);
+    }
+}
+
+/* ============================================================ */
+/* 2. HOW IT WORKS → VERTICAL TIMELINE STEPPER
+/* ============================================================ */
+@media (max-width: 768px) {
+    .how-it-works-v2 {
+        margin-bottom: 1.4rem;
+    }
+
+    .how-it-works-v2 .section-label {
+        margin-bottom: 0.5rem;
+    }
+
+    .how-it-works-v2 .section-title-center {
+        font-size: 1.4rem;
+        letter-spacing: -0.02em;
+    }
+
+    .how-it-works-v2 .section-subtitle-center {
+        font-size: 0.85rem;
+        margin-bottom: 1.1rem;
+        line-height: 1.5;
+    }
+
+    .steps-grid-v2 {
+        grid-template-columns: 1fr;
+        gap: 0.7rem;
+        padding: 0;
+    }
+
+    .step-card-v2 {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        text-align: left;
+        padding: 0.95rem 1rem;
+        border-radius: 1.1rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .step-card-v2:active {
+        transform: scale(0.98);
+    }
+
+    /* Left accent line connecting steps */
+    .step-card-v2:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 1.55rem;
+        top: 3.1rem;
+        bottom: -0.7rem;
+        width: 2px;
+        background: linear-gradient(to bottom, var(--primary), rgba(59,130,246,0.25));
+        opacity: 0.35;
+    }
+
+    /* Numbered dot */
+    .step-number-v2 {
+        width: 2.1rem;
+        height: 2.1rem;
+        font-size: 0.85rem;
+        margin: 0;
+        border-radius: 50%;
+        flex-shrink: 0;
+        z-index: 1;
+        box-shadow: 0 4px 14px rgba(30,64,175,0.28);
+    }
+
+    /* Icon + text column */
+    .step-icon-v2 {
+        font-size: 1.05rem;
+        margin-bottom: 0.15rem;
+        display: inline-block;
+        width: 1.9rem;
+        height: 1.9rem;
+        border-radius: 0.6rem;
+        background: rgba(59,130,246,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .step-title-v2 {
+        font-size: 0.95rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .step-desc-v2 {
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+}
+
+/* ============================================================ */
+/* 3. RECENT ANNOUNCEMENTS → HORIZONTAL "STORIES" CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .landing-announcements-v2 {
+        margin-bottom: 1.4rem;
+    }
+
+    .landing-announcements-v2 .section-label {
+        margin-bottom: 0.5rem;
+    }
+
+    .landing-announcements-v2 .section-title-center {
+        font-size: 1.4rem;
+        letter-spacing: -0.02em;
+    }
+
+    /* Convert stacked list into a swipeable snap-scroll row */
+    .announcements-list-v2 {
+        display: flex;
+        flex-direction: row;
+        gap: 0.7rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.15rem 0.1rem 0.6rem;
+        margin: 0 -0.1rem;
+        scrollbar-width: none;
+    }
+
+    .announcements-list-v2::-webkit-scrollbar {
+        display: none;
+    }
+
+    .announcement-item-v2 {
+        flex: 0 0 82%;
+        max-width: 82%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.55rem;
+        padding: 0;
+        border-radius: 1.15rem;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        scroll-snap-align: start;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Top gradient thumb strip */
+    .announcement-item-v2::before {
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--warning));
+        border-radius: 0 0 2px 2px;
+        opacity: 1;
+    }
+
+    .announcement-item-content-v2 {
+        padding: 0 0.95rem 0.15rem;
+    }
+
+    .announcement-item-title-v2 {
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+
+    .announcement-item-preview-v2 {
+        font-size: 0.78rem;
+        -webkit-line-clamp: 2;
+    }
+
+    .announcement-item-meta-v2 {
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.55rem 0.95rem 0.7rem;
+        border-top: 1px solid var(--border-color);
+        background: var(--bg-color);
+    }
+
+    .announcement-item-date-v2 {
+        font-size: 0.68rem;
+    }
+
+    .announcement-item-badge-v2 {
+        font-size: 0.62rem;
+        padding: 0.18rem 0.5rem;
+    }
+
+    /* "View all" button full-width */
+    .landing-announcements-v2 .text-center.mt-4 {
+        margin-top: 0.35rem;
+    }
+    .landing-announcements-v2 .btn-ghost {
+        width: 100%;
+        justify-content: center;
+        min-height: 2.9rem;
+        border-radius: 1rem;
+    }
+}
+
+/* ============================================================ */
+/* 4. CTA → FULL-BLEED GRADIENT BANNER
+/* ============================================================ */
+@media (max-width: 768px) {
+    .landing-cta-v2 {
+        margin-bottom: 1.1rem;
+        padding: 1.9rem 1.25rem 1.7rem;
+        border-radius: 1.6rem;
+        text-align: center;
+        box-shadow: 0 16px 40px rgba(30, 64, 175, 0.28);
+    }
+
+    .landing-cta-title-v2 {
+        font-size: 1.45rem;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.4rem;
+    }
+
+    .landing-cta-desc-v2 {
+        font-size: 0.88rem;
+        line-height: 1.5;
+        margin-bottom: 1.1rem;
+    }
+
+    .landing-cta-actions-v2 {
+        flex-direction: column;
+        gap: 0.6rem;
+        width: 100%;
+    }
+
+    .landing-cta-actions-v2 > * {
+        width: 100%;
+        justify-content: center;
+        min-height: 3rem;
+        padding: 0.85rem 1rem;
+        border-radius: var(--radius-lg);
+        font-size: 0.95rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .landing-cta-actions-v2 > *:active {
+        transform: scale(0.97);
+    }
+}
+
+/* ============================================================ */
+/* 5. TRUST NOTICE → GLASS INFO CHIP
+/* ============================================================ */
+@media (max-width: 768px) {
+    .alert.alert-info {
+        border-radius: 1rem;
+        padding: 0.85rem 1rem;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(59,130,246,0.18);
+    }
+}
+
+/* ============================================================ */
+/* 6. PREMIUM POLISH & SAFE AREAS
+/* ============================================================ */
+@media (max-width: 768px) {
+    /* Springy section reveal (overrides desktop translate for a softer feel) */
+    .landing-hero-v2.reveal,
+    .how-it-works-v2.reveal,
+    .landing-announcements-v2.reveal,
+    .landing-cta-v2.reveal {
+        transition: opacity 0.5s var(--mob-landing-ease), transform 0.5s var(--mob-landing-ease);
+    }
+
+    /* Ensure content clears the floating bottom nav */
+    .landing-hero-v2,
+    .how-it-works-v2,
+    .landing-announcements-v2,
+    .landing-cta-v2,
+    .alert.alert-info {
+        scroll-margin-bottom: 1rem;
+    }
+
+    /* Remove blue tap outline on interactive hero/cta elements */
+    .landing-hero-actions-v2 a,
+    .landing-cta-actions-v2 a,
+    .announcement-item-v2,
+    .step-card-v2 {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ---- Dark mode refinements ---- */
+@media (max-width: 768px) {
+    html.theme-dark .landing-hero-v2 {
+        background:
+            radial-gradient(ellipse 480px 260px at 88% -8%, rgba(96,165,250,0.16) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(252,211,77,0.08) 0%, transparent 60%),
+            linear-gradient(135deg, #0f2557 0%, #0e1f47 55%, #0a1836 100%);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+    }
+
+    html.theme-dark .landing-stat-v2 {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.1);
+    }
+
+    html.theme-dark .step-number-v2 {
+        box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    }
+
+    html.theme-dark .announcement-item-v2 {
+        background: var(--card-bg);
+    }
+
+    html.theme-dark .announcement-item-meta-v2 {
+        background: rgba(148,163,184,0.06);
+    }
+}
+
+/* ---- Extra-small phones (≤480px) ---- */
+@media (max-width: 480px) {
+    .landing-hero-title-v2 {
+        font-size: 1.65rem;
+    }
+
+    .landing-hero-subtitle-v2 {
+        font-size: 0.85rem;
+    }
+
+    .landing-stat-value-v2 {
+        font-size: 1.3rem;
+    }
+
+    .landing-stat-label-v2 {
+        font-size: 0.58rem;
+    }
+
+    .announcement-item-v2 {
+        flex: 0 0 88%;
+        max-width: 88%;
+    }
+
+.landing-cta-title-v2 {
+        font-size: 1.3rem;
+    }
+}
+
+/* ============================================================ */
+/* 📱 STUDENT DASHBOARD → PREMIUM NATIVE MOBILE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   student dashboard (student_dashboard.html) into a cohesive,
+   app-like experience:
+     • Hero            → app greeting card + stacked full-width CTAs
+     • Quick actions   → horizontal snap-scroll glass icon tiles
+     • Stats           → compact 2×2 glass stat widgets
+     • Charts          → full-width stacked cards
+     • Filter bar      → horizontal scrollable pill bar
+     • Feedback cards  → native-style touch cards
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- Shared tokens for the dashboard mobile redesign ---- */
+@media (max-width: 768px) {
+    :root {
+        --mob-dash-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --mob-dash-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+/* ============================================================ */
+/* 1. HERO → APP GREETING CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .dashboard-hero-premium {
+        margin: 0.25rem 0 1.1rem;
+        padding: 1.5rem 1.15rem 1.35rem;
+        border-radius: 1.6rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        background:
+            radial-gradient(ellipse 480px 260px at 88% -8%, rgba(96,165,250,0.28) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(252,211,77,0.14) 0%, transparent 60%),
+            linear-gradient(135deg, #1e40af 0%, #1e3a8a 55%, #162d50 100%);
+        box-shadow: 0 18px 44px rgba(30, 64, 175, 0.32);
+        overflow: hidden;
+    }
+
+    .dashboard-hero-premium::before,
+    .dashboard-hero-premium::after {
+        opacity: 0.6;
+    }
+
+    .dashboard-hero-greeting {
+        gap: 0.85rem;
+        margin-bottom: 0;
+    }
+
+    .dashboard-hero-avatar {
+        width: 3.4rem;
+        height: 3.4rem;
+        font-size: 1.35rem;
+        border: 2px solid rgba(255,255,255,0.35);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.22), 0 0 0 4px rgba(255,255,255,0.08);
+        background: linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.1));
+    }
+
+    .dashboard-hero-title {
+        font-size: 1.35rem;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+    }
+
+    .dashboard-hero-subtitle {
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: rgba(255,255,255,0.78);
+        margin-top: 0.2rem;
+    }
+
+    /* Stacked, full-width, touch-friendly CTAs */
+    .dashboard-hero-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 0.1rem;
+    }
+
+    .dashboard-hero-actions > * {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem 1rem;
+        border-radius: 1rem;
+        font-size: 0.95rem;
+        min-height: 3rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .dashboard-hero-actions .btn-hero-primary {
+        background: #fff;
+        color: var(--primary);
+        box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+    }
+
+    .dashboard-hero-actions .btn-hero:not(.btn-hero-primary) {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.22);
+    }
+
+    .dashboard-hero-actions > *:active {
+        transform: scale(0.97);
+    }
+}
+
+/* ============================================================ */
+/* 2. QUICK ACTIONS → HORIZONTAL SNAP-SCROLL GLASS TILES
+/* ============================================================ */
+@media (max-width: 768px) {
+    .quick-actions-grid {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.7rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.15rem 0.1rem 0.6rem;
+        margin: 0 -0.1rem 1.1rem;
+        scrollbar-width: none;
+    }
+
+    .quick-actions-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .quick-action-card {
+        flex: 0 0 7.5rem;
+        max-width: 7.5rem;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.5rem;
+        padding: 1rem 0.6rem;
+        border-radius: 1.15rem;
+        scroll-snap-align: start;
+        box-shadow: var(--shadow-sm);
+        -webkit-tap-highlight-color: transparent;
+        transition: transform var(--mob-dash-spring), box-shadow var(--transition-fast);
+    }
+
+    .quick-action-card:active {
+        transform: scale(0.95);
+        box-shadow: var(--shadow-md);
+    }
+
+    .quick-action-icon {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.4rem;
+        border-radius: 1rem;
+    }
+
+    .quick-action-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.1rem;
+    }
+
+    .quick-action-label {
+        font-size: 0.78rem;
+        line-height: 1.2;
+    }
+
+    .quick-action-desc {
+        font-size: 0.62rem;
+        line-height: 1.3;
+        -webkit-line-clamp: 2;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .quick-action-arrow {
+        display: none;
+    }
+}
+
+/* ============================================================ */
+/* 3. STATS → COMPACT 2×2 GLASS STAT WIDGETS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .stats-grid-premium {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.7rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .stat-card-premium {
+        padding: 1rem 0.9rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .stat-card-premium:active {
+        transform: scale(0.98);
+    }
+
+    .stat-card-premium-accent {
+        height: 3px;
+        border-radius: 0 0 2px 2px;
+    }
+
+    .stat-card-premium-glow {
+        opacity: 0.1;
+    }
+
+    .stat-card-premium-top {
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card-premium-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        font-size: 1.05rem;
+        border-radius: 0.8rem;
+    }
+
+    .stat-card-premium-badge {
+        font-size: 0.6rem;
+        padding: 0.12rem 0.45rem;
+    }
+
+    .stat-card-premium-value {
+        font-size: 1.7rem;
+    }
+
+    .stat-card-premium-label {
+        font-size: 0.68rem;
+    }
+
+    .stat-card-premium-trend {
+        font-size: 0.66rem;
+        margin-top: 0.45rem;
+        padding-top: 0.4rem;
+    }
+}
+
+/* ============================================================ */
+/* 4. CHARTS → FULL-WIDTH STACKED CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .charts-row-premium {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .progress-card-premium,
+    .chart-card-premium {
+        padding: 1.15rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .progress-card-premium-title,
+    .chart-card-premium-title {
+        font-size: 0.9rem;
+    }
+
+    .progress-card-premium-value {
+        font-size: 1.35rem;
+    }
+
+    .progress-bar-premium {
+        height: 0.7rem;
+    }
+
+    .progress-card-premium-info {
+        font-size: 0.76rem;
+    }
+
+    /* Center the sentiment doughnut with a centered total label */
+    .chart-card-premium .chart-card-premium-header {
+        margin-bottom: 0.6rem;
+    }
+
+    #premiumSentimentChart {
+        max-width: 11rem;
+        margin: 0.25rem auto;
+    }
+}
+
+/* ============================================================ */
+/* 5. FILTER BAR → HORIZONTAL SCROLLABLE PILL BAR
+/* ============================================================ */
+@media (max-width: 768px) {
+    .filter-bar-premium {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.7rem 0.85rem;
+        margin-bottom: 1.1rem;
+        border-radius: 1.15rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .filter-bar-premium::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-bar-premium-label {
+        font-size: 0.68rem;
+        margin-right: 0.1rem;
+        flex-shrink: 0;
+    }
+
+    .filter-pill {
+        flex: 0 0 auto;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.76rem;
+        border-radius: var(--radius-full);
+        scroll-snap-align: start;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 2.4rem;
+    }
+
+    .filter-pill:active {
+        transform: scale(0.95);
+    }
+
+    .filter-pill-count {
+        min-width: 1.15rem;
+        height: 1.05rem;
+        font-size: 0.62rem;
+    }
+}
+
+/* ============================================================ */
+/* 6. FEEDBACK CARDS → NATIVE-STYLE TOUCH CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .feedback-card-premium {
+        border-radius: 1.15rem;
+        margin-bottom: 0.85rem;
+        box-shadow: var(--shadow-sm);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .feedback-card-premium:active {
+        transform: scale(0.99);
+    }
+
+    .feedback-card-premium-inner {
+        flex-direction: column;
+    }
+
+    .feedback-card-premium-accent {
+        width: 100%;
+        height: 3px;
+        border-radius: 2px 2px 0 0;
+    }
+
+    .feedback-card-premium-body {
+        padding: 1rem;
+    }
+
+    .feedback-card-premium-top {
+        align-items: flex-start;
+    }
+
+    .feedback-card-premium-badges {
+        gap: 0.35rem;
+    }
+
+    .feedback-card-premium-time {
+        font-size: 0.68rem;
+        margin-top: 0.1rem;
+    }
+
+    .feedback-card-premium-text {
+        font-size: 0.88rem;
+        line-height: 1.55;
+        padding: 0.8rem 0.9rem;
+        border-radius: 0.9rem;
+    }
+
+    .feedback-card-premium-meta {
+        font-size: 0.74rem;
+        gap: 0.6rem;
+    }
+
+    .feedback-card-premium-response,
+    .feedback-card-premium-pending {
+        border-radius: 0.9rem;
+    }
+
+    .analysis-section-premium {
+        border-radius: 0.9rem;
+        padding: 0.9rem;
+    }
+
+    /* Stacked, full-width action buttons for thumb reach */
+    .feedback-card-premium-actions {
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .feedback-card-premium-actions form {
+        display: block;
+        width: 100%;
+        margin: 0;
+    }
+
+    .feedback-card-premium-action {
+        justify-content: center;
+        min-height: 2.6rem;
+        width: 100%;
+        padding: 0.55rem 0.85rem;
+        border-radius: 0.85rem;
+        font-size: 0.82rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .feedback-card-premium-action:active {
+        transform: scale(0.97);
+    }
+
+    /* Grid inside analysis (short-term / long-term) stacks on small screens */
+    .analysis-section-premium .grid.grid-cols-2 {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+}
+
+/* ---- Empty state & submit button polish ---- */
+@media (max-width: 768px) {
+    .empty-state-premium {
+        padding: 2.5rem 1.25rem;
+        border-radius: 1.15rem;
+    }
+
+    .empty-state-premium-icon {
+        font-size: 3.25rem;
+    }
+
+    .empty-state-premium-title {
+        font-size: 1.15rem;
+    }
+
+    .empty-state-premium-desc {
+        font-size: 0.85rem;
+    }
+
+    .empty-state-premium .btn-lg {
+        width: 100%;
+        justify-content: center;
+        min-height: 3rem;
+        border-radius: 1rem;
+    }
+
+    .main-container .btn-lg[style*="text-align"] {
+        min-height: 3rem;
+    }
+}
+
+/* ============================================================ */
+/* 7. PREMIUM POLISH & SAFE AREAS
+/* ============================================================ */
+@media (max-width: 768px) {
+    /* Springy reveal for dashboard sections */
+    .dashboard-hero-premium,
+    .quick-actions-grid,
+    .stats-grid-premium,
+    .charts-row-premium,
+    .filter-bar-premium,
+    .feedback-card-premium {
+        will-change: transform, opacity;
+    }
+
+    /* Ensure content clears the floating bottom nav */
+    .dashboard-hero-premium,
+    .quick-actions-grid,
+    .stats-grid-premium,
+    .charts-row-premium,
+    .filter-bar-premium,
+    .feedback-card-premium,
+    .empty-state-premium {
+        scroll-margin-bottom: 1rem;
+    }
+
+    /* Remove blue tap outline on interactive elements */
+    .feedback-card-premium-action,
+    .filter-pill,
+    .quick-action-card,
+    .stat-card-premium,
+    .dashboard-hero-actions a {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ---- Dark mode refinements ---- */
+@media (max-width: 768px) {
+    html.theme-dark .dashboard-hero-premium {
+        background:
+            radial-gradient(ellipse 480px 260px at 88% -8%, rgba(96,165,250,0.16) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(252,211,77,0.08) 0%, transparent 60%),
+            linear-gradient(135deg, #0f2557 0%, #0e1f47 55%, #0a1836 100%);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+    }
+
+    html.theme-dark .dashboard-hero-actions .btn-hero-primary {
+        color: var(--primary-light);
+    }
+
+    html.theme-dark .quick-action-card,
+    html.theme-dark .stat-card-premium,
+    html.theme-dark .progress-card-premium,
+    html.theme-dark .chart-card-premium,
+    html.theme-dark .filter-bar-premium,
+    html.theme-dark .feedback-card-premium {
+        background: var(--card-bg);
+    }
+}
+
+/* ---- Extra-small phones (≤480px) ---- */
+@media (max-width: 480px) {
+    .dashboard-hero-title {
+        font-size: 1.2rem;
+    }
+
+    .dashboard-hero-avatar {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.2rem;
+    }
+
+    .quick-action-card {
+        flex: 0 0 6.6rem;
+        max-width: 6.6rem;
+    }
+
+    .stat-card-premium-value {
+        font-size: 1.5rem;
+    }
+
+#premiumSentimentChart {
+        max-width: 9.5rem;
+    }
+}
+
+/* ============================================================ */
+/* ✍️ STUDENT SUBMIT FEEDBACK → PREMIUM NATIVE MOBILE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   submit feedback wizard (submit_feedback.html) into a cohesive,
+   native app-like experience:
+     • Shell      → full-bleed glass card w/ gradient accent
+     • Header     → compact hero w/ gradient icon badge
+     • Stepper    → native progress dots + gradient connectors
+     • Categories → touch-optimized glass tiles w/ selection ring
+     • Fields     → pill inputs, focus glow, char counter, toggle
+     • Urgency    → big-thumb slider + live meter card
+     • Review     → app receipt-style summary + pulse submit
+     • Actions    → sticky bottom action bar (thumb-reachable)
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- Shared tokens for the submit-feedback mobile design ---- */
+@media (max-width: 768px) {
+    :root {
+        --mob-fb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --mob-fb-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+/* ============================================================ */
+/* 1. SHELL → APP GLASS CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .feedback-form-card {
+        position: relative;
+        margin: 0 0 1.1rem;
+        padding: 1.15rem 1rem 1.4rem;
+        border-radius: 1.5rem;
+        border: 1px solid var(--border-color);
+        background:
+            radial-gradient(ellipse 480px 260px at 92% -6%, rgba(96,165,250,0.1) 0%, transparent 60%),
+            linear-gradient(180deg, var(--card-bg), var(--card-bg));
+        box-shadow: 0 18px 44px rgba(30, 64, 175, 0.14);
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Gradient accent strip along the top */
+    .feedback-form-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--warning), var(--primary));
+        background-size: 300% 100%;
+        animation: fbBorderMove 5s linear infinite;
+        opacity: 0.85;
+    }
+
+    @keyframes fbBorderMove {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 300% 50%; }
+    }
+
+    html.theme-dark .feedback-form-card {
+        background:
+            radial-gradient(ellipse 480px 260px at 92% -6%, rgba(96,165,250,0.14) 0%, transparent 60%),
+            linear-gradient(180deg, var(--card-bg), var(--card-bg));
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* ============================================================ */
+/* 2. HEADER → COMPACT HERO
+/* ============================================================ */
+@media (max-width: 768px) {
+    .feedback-form-header {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        margin-bottom: 1.1rem;
+        padding: 0.65rem 0.15rem 1rem;
+        border-bottom: none;
+        position: relative;
+    }
+
+    /* Gradient icon badge */
+    .feedback-form-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 1.25rem;
+        letter-spacing: -0.03em;
+        line-height: 1.2;
+        color: var(--text-primary);
+        padding-left: 3.6rem;
+    }
+
+    .feedback-form-header h2::before {
+        content: '✍️';
+        position: absolute;
+        left: 0.15rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 2.9rem;
+        height: 2.9rem;
+        border-radius: 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        background: linear-gradient(135deg, rgba(30,64,175,0.12), rgba(59,130,246,0.06));
+        border: 1px solid rgba(30,64,175,0.18);
+        box-shadow: 0 6px 18px rgba(30,64,175,0.15);
+    }
+
+    .feedback-form-header p {
+        font-size: 0.82rem;
+        line-height: 1.5;
+        margin-top: 0.15rem;
+        color: var(--text-secondary);
+    }
+
+    html.theme-dark .feedback-form-header h2::before {
+        background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(96,165,250,0.08));
+        border-color: rgba(96,165,250,0.28);
+    }
+}
+
+/* ============================================================ */
+/* 3. STEPPER → NATIVE PROGRESS DOTS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .step-wizard {
+        gap: 0.3rem;
+        margin-bottom: 1.4rem;
+        padding: 0.85rem 0.4rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    html.theme-dark .step-wizard {
+        background: rgba(148,163,184,0.06);
+    }
+
+    .step-dot {
+        width: 2.15rem;
+        height: 2.15rem;
+        font-size: 0.82rem;
+        border-width: 2px;
+        border-radius: 50%;
+        transition: all 0.3s var(--mob-fb-spring);
+    }
+
+    .step-dot.active {
+        transform: scale(1.12);
+        box-shadow: 0 0 0 4px rgba(59,130,246,0.18), 0 6px 18px rgba(30,64,175,0.35);
+        animation: fbDotPop 0.4s var(--mob-fb-spring);
+    }
+
+    @keyframes fbDotPop {
+        0% { transform: scale(0.8); }
+        60% { transform: scale(1.18); }
+        100% { transform: scale(1.12); }
+    }
+
+    .step-dot.completed {
+        box-shadow: 0 0 0 4px rgba(16,185,129,0.15);
+    }
+
+    .step-connector {
+        width: 1.4rem;
+        height: 3px;
+        border-radius: var(--radius-full);
+    }
+
+    .step-connector.completed {
+        background: linear-gradient(90deg, var(--success), #34d399);
+    }
+
+    .step-label {
+        font-size: 0.62rem;
+        letter-spacing: 0.03em;
+    }
+}
+
+/* ============================================================ */
+/* 4. CATEGORY TILES → TOUCH-OPTIMIZED GLASS CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .category-grid-modern {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.7rem;
+    }
+
+    .category-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 1.05rem 0.55rem 0.95rem;
+        border-radius: 1.15rem;
+        border: 1.5px solid var(--border-color);
+        background: linear-gradient(180deg, var(--card-bg), rgba(59,130,246,0.03));
+        box-shadow: var(--shadow-sm);
+        min-height: 7.2rem;
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 0.28s var(--mob-fb-spring), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    }
+
+    .category-card:active {
+        transform: scale(0.95);
+    }
+
+    .category-card.selected {
+        border-color: var(--primary);
+        background: linear-gradient(180deg, rgba(30,64,175,0.08), rgba(59,130,246,0.03));
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.16), 0 8px 22px rgba(30,64,175,0.18);
+        transform: scale(1.02);
+    }
+
+    html.theme-dark .category-card.selected {
+        border-color: var(--primary-light);
+        background: linear-gradient(180deg, rgba(96,165,250,0.16), rgba(96,165,250,0.05));
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.2), 0 8px 22px rgba(0,0,0,0.35);
+    }
+
+    /* Gradient icon chip */
+    .category-card-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, rgba(30,64,175,0.1), rgba(59,130,246,0.05));
+        border: 1px solid rgba(59,130,246,0.14);
+        box-shadow: 0 4px 12px rgba(30,64,175,0.1);
+        flex-shrink: 0;
+        transition: transform 0.28s var(--mob-fb-spring);
+    }
+
+    .category-card.selected .category-card-icon {
+        transform: scale(1.08);
+        box-shadow: 0 6px 18px rgba(30,64,175,0.22);
+    }
+
+    .category-card-name {
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-align: center;
+        line-height: 1.2;
+    }
+
+    .category-desc {
+        font-size: 0.66rem;
+        line-height: 1.35;
+        text-align: center;
+        color: var(--text-muted);
+    }
+
+    .category-card input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Selection check badge (override desktop top-right) */
+    .category-card.selected::after {
+        top: 0.45rem;
+        right: 0.45rem;
+        width: 1.3rem;
+        height: 1.3rem;
+        font-size: 0.7rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        box-shadow: 0 3px 10px rgba(30,64,175,0.35);
+    }
+}
+
+/* ============================================================ */
+/* 5. FORM FIELDS → PILL INPUTS + FOCUS GLOW
+/* ============================================================ */
+@media (max-width: 768px) {
+    .form-group-enhanced {
+        margin-bottom: 1.15rem;
+    }
+
+    .form-group-enhanced .form-label {
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-group-enhanced .form-label-hint {
+        font-size: 0.74rem;
+        margin-top: 0.15rem;
+    }
+
+    .form-textarea-enhanced,
+    .form-input-enhanced {
+        border-radius: 1rem;
+        border: 1.5px solid var(--border-color);
+        background: var(--bg-color);
+        font-size: 16px;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+
+    .form-textarea-enhanced:focus,
+    .form-input-enhanced:focus {
+        outline: none;
+        border-color: var(--primary-light);
+        background: var(--card-bg);
+        box-shadow: 0 0 0 4px rgba(59,130,246,0.14);
+    }
+
+    .form-textarea-enhanced {
+        min-height: 130px;
+        line-height: 1.55;
+    }
+
+    /* Character counter → segmented pill */
+    .char-counter {
+        margin-top: 0.45rem;
+        padding: 0.4rem 0.6rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 0.8rem;
+    }
+
+    .char-counter-hint {
+        font-size: 0.72rem;
+    }
+
+    .char-counter-count {
+        font-size: 0.72rem;
+        padding: 0.12rem 0.5rem;
+        border-radius: var(--radius-full);
+        background: rgba(59,130,246,0.1);
+        color: var(--primary);
+    }
+
+    .char-counter-count.warning {
+        background: rgba(245,158,11,0.14);
+        color: var(--warning);
+    }
+
+    .char-counter-count.danger {
+        background: rgba(239,68,68,0.14);
+        color: var(--danger);
+    }
+
+    /* Anonymous → toggle-style box */
+    .checkbox-label {
+        padding: 0.85rem 1rem;
+        border-radius: 1rem;
+        background: var(--bg-color);
+        font-size: 0.85rem;
+        font-weight: 700;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .checkbox-label:active {
+        transform: scale(0.98);
+    }
+
+    .checkbox-label input[type="checkbox"] {
+        width: 1.25rem;
+        height: 1.25rem;
+        accent-color: var(--primary);
+    }
+}
+
+/* ============================================================ */
+/* 6. URGENCY → BIG-THUMB SLIDER + LIVE METER
+/* ============================================================ */
+@media (max-width: 768px) {
+    .urgency-container {
+        padding: 0.4rem 0;
+    }
+
+    .urgency-slider {
+        height: 0.6rem;
+        border-radius: var(--radius-full);
+    }
+
+    .urgency-slider::-webkit-slider-thumb {
+        width: 1.6rem;
+        height: 1.6rem;
+        box-shadow: 0 0 0 5px rgba(59,130,246,0.16), 0 4px 12px rgba(30,64,175,0.35);
+    }
+
+    .urgency-slider::-moz-range-thumb {
+        width: 1.6rem;
+        height: 1.6rem;
+        box-shadow: 0 0 0 5px rgba(59,130,246,0.16), 0 4px 12px rgba(30,64,175,0.35);
+    }
+
+    .urgency-slider::-webkit-slider-thumb:active {
+        transform: scale(1.15);
+    }
+
+    .urgency-labels {
+        font-size: 0.68rem;
+        margin-top: 0.35rem;
+    }
+
+    /* Live meter card */
+    .urgency-meter {
+        padding: 0.8rem 1rem;
+        border-radius: 1rem;
+        margin-top: 0.6rem;
+        background: linear-gradient(135deg, var(--bg-color), rgba(59,130,246,0.04));
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .urgency-meter-bar {
+        height: 0.6rem;
+    }
+
+    .urgency-meter-fill {
+        transition: width 0.35s var(--mob-fb-spring), background 0.3s ease;
+    }
+
+    .urgency-meter-label {
+        font-size: 0.82rem;
+        min-width: 4.2rem;
+    }
+}
+
+/* ============================================================ */
+/* 7. REVIEW CARD + SUBMIT → APP RECEIPT STYLE
+/* ============================================================ */
+@media (max-width: 768px) {
+    .review-card {
+        border-radius: 1.15rem;
+        padding: 0.9rem 1rem;
+        background: linear-gradient(180deg, var(--bg-color), var(--card-bg));
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .review-card-row {
+        padding: 0.7rem 0;
+        gap: 0.75rem;
+    }
+
+    .review-card-label {
+        font-size: 0.72rem;
+        min-width: 4.5rem;
+    }
+
+    .review-card-value {
+        font-size: 0.85rem;
+    }
+
+    .review-card-value .review-badge {
+        font-size: 0.74rem;
+        padding: 0.2rem 0.6rem;
+        background: linear-gradient(135deg, rgba(30,64,175,0.1), rgba(59,130,246,0.06));
+    }
+
+    /* Info alert → glass chip */
+    .alert.alert-info {
+        border-radius: 1rem;
+        padding: 0.85rem 1rem;
+        font-size: 0.78rem;
+        line-height: 1.5;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(59,130,246,0.18);
+    }
+
+    /* Submit button → gradient + pulse ring */
+    .step-actions .btn-success {
+        position: relative;
+        background: linear-gradient(135deg, var(--success), #059669);
+        box-shadow: 0 8px 26px rgba(16,185,129,0.35);
+        min-height: 3rem;
+    }
+
+    .step-actions .btn-success::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        border: 2px solid rgba(255,255,255,0.35);
+        animation: fbSubmitPulse 2.2s var(--mob-fb-ease) infinite;
+        pointer-events: none;
+    }
+
+    @keyframes fbSubmitPulse {
+        0% { transform: scale(1); opacity: 0.6; }
+        100% { transform: scale(1.06); opacity: 0; }
+    }
+}
+
+/* ============================================================ */
+/* 8. STICKY BOTTOM ACTION BAR (THUMB-REACHABLE)
+/* ============================================================ */
+@media (max-width: 768px) {
+    .step-actions {
+        position: sticky;
+        bottom: calc(4.6rem + env(safe-area-inset-bottom, 0));
+        z-index: 20;
+        flex-direction: row;
+        gap: 0.6rem;
+        margin-top: 1.35rem;
+        padding: 0.6rem 0.6rem;
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(18px) saturate(160%);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+        border: 1px solid var(--border-color);
+        border-radius: 1.15rem;
+        box-shadow: 0 10px 30px rgba(30,64,175,0.16);
+    }
+
+    html.theme-dark .step-actions {
+        background: rgba(15,23,42,0.85);
+        border-color: rgba(148,163,184,0.16);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .step-actions .btn {
+        flex: 1;
+        min-height: 3rem;
+        font-size: 0.9rem;
+        border-radius: 0.9rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .step-actions .btn-ghost {
+        background: var(--bg-color);
+        border-color: var(--border-color);
+    }
+
+    .step-actions .btn:active {
+        transform: scale(0.96);
+    }
+}
+
+/* ============================================================ */
+/* 9. PREMIUM POLISH & SAFE AREAS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .feedback-form-card,
+    .step-wizard,
+    .category-card,
+    .urgency-meter,
+    .review-card,
+    .step-actions {
+        will-change: transform, opacity;
+    }
+
+    /* Ensure sections clear the sticky action bar + bottom nav */
+    .feedback-form-card,
+    .step-panel,
+    .step-actions {
+        scroll-margin-bottom: 5.5rem;
+    }
+
+    .category-card,
+    .checkbox-label,
+    .step-actions .btn,
+    .urgency-slider {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Disable hover-lift on touch */
+    .category-card:hover {
+        transform: none;
+    }
+}
+
+/* ============================================================ */
+/* 10. EXTRA-SMALL PHONES (≤480px)
+/* ============================================================ */
+@media (max-width: 480px) {
+    .feedback-form-card {
+        padding: 1rem 0.85rem 1.25rem;
+        border-radius: 1.35rem;
+    }
+
+    .feedback-form-header h2 {
+        font-size: 1.15rem;
+        padding-left: 3.3rem;
+    }
+
+    .feedback-form-header h2::before {
+        width: 2.6rem;
+        height: 2.6rem;
+        font-size: 1.25rem;
+    }
+
+    .category-grid-modern {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+    }
+
+    .category-card {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.7rem;
+        min-height: 0;
+        padding: 0.7rem 0.85rem;
+        text-align: left;
+    }
+
+    .category-card-icon {
+        width: 2.6rem;
+        height: 2.6rem;
+        font-size: 1.3rem;
+        border-radius: 0.8rem;
+        flex-shrink: 0;
+    }
+
+    .category-card-name {
+        font-size: 0.82rem;
+        text-align: left;
+    }
+
+    .category-desc {
+        font-size: 0.66rem;
+        text-align: left;
+    }
+
+    .category-card.selected::after {
+        top: 0.4rem;
+        right: 0.4rem;
+    }
+
+    .step-connector {
+        width: 1rem;
+    }
+
+.step-actions {
+        bottom: calc(4.2rem + env(safe-area-inset-bottom, 0));
+        padding: 0.5rem 0.5rem;
+    }
+}
+
+/* ============================================================ */
+/* 💬 FORUM → PREMIUM NATIVE MOBILE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   student discussion forum (forum_index.html, forum_topic.html,
+   forum_my_topics.html, forum_search.html, create_topic.html)
+   into a cohesive, native app-like experience:
+     • Hero            → app greeting card w/ gradient + stacked CTAs
+     • Stats           → compact 2×2 glass stat widgets
+     • Sentiment       → compact glass card w/ segmented progress bar
+     • Sidebar         → horizontal snap-scroll category chips + search
+     • Sort bar        → scrollable pill bar
+     • Topic cards     → native touch cards w/ sentiment accent, meta chips
+     • Topic detail    → app header + sticky bottom voting bar
+     • Reply cards     → chat-style bubbles w/ avatars
+     • Reply form      → sticky bottom composer w/ gradient send
+     • Create topic    → app glass form card
+     • My topics/search → consistent native topic cards
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- Shared tokens for the forum mobile redesign ---- */
+@media (max-width: 768px) {
+    :root {
+        --mob-forum-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --mob-forum-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+/* ============================================================ */
+/* 1. HERO → APP GREETING CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .dashboard-hero-premium {
+        margin: 0.25rem 0 1.1rem;
+        padding: 1.5rem 1.15rem 1.35rem;
+        border-radius: 1.6rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        background:
+            radial-gradient(ellipse 480px 260px at 88% -8%, rgba(96,165,250,0.28) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(252,211,77,0.14) 0%, transparent 60%),
+            linear-gradient(135deg, #1e40af 0%, #1e3a8a 55%, #162d50 100%);
+        box-shadow: 0 18px 44px rgba(30, 64, 175, 0.32);
+        overflow: hidden;
+    }
+
+    .dashboard-hero-premium::before,
+    .dashboard-hero-premium::after {
+        opacity: 0.6;
+    }
+
+    .dashboard-hero-greeting {
+        gap: 0.85rem;
+        margin-bottom: 0;
+    }
+
+    .dashboard-hero-avatar {
+        width: 3.4rem;
+        height: 3.4rem;
+        font-size: 1.35rem;
+        border: 2px solid rgba(255,255,255,0.35);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.22), 0 0 0 4px rgba(255,255,255,0.08);
+        background: linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.1));
+    }
+
+    .dashboard-hero-title {
+        font-size: 1.35rem;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+    }
+
+    .dashboard-hero-subtitle {
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: rgba(255,255,255,0.78);
+        margin-top: 0.2rem;
+    }
+
+    /* Stacked, full-width, touch-friendly CTAs */
+    .dashboard-hero-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 0.1rem;
+    }
+
+    .dashboard-hero-actions > * {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem 1rem;
+        border-radius: 1rem;
+        font-size: 0.95rem;
+        min-height: 3rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .dashboard-hero-actions .btn-hero-primary {
+        background: #fff;
+        color: var(--primary);
+        box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+    }
+
+    .dashboard-hero-actions .btn-hero:not(.btn-hero-primary) {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.22);
+    }
+
+    .dashboard-hero-actions > *:active {
+        transform: scale(0.97);
+    }
+}
+
+/* ============================================================ */
+/* 2. STATS → COMPACT 2×2 GLASS WIDGETS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .stats-grid-premium {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.7rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .stat-card-premium {
+        padding: 1rem 0.9rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .stat-card-premium:active {
+        transform: scale(0.98);
+    }
+
+    .stat-card-premium-accent {
+        height: 3px;
+        border-radius: 0 0 2px 2px;
+    }
+
+    .stat-card-premium-glow {
+        opacity: 0.1;
+    }
+
+    .stat-card-premium-top {
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card-premium-icon {
+        width: 2.25rem;
+        height: 2.25rem;
+        font-size: 1.05rem;
+        border-radius: 0.8rem;
+    }
+
+    .stat-card-premium-badge {
+        font-size: 0.6rem;
+        padding: 0.12rem 0.45rem;
+    }
+
+    .stat-card-premium-value {
+        font-size: 1.7rem;
+    }
+
+    .stat-card-premium-label {
+        font-size: 0.68rem;
+    }
+
+    .stat-card-premium-trend {
+        font-size: 0.66rem;
+        margin-top: 0.45rem;
+        padding-top: 0.4rem;
+    }
+}
+
+/* ============================================================ */
+/* 3. SENTIMENT OVERVIEW → COMPACT GLASS CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .chart-card-premium {
+        padding: 1rem 1.1rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.1rem;
+    }
+
+    .chart-card-premium-title {
+        font-size: 0.82rem;
+    }
+
+    .chart-card-premium .badge {
+        font-size: 0.68rem;
+        padding: 0.2rem 0.55rem;
+    }
+
+    .chart-card-premium .progress-bar {
+        height: 0.5rem;
+        border-radius: var(--radius-full);
+    }
+
+    .chart-card-premium .flex.justify-between.text-xs {
+        font-size: 0.68rem;
+        margin-top: 0.3rem;
+    }
+}
+
+/* ============================================================ */
+/* 4. SIDEBAR → HORIZONTAL SNAP-SCROLL CHIPS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .forum-sidebar {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.6rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.15rem 0.1rem 0.5rem;
+        margin: 0 -0.1rem 0.85rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .forum-sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .forum-sidebar-card {
+        flex: 0 0 auto;
+        min-width: auto;
+        margin-bottom: 0;
+        border-radius: 1.05rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        scroll-snap-align: start;
+        overflow: visible;
+    }
+
+    .forum-sidebar-card-header {
+        display: none;
+    }
+
+    .forum-sidebar-card-body {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.3rem;
+        padding: 0.5rem 0.55rem;
+        align-items: center;
+    }
+
+    .forum-sidebar-link {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 0.4rem 0.7rem;
+        font-size: 0.75rem;
+        border-radius: var(--radius-full);
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        gap: 0.35rem;
+        -webkit-tap-highlight-color: transparent;
+        transition: all var(--transition-fast);
+    }
+
+    .forum-sidebar-link:active {
+        transform: scale(0.95);
+    }
+
+    .forum-sidebar-link.active {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: #fff;
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(30,64,175,0.2);
+    }
+
+    .forum-sidebar-link .count {
+        font-size: 0.65rem;
+        padding: 0.05rem 0.4rem;
+        min-width: 1.1rem;
+        text-align: center;
+    }
+
+    .forum-sidebar-link.active .count {
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+    }
+
+    /* Search card inline */
+    .forum-sidebar-card:last-child .forum-sidebar-card-body {
+        padding: 0.4rem 0.5rem;
+    }
+
+    .forum-sidebar-card:last-child form {
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+    }
+
+    .forum-sidebar-card:last-child .form-input-enhanced {
+        font-size: 14px;
+        padding: 0.4rem 0.6rem;
+        min-width: 130px;
+        border-radius: var(--radius-full);
+    }
+
+    .forum-sidebar-card:last-child .btn-primary {
+        padding: 0.4rem 0.65rem;
+        min-height: 2.1rem;
+        border-radius: var(--radius-full);
+        font-size: 0.8rem;
+    }
+}
+
+/* ============================================================ */
+/* 5. SORT BAR → SCROLLABLE PILL BAR
+/* ============================================================ */
+@media (max-width: 768px) {
+    .sort-bar {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.4rem;
+        padding: 0.6rem 0.75rem;
+        margin-bottom: 0.85rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        border-radius: 1.05rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .sort-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sort-btn {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.75rem;
+        border-radius: var(--radius-full);
+        border: 1.5px solid var(--border-color);
+        -webkit-tap-highlight-color: transparent;
+        min-height: 2.2rem;
+        transition: all var(--transition-fast);
+    }
+
+    .sort-btn:active {
+        transform: scale(0.95);
+    }
+
+    .sort-btn.active {
+        border-color: var(--primary);
+        box-shadow: 0 4px 12px rgba(30,64,175,0.2);
+    }
+}
+
+/* ============================================================ */
+/* 6. TOPIC CARDS → NATIVE TOUCH CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .topic-card {
+        border-radius: 1.1rem;
+        padding: 1rem 1rem;
+        margin-bottom: 0.75rem;
+        box-shadow: var(--shadow-sm);
+        -webkit-tap-highlight-color: transparent;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .topic-card:active {
+        transform: scale(0.99);
+    }
+
+    /* Sentiment left accent bar */
+    .topic-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+        opacity: 0.7;
+        transition: opacity var(--transition-fast);
+    }
+
+    .topic-card:hover {
+        transform: none;
+        box-shadow: var(--shadow-md);
+    }
+
+    .topic-card-header {
+        gap: 0.75rem;
+    }
+
+    .topic-card-title {
+        font-size: 0.95rem;
+        line-height: 1.35;
+        display: block;
+    }
+
+    .topic-card-preview {
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+        line-height: 1.4;
+        -webkit-line-clamp: 2;
+    }
+
+    .topic-card-tags {
+        gap: 0.3rem;
+        margin-top: 0.4rem;
+    }
+
+    .topic-card-tag {
+        font-size: 0.65rem;
+        padding: 0.12rem 0.45rem;
+    }
+
+    .topic-card-meta {
+        gap: 0.6rem;
+        margin-top: 0.5rem;
+        font-size: 0.72rem;
+    }
+
+    .topic-card-meta span {
+        gap: 0.2rem;
+    }
+
+    .topic-card-sentiment {
+        min-width: 2.5rem;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .topic-card-sentiment .badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+    }
+
+    .topic-card-pinned {
+        border-left: none;
+    }
+
+    .topic-card-pinned::before {
+        background: var(--warning);
+        width: 3px;
+    }
+
+    /* Pinned label */
+    .topic-card-pinned .badge-warning {
+        font-size: 0.65rem;
+    }
+
+    /* "Hot" badge */
+    .badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.5rem;
+    }
+
+    .topic-card .badge-info {
+        font-size: 0.65rem;
+    }
+
+    /* Pinned topic header */
+    .flex.items-center.gap-2.mb-2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .flex.items-center.gap-2.mb-2 span {
+        font-size: 0.65rem;
+    }
+}
+
+/* ============================================================ */
+/* 7. TOPIC DETAIL → APP HEADER + STICKY VOTING
+/* ============================================================ */
+@media (max-width: 768px) {
+    .topic-detail-header {
+        padding: 1.1rem 1rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1rem;
+    }
+
+    .topic-detail-badges {
+        gap: 0.35rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .topic-detail-title {
+        font-size: 1.1rem;
+        line-height: 1.3;
+    }
+
+    .topic-detail-meta {
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        margin-top: 0.45rem;
+    }
+
+    .topic-detail-content {
+        padding: 1rem;
+        font-size: 0.88rem;
+        line-height: 1.6;
+        margin-top: 0.75rem;
+        border-radius: 1rem;
+    }
+
+    /* Sentiment badge inline */
+    .topic-detail-header .badge {
+        font-size: 0.72rem;
+        padding: 0.25rem 0.55rem;
+    }
+}
+
+/* ============================================================ */
+/* 8. VOTING CONTROLS → STICKY BOTTOM BAR
+/* ============================================================ */
+@media (max-width: 768px) {
+    .voting-controls {
+        position: fixed;
+        bottom: calc(4.6rem + env(safe-area-inset-bottom, 0));
+        left: 0.75rem;
+        right: 0.75rem;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        padding: 0.55rem 0.75rem;
+        background: rgba(255,255,255,0.88);
+        backdrop-filter: blur(18px) saturate(160%);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+        box-shadow: 0 8px 28px rgba(30,64,175,0.16);
+        margin: 0 auto;
+        max-width: 400px;
+        animation: voteBarIn 0.4s var(--mob-forum-spring) 0.2s both;
+    }
+
+    @keyframes voteBarIn {
+        from { opacity: 0; transform: translateY(20px) scale(0.95); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    html.theme-dark .voting-controls {
+        background: rgba(15,23,42,0.88);
+        border-color: rgba(148,163,184,0.16);
+        box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    }
+
+    .vote-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.82rem;
+        border-radius: var(--radius-full);
+        min-height: 2.6rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .vote-btn:active {
+        transform: scale(0.95);
+    }
+
+    .vote-count {
+        font-size: 1rem;
+        min-width: 2.5rem;
+        font-weight: 800;
+    }
+
+    /* Add bottom padding to topic detail page so voting bar doesn't overlap content */
+    body:has(.topic-detail-header) .main-container {
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0));
+    }
+}
+
+/* ============================================================ */
+/* 9. REPLY CARDS → CHAT-STYLE BUBBLES
+/* ============================================================ */
+@media (max-width: 768px) {
+    .reply-card {
+        padding: 0.9rem 1rem;
+        border-radius: 1.1rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 0.65rem;
+        border: 1px solid var(--border-color);
+        -webkit-tap-highlight-color: transparent;
+        position: relative;
+    }
+
+    .reply-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--primary-light);
+        border-radius: 0 2px 2px 0;
+        opacity: 0.2;
+    }
+
+    .reply-card:active {
+        transform: scale(0.99);
+    }
+
+    .reply-card-header {
+        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .reply-avatar {
+        width: 1.85rem;
+        height: 1.85rem;
+        font-size: 0.7rem;
+    }
+
+    .reply-author {
+        font-size: 0.82rem;
+    }
+
+    .reply-time {
+        font-size: 0.68rem;
+    }
+
+    .reply-sentiment {
+        font-size: 0.75rem;
+    }
+
+    .reply-content {
+        font-size: 0.85rem;
+        line-height: 1.55;
+        padding-left: 0;
+        margin-top: 0.2rem;
+    }
+
+    .reply-actions {
+        padding-left: 0;
+        margin-top: 0.4rem;
+        gap: 0.4rem;
+    }
+
+    .reply-actions .btn {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.65rem;
+        min-height: 2rem;
+    }
+
+    /* Section header "Replies" */
+    .section-header {
+        margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+    }
+}
+
+/* ============================================================ */
+/* 10. REPLY FORM → STICKY BOTTOM COMPOSER
+/* ============================================================ */
+@media (max-width: 768px) {
+    .reply-form {
+        padding: 1rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        margin-top: 0.85rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .reply-form h4 {
+        font-size: 0.9rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .reply-form .form-group-enhanced {
+        margin-bottom: 0.6rem;
+    }
+
+    .reply-form .form-textarea-enhanced {
+        min-height: 90px;
+        font-size: 16px;
+        border-radius: 1rem;
+    }
+
+    .reply-form .btn-primary {
+        width: 100%;
+        justify-content: center;
+        min-height: 2.8rem;
+        font-size: 0.9rem;
+        border-radius: 0.9rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .reply-form .btn-primary:active {
+        transform: scale(0.97);
+    }
+
+    /* Locked topic alert */
+    .alert.text-center.mt-4 {
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.82rem;
+    }
+}
+
+/* ============================================================ */
+/* 11. CREATE TOPIC → APP GLASS FORM CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .create-topic-card {
+        padding: 1.15rem 1rem 1.4rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 18px 44px rgba(30,64,175,0.14);
+        position: relative;
+        overflow: hidden;
+        margin: 0 0 1.1rem;
+        border: 1px solid var(--border-color);
+        background:
+            radial-gradient(ellipse 480px 260px at 92% -6%, rgba(96,165,250,0.1) 0%, transparent 60%),
+            linear-gradient(180deg, var(--card-bg), var(--card-bg));
+    }
+
+    .create-topic-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--warning), var(--primary));
+        background-size: 300% 100%;
+        animation: createBorderMove 5s linear infinite;
+        opacity: 0.85;
+    }
+
+    @keyframes createBorderMove {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 300% 50%; }
+    }
+
+    html.theme-dark .create-topic-card {
+        background:
+            radial-gradient(ellipse 480px 260px at 92% -6%, rgba(96,165,250,0.14) 0%, transparent 60%),
+            linear-gradient(180deg, var(--card-bg), var(--card-bg));
+        box-shadow: 0 18px 44px rgba(0,0,0,0.4);
+    }
+
+    .create-topic-card .feedback-form-header {
+        margin-bottom: 1.1rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .create-topic-card .feedback-form-header h2 {
+        font-size: 1.15rem;
+        letter-spacing: -0.03em;
+    }
+
+    .create-topic-card .feedback-form-header p {
+        font-size: 0.8rem;
+    }
+
+    .create-topic-card .form-group-enhanced {
+        margin-bottom: 1rem;
+    }
+
+    .create-topic-card .form-label {
+        font-size: 0.82rem;
+    }
+
+    .create-topic-card .form-label-hint {
+        font-size: 0.72rem;
+    }
+
+    .create-topic-card .form-input-enhanced,
+    .create-topic-card .form-select-enhanced,
+    .create-topic-card .form-textarea-enhanced {
+        font-size: 16px;
+        border-radius: 1rem;
+        border: 1.5px solid var(--border-color);
+        background: var(--bg-color);
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+
+    .create-topic-card .form-input-enhanced:focus,
+    .create-topic-card .form-select-enhanced:focus,
+    .create-topic-card .form-textarea-enhanced:focus {
+        outline: none;
+        border-color: var(--primary-light);
+        background: var(--card-bg);
+        box-shadow: 0 0 0 4px rgba(59,130,246,0.14);
+    }
+
+    .create-topic-card .form-textarea-enhanced {
+        min-height: 140px;
+    }
+
+    .create-topic-card .alert.alert-info {
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.78rem;
+        line-height: 1.5;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(59,130,246,0.18);
+    }
+
+    .create-topic-card .btn-primary {
+        width: 100%;
+        justify-content: center;
+        min-height: 3rem;
+        font-size: 0.95rem;
+        border-radius: 0.9rem;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 8px 26px rgba(30,64,175,0.3);
+    }
+
+    .create-topic-card .btn-primary:active {
+        transform: scale(0.97);
+    }
+}
+
+/* ============================================================ */
+/* 12. MY TOPICS & SEARCH → CONSISTENT TOPIC CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    /* My Topics header */
+    .flex.justify-between.items-center.mb-6 {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+        margin-bottom: 0.85rem;
+    }
+
+    .flex.justify-between.items-center.mb-6 h2 {
+        font-size: 1.15rem;
+    }
+
+    .flex.justify-between.items-center.mb-6 p {
+        font-size: 0.78rem;
+    }
+
+    .flex.justify-between.items-center.mb-6 .btn {
+        width: 100%;
+        justify-content: center;
+        min-height: 2.75rem;
+    }
+
+    /* Search results header */
+    .mb-6 > .flex.justify-between.items-center {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+
+    .mb-6 > .flex.justify-between.items-center h2 {
+        font-size: 1.15rem;
+    }
+
+    .mb-6 > .flex.justify-between.items-center p {
+        font-size: 0.78rem;
+    }
+
+    .mb-6 > .flex.justify-between.items-center .btn-back {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Search redo bar */
+    .filter-bar-premium.mt-4 {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        padding: 0.75rem 0.85rem;
+        border-radius: 1.05rem;
+    }
+
+    .filter-bar-premium.mt-4 .filter-bar-premium-label {
+        font-size: 0.68rem;
+    }
+
+    .filter-bar-premium.mt-4 form {
+        flex-direction: row;
+        gap: 0.4rem;
+    }
+
+    .filter-bar-premium.mt-4 .form-input-enhanced {
+        font-size: 14px;
+        padding: 0.5rem 0.7rem;
+    }
+
+    .filter-bar-premium.mt-4 .btn-primary {
+        padding: 0.5rem 0.75rem;
+        min-height: 2.4rem;
+        font-size: 0.8rem;
+    }
+
+    /* Topic list containers */
+    .flex.flex-col.gap-3 {
+        gap: 0.75rem;
+    }
+}
+
+/* ============================================================ */
+/* 13. PREMIUM POLISH & SAFE AREAS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .dashboard-hero-premium,
+    .stats-grid-premium,
+    .chart-card-premium,
+    .forum-sidebar,
+    .sort-bar,
+    .topic-card,
+    .topic-detail-header,
+    .reply-card,
+    .reply-form,
+    .create-topic-card,
+    .voting-controls {
+        will-change: transform, opacity;
+    }
+
+    .dashboard-hero-premium,
+    .stats-grid-premium,
+    .chart-card-premium,
+    .forum-sidebar,
+    .sort-bar,
+    .topic-card,
+    .topic-detail-header,
+    .reply-card,
+    .reply-form,
+    .create-topic-card,
+    .empty-state-premium {
+        scroll-margin-bottom: 1rem;
+    }
+
+    .topic-card,
+    .topic-card-header .badge,
+    .topic-card a,
+    .forum-sidebar-link,
+    .sort-btn,
+    .vote-btn,
+    .reply-card,
+    .dashboard-hero-actions a,
+    .create-topic-card .btn-primary,
+    .reply-form .btn-primary {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Disable hover-lift on touch for topic cards */
+    .topic-card:hover {
+        transform: none;
+    }
+
+    /* Back button container */
+    .student-top-actions {
+        margin-bottom: 0.65rem;
+    }
+
+    .student-top-actions .btn-back {
+        width: 100%;
+        justify-content: center;
+        border-radius: 0.9rem;
+        min-height: 2.6rem;
+        font-size: 0.82rem;
+    }
+
+    /* Empty state on forum pages */
+    .empty-state-premium {
+        padding: 2.5rem 1.25rem;
+        border-radius: 1.15rem;
+    }
+
+    .empty-state-premium-icon {
+        font-size: 3rem;
+    }
+
+    .empty-state-premium-title {
+        font-size: 1.1rem;
+    }
+
+    .empty-state-premium-desc {
+        font-size: 0.82rem;
+    }
+
+    .empty-state-premium .btn-lg {
+        width: 100%;
+        justify-content: center;
+        min-height: 3rem;
+        border-radius: 1rem;
+    }
+}
+
+/* ---- Dark mode refinements ---- */
+@media (max-width: 768px) {
+    html.theme-dark .dashboard-hero-premium {
+        background:
+            radial-gradient(ellipse 480px 260px at 88% -8%, rgba(96,165,250,0.16) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(252,211,77,0.08) 0%, transparent 60%),
+            linear-gradient(135deg, #0f2557 0%, #0e1f47 55%, #0a1836 100%);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+    }
+
+    html.theme-dark .dashboard-hero-actions .btn-hero-primary {
+        color: var(--primary-light);
+    }
+
+    html.theme-dark .topic-card,
+    html.theme-dark .topic-detail-header,
+    html.theme-dark .reply-card,
+    html.theme-dark .reply-form,
+    html.theme-dark .create-topic-card,
+    html.theme-dark .forum-sidebar-card,
+    html.theme-dark .sort-bar {
+        background: var(--card-bg);
+    }
+
+    html.theme-dark .forum-sidebar-link {
+        background: var(--bg-color);
+        border-color: var(--border-color);
+    }
+
+    html.theme-dark .forum-sidebar-link.active {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-color: var(--primary);
+    }
+
+    html.theme-dark .voting-controls {
+        background: rgba(15,23,42,0.88);
+        border-color: rgba(148,163,184,0.16);
+    }
+
+    html.theme-dark .topic-card::before {
+        opacity: 0.5;
+    }
+
+    html.theme-dark .reply-card::before {
+        opacity: 0.15;
+    }
+}
+
+/* ---- Extra-small phones (≤480px) ---- */
+@media (max-width: 480px) {
+    .dashboard-hero-title {
+        font-size: 1.2rem;
+    }
+
+    .dashboard-hero-avatar {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.2rem;
+    }
+
+    .stats-grid-premium {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card-premium-value {
+        font-size: 1.5rem;
+    }
+
+    .topic-card-title {
+        font-size: 0.88rem;
+    }
+
+    .topic-card-preview {
+        font-size: 0.78rem;
+    }
+
+    .topic-card-meta {
+        font-size: 0.68rem;
+        gap: 0.45rem;
+    }
+
+    .topic-detail-title {
+        font-size: 1rem;
+    }
+
+    .topic-detail-header {
+        padding: 0.9rem 0.85rem;
+    }
+
+    .reply-card {
+        padding: 0.8rem 0.85rem;
+    }
+
+    .reply-content {
+        font-size: 0.82rem;
+    }
+
+    .create-topic-card {
+        padding: 1rem 0.85rem 1.25rem;
+        border-radius: 1.35rem;
+    }
+
+    .create-topic-card .feedback-form-header h2 {
+        font-size: 1.05rem;
+    }
+
+    .forum-sidebar-card:last-child .form-input-enhanced {
+        min-width: 100px;
+    }
+
+    .voting-controls {
+        left: 0.5rem;
+        right: 0.5rem;
+        bottom: calc(4.2rem + env(safe-area-inset-bottom, 0));
+        padding: 0.45rem 0.6rem;
+    }
+
+    .vote-btn {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.5rem;
+        min-height: 2.3rem;
+    }
+
+    .vote-count {
+        font-size: 0.9rem;
+        min-width: 2rem;
+    }
+
+    .reply-form {
+        padding: 0.85rem;
+    }
+
+.sort-btn {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.65rem;
+    }
+
+    .forum-sidebar-link {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.6rem;
+    }
+}
+
+/* ============================================================ */
+/* 🛡️ ADMIN DASHBOARD → PREMIUM NATIVE MOBILE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   admin dashboard (admin_dashboard.html) into a cohesive, native
+   app-like experience:
+     • Sidebar   → hidden (the off-canvas drawer already handles nav)
+     • Hero      → app greeting card w/ shield avatar + stacked CTAs
+     • Stats     → compact 2×3 glass stat widgets w/ accent + stagger
+     • Charts    → stacked full-width cards, centered doughnut
+     • Filters   → horizontal scrollable pill/field bar
+     • Feedback  → native-style cards (urgency accent, title, meta,
+                   inline status/assign, thumb-reachable action row)
+     • Misc      → section header, pagination & modal polish
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- 1. Hide redundant inline admin sidebar (drawer owns nav) ---- */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        display: none;
+    }
+
+    /* Full-width content when sidebar is gone */
+    .student-layout {
+        gap: 0;
+    }
+
+    .student-content {
+        width: 100%;
+    }
+}
+
+/* ============================================================ */
+/* 2. HERO → APP GREETING CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-hero {
+        margin: 0.25rem 0 1.05rem;
+        padding: 1.5rem 1.15rem 1.35rem;
+        border-radius: 1.6rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        background:
+            radial-gradient(ellipse 460px 260px at 88% -8%, rgba(96,165,250,0.28) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(16,185,129,0.16) 0%, transparent 60%),
+            linear-gradient(135deg, #1e40af 0%, #1e3a8a 55%, #162d50 100%);
+        box-shadow: 0 18px 44px rgba(30, 64, 175, 0.32);
+        overflow: hidden;
+    }
+
+    html.theme-dark .admin-hero {
+        background:
+            radial-gradient(ellipse 460px 260px at 88% -8%, rgba(96,165,250,0.16) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(16,185,129,0.1) 0%, transparent 60%),
+            linear-gradient(135deg, #0f2557 0%, #0e1f47 55%, #0a1836 100%);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+    }
+
+    .admin-hero-content {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    /* Shield avatar chip */
+    .admin-hero-content::before {
+        content: '🛡️';
+        width: 3.2rem;
+        height: 3.2rem;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+        border: 1.5px solid rgba(255,255,255,0.28);
+        box-shadow: 0 8px 22px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.18);
+        flex-shrink: 0;
+    }
+
+    .admin-hero-title {
+        font-size: 1.3rem;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        margin-bottom: 0.15rem;
+    }
+
+    .admin-hero-subtitle {
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: rgba(255,255,255,0.78);
+    }
+
+    /* Stacked, full-width, touch-friendly CTAs */
+    .admin-hero-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 0.1rem;
+    }
+
+    .admin-hero-actions > * {
+        width: 100%;
+        justify-content: center;
+        padding: 0.83rem 1rem;
+        border-radius: 1rem;
+        font-size: 0.95rem;
+        min-height: 3rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .admin-hero-actions .btn-hero-primary {
+        background: #fff;
+        color: var(--primary);
+        box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+    }
+
+    .admin-hero-actions .btn-hero:not(.btn-hero-primary) {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.22);
+    }
+
+    .admin-hero-actions > *:active {
+        transform: scale(0.97);
+    }
+}
+
+/* Small hero tweak */
+@media (max-width: 480px) {
+    .admin-hero-title {
+        font-size: 1.15rem;
+    }
+    .admin-hero-content::before {
+        width: 2.8rem;
+        height: 2.8rem;
+        font-size: 1.3rem;
+    }
+}
+
+/* ============================================================ */
+/* 3. STATS → COMPACT 2×3 GLASS WIDGETS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.7rem;
+        margin-bottom: 1.05rem;
+    }
+
+    .stat-card {
+        padding: 0.95rem 0.85rem 0.85rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        animation: admStatIn 0.4s var(--mob-card-ease) both;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.02s; }
+    .stat-card:nth-child(2) { animation-delay: 0.06s; }
+    .stat-card:nth-child(3) { animation-delay: 0.1s; }
+    .stat-card:nth-child(4) { animation-delay: 0.14s; }
+    .stat-card:nth-child(5) { animation-delay: 0.18s; }
+    .stat-card:nth-child(6) { animation-delay: 0.22s; }
+
+    @keyframes admStatIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card:active {
+        transform: scale(0.98);
+    }
+
+    .stat-card-accent {
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        border-radius: 0 0 2px 2px;
+    }
+
+    .stat-card-icon {
+        width: 2.3rem;
+        height: 2.3rem;
+        font-size: 1.05rem;
+        border-radius: 0.8rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .stat-card-value {
+        font-size: 1.6rem;
+        margin-bottom: 0.1rem;
+    }
+
+    .stat-card-label {
+        font-size: 0.68rem;
+        letter-spacing: 0.03em;
+    }
+
+    .stat-card-trend {
+        margin-top: 0.45rem;
+        font-size: 0.66rem;
+        padding-top: 0.4rem;
+        border-top: 1px solid var(--border-color);
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .stat-card-value {
+        font-size: 1.45rem;
+    }
+}
+
+/* ============================================================ */
+/* 4. CHARTS → STACKED FULL-WIDTH CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .charts-row {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        margin-bottom: 1.05rem;
+    }
+
+    .chart-card {
+        padding: 1.1rem 1rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .chart-card-header {
+        margin-bottom: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .chart-card-title {
+        font-size: 0.9rem;
+    }
+
+    .chart-period-selector {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: var(--radius-full);
+    }
+
+    /* Trend chart: fixed comfortable height */
+    #trendChart {
+        max-height: 220px;
+    }
+
+    /* Center the donut with a reasonable max width */
+    .chart-card > div[style*="200px"] {
+        height: 180px !important;
+    }
+
+    #sentimentDonutChart {
+        max-width: 10.5rem;
+        margin: 0 auto;
+    }
+
+    /* Legend chips row */
+    .chart-card > div:last-child {
+        gap: 0.9rem !important;
+        margin-top: 0.6rem !important;
+    }
+
+    .chart-card > div:last-child > div {
+        font-size: 0.74rem !important;
+    }
+}
+
+/* ============================================================ */
+/* 5. FILTERS → HORIZONTAL SCROLLABLE PILL BAR
+/* ============================================================ */
+@media (max-width: 768px) {
+    .filter-bar-enhanced {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.7rem 0.85rem;
+        margin-bottom: 1.05rem;
+        border-radius: 1.15rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .filter-bar-enhanced::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-bar-enhanced .filter-label {
+        font-size: 0.68rem;
+        margin-right: 0.1rem;
+        flex-shrink: 0;
+    }
+
+    .filter-bar-enhanced .filter-input,
+    .filter-bar-enhanced .filter-select {
+        flex: 0 0 auto;
+        min-width: 0;
+        width: auto;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.78rem;
+        border-radius: var(--radius-full);
+        scroll-snap-align: start;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 2.4rem;
+        white-space: nowrap;
+    }
+
+    .filter-bar-enhanced .filter-input {
+        flex: 1 1 11rem;
+        min-width: 11rem;
+    }
+
+    .filter-bar-enhanced .filter-select {
+        max-width: 8.5rem;
+    }
+
+    .filter-bar-enhanced .filter-clear {
+        flex: 0 0 auto;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.76rem;
+        border-radius: var(--radius-full);
+        min-height: 2.4rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ============================================================ */
+/* 6. FEEDBACK TABLE → NATIVE-STYLE CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .table-modern tbody tr {
+        padding: 1rem 0.95rem 0.95rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 0.8rem;
+    }
+
+    /* Left accent color by urgency handled via the existing ::before
+       (primary gradient). Keep it but soften. */
+    .table-modern tbody tr::before {
+        width: 3px;
+        opacity: 0.55;
+    }
+
+    .table-modern tbody td {
+        padding: 0.38rem 0;
+        font-size: 0.85rem;
+        gap: 0.4rem;
+    }
+
+    /* Hide distracting labels for meta cells; keep only the value */
+    .table-modern tbody td[data-label="Category"]::before,
+    .table-modern tbody td[data-label="Sentiment"]::before,
+    .table-modern tbody td[data-label="Urgency Score"]::before,
+    .table-modern tbody td[data-label="Cleaned Text"]::before {
+        display: none;
+    }
+
+    /* ---- Urgency cell (first) becomes a floating chip ---- */
+    .table-modern tbody td[data-label="Urgency"] {
+        position: absolute;
+        top: 0.85rem;
+        right: 0.9rem;
+        padding: 0;
+        border: none;
+        width: auto;
+        z-index: 2;
+    }
+
+    .table-modern tbody td[data-label="Urgency"]::before {
+        display: none;
+    }
+
+    .table-modern tbody td[data-label="Urgency"] span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 0.7rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        font-size: 1.05rem !important;
+        opacity: 1 !important;
+    }
+
+    /* ---- Feedback text → prominent card title ---- */
+    .table-modern tbody td[data-label="Feedback"] {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        padding-right: 2.6rem;
+        border-bottom: none;
+    }
+
+    .table-modern tbody td[data-label="Feedback"]::before {
+        display: none;
+    }
+
+    .table-modern .feedback-text-cell {
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }
+
+    /* ---- Cleaned text collapsed into a subtle sub-line ---- */
+    .table-modern tbody td[data-label="Cleaned Text"] {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        padding-top: 0;
+    }
+
+    .table-modern tbody td[data-label="Cleaned Text"] .feedback-text-cell {
+        font-size: 0.78rem;
+        opacity: 0.85;
+    }
+
+    /* ---- Category / Sentiment / Urgency score → inline meta chips ---- */
+    .table-modern tbody td[data-label="Category"],
+    .table-modern tbody td[data-label="Sentiment"],
+    .table-modern tbody td[data-label="Urgency Score"] {
+        display: inline-flex;
+        align-items: center;
+        width: auto;
+        border: none;
+        padding: 0.15rem 0.1rem;
+        margin-right: 0.35rem;
+    }
+
+    .table-modern tbody td[data-label="Category"] .badge,
+    .table-modern tbody td[data-label="Sentiment"] .sentiment-dot {
+        font-size: 0.68rem;
+        padding: 0.18rem 0.5rem;
+    }
+
+    .table-modern tbody td[data-label="Urgency Score"] .urgency-badge {
+        font-size: 0.68rem;
+        padding: 0.18rem 0.5rem;
+    }
+
+    /* ---- Status + Assignee on their own labeled rows ---- */
+    .table-modern tbody td[data-label="Status"],
+    .table-modern tbody td[data-label="Assigned To"] {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .table-modern tbody td[data-label="Status"] form,
+    .table-modern tbody td[data-label="Assigned To"] form {
+        margin: 0;
+    }
+
+    .table-modern tbody td[data-label="Status"] .status-select {
+        font-size: 0.85rem;
+        padding: 0.45rem 0.7rem;
+        border-radius: var(--radius-md);
+        min-height: 2.35rem;
+    }
+
+    .table-modern tbody td[data-label="Assigned To"] input {
+        width: 100% !important;
+        font-size: 0.82rem !important;
+        padding: 0.5rem 0.65rem !important;
+        border-radius: var(--radius-md) !important;
+        min-height: 2.35rem;
+    }
+
+    .table-modern tbody td[data-label="Assigned To"] form {
+        display: flex;
+        gap: 0.4rem;
+        width: 100%;
+    }
+
+    .table-modern tbody td[data-label="Assigned To"] .action-btn {
+        width: 2.35rem;
+        height: 2.35rem;
+        flex-shrink: 0;
+    }
+
+    /* ---- Actions → full-width thumb-reachable row ---- */
+    .table-modern tbody td[data-label="Actions"] {
+        border-top: 1px solid var(--border-color);
+        margin-top: 0.4rem;
+        padding-top: 0.6rem;
+    }
+
+    .table-modern tbody td[data-label="Actions"]::before {
+        display: none;
+    }
+
+    .action-btn-group {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.45rem;
+        width: 100%;
+    }
+
+    .action-btn-group .action-btn,
+    .action-btn-group form {
+        width: 100%;
+    }
+
+    .action-btn-group .action-btn {
+        width: 100%;
+        height: 2.6rem;
+        border-radius: 0.85rem;
+        font-size: 1rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+    }
+
+    .action-btn-group form {
+        margin: 0 !important;
+    }
+}
+
+/* ============================================================ */
+/* 7. SECTION HEADER + PAGINATION + MODAL POLISH
+/* ============================================================ */
+@media (max-width: 768px) {
+    .section-header {
+        margin-bottom: 0.8rem;
+        gap: 0.4rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+    }
+
+    .section-title .badge {
+        font-size: 0.68rem;
+        padding: 0.18rem 0.5rem;
+    }
+
+    .pagination-modern {
+        margin-top: 1rem;
+        gap: 0.3rem;
+    }
+
+    .pagination-modern .page-btn {
+        min-width: 2.1rem;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+        border-radius: var(--radius-full);
+    }
+
+    .pagination-modern .page-info {
+        font-size: 0.75rem;
+        width: 100%;
+        text-align: center;
+        margin-top: 0.3rem;
+    }
+
+    /* Bottom-sheet style modals */
+    .modal-content {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 1.4rem 1.4rem 0 0;
+        max-height: 88vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .modal-content {
+        border-radius: 1.4rem 1.4rem 0 0;
+        padding: 1.4rem 1.1rem calc(1.4rem + env(safe-area-inset-bottom, 0));
+    }
+}
+
+/* ============================================================ */
+/* 8. SMALL-PHONE TWEAKS (≤480px)
+/* ============================================================ */
+@media (max-width: 480px) {
+    .admin-hero-actions {
+        gap: 0.5rem;
+    }
+
+    .table-modern tbody td[data-label="Feedback"] {
+        font-size: 0.9rem;
+    }
+
+    .table-modern tbody td[data-label="Category"],
+    .table-modern tbody td[data-label="Sentiment"] {
+        margin-right: 0.2rem;
+    }
+
+    .action-btn-group {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ============================================================ */
+/* 📈 ADMIN ANALYTICS → PREMIUM NATIVE MOBILE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   admin analytics page (admin_analytics.html) into a cohesive,
+   native app-like experience:
+     • Hero           → app card w/ risk gauge + stacked CTAs
+     • Metrics        → compact 2×2 glass stat widgets
+     • Early warnings → native alert cards w/ confidence ring
+     • Trend          → stacked full-width chart + resolution card
+     • Category table → native stacked cards w/ labels + progress
+     • Hour/Day charts→ stacked full-width cards
+     • Locations      → native list w/ gradient meters
+     • Department table → native stacked cards
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- Shared tokens for the analytics mobile redesign ---- */
+@media (max-width: 768px) {
+    :root {
+        --mob-an-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --mob-an-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+/* ============================================================ */
+/* 1. METRICS → COMPACT 2×2 GLASS WIDGETS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-analytics .stats-grid,
+    .stats-grid[style*="repeat(5"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.7rem;
+        margin-bottom: 1.05rem;
+    }
+
+    .admin-analytics .stat-card {
+        padding: 0.95rem 0.85rem 0.85rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        animation: admStatIn 0.4s var(--mob-card-ease) both;
+    }
+
+    .admin-analytics .stat-card:nth-child(1) { animation-delay: 0.02s; }
+    .admin-analytics .stat-card:nth-child(2) { animation-delay: 0.06s; }
+    .admin-analytics .stat-card:nth-child(3) { animation-delay: 0.1s; }
+    .admin-analytics .stat-card:nth-child(4) { animation-delay: 0.14s; }
+    .admin-analytics .stat-card:nth-child(5) { animation-delay: 0.18s; }
+
+    .admin-analytics .stat-card:active {
+        transform: scale(0.98);
+    }
+
+    .admin-analytics .stat-card-accent {
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        border-radius: 0 0 2px 2px;
+    }
+
+    .admin-analytics .stat-card-icon {
+        width: 2.3rem;
+        height: 2.3rem;
+        font-size: 1.05rem;
+        border-radius: 0.8rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .admin-analytics .stat-card-value {
+        font-size: 1.6rem;
+        margin-bottom: 0.1rem;
+    }
+
+    .admin-analytics .stat-card-label {
+        font-size: 0.68rem;
+        letter-spacing: 0.03em;
+    }
+
+    .admin-analytics .stat-card-trend {
+        margin-top: 0.45rem;
+        font-size: 0.66rem;
+        padding-top: 0.4rem;
+        border-top: 1px solid var(--border-color);
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-analytics .stat-card-value {
+        font-size: 1.45rem;
+    }
+}
+
+/* ============================================================ */
+/* 2. EARLY WARNINGS → NATIVE ALERT CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-analytics .predictive-card {
+        border-radius: 1.15rem;
+        padding: 1rem 1rem;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 0.75rem;
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        animation: anWarnIn 0.4s var(--mob-an-spring) both;
+    }
+
+    .admin-analytics .predictive-card:nth-child(2) { animation-delay: 0.05s; }
+    .admin-analytics .predictive-card:nth-child(3) { animation-delay: 0.1s; }
+    .admin-analytics .predictive-card:nth-child(4) { animation-delay: 0.15s; }
+
+    @keyframes anWarnIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .admin-analytics .predictive-card:active {
+        transform: scale(0.99);
+    }
+
+    /* Confidence ring centered for mobile */
+    .admin-analytics .confidence-ring {
+        width: 3rem;
+        height: 3rem;
+        font-size: 0.82rem;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+    }
+
+    .admin-analytics .predictive-event {
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+
+    .admin-analytics .predictive-evidence {
+        font-size: 0.78rem;
+        line-height: 1.45;
+        color: var(--text-secondary);
+    }
+
+    .admin-analytics .predictive-actions {
+        gap: 0.3rem;
+        margin-top: 0.4rem;
+    }
+
+    .admin-analytics .predictive-actions .keyword-chip {
+        font-size: 0.68rem;
+        padding: 0.2rem 0.55rem;
+    }
+}
+
+/* ============================================================ */
+/* 3. TREND + RESOLUTION → STACKED FULL-WIDTH CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-analytics .chart-card-premium,
+    .admin-analytics .progress-card-premium {
+        padding: 1.15rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .admin-analytics .chart-card-premium-title,
+    .admin-analytics .progress-card-premium-title {
+        font-size: 0.9rem;
+    }
+
+    .admin-analytics .progress-card-premium-value {
+        font-size: 1.35rem;
+    }
+
+    .admin-analytics .progress-bar-premium {
+        height: 0.7rem;
+    }
+
+    .admin-analytics .progress-card-premium-info {
+        font-size: 0.76rem;
+    }
+
+    /* Legend chips wrap nicely */
+    .admin-analytics .chart-stat-dot {
+        font-size: 0.68rem;
+    }
+
+    /* Comfortable chart height on mobile */
+    #sentimentTrendChart {
+        max-height: 240px;
+    }
+
+    /* Resolution mini-grid → 2×2 compact tiles */
+    .admin-analytics .res-badge {
+        padding: 0.75rem 0.5rem;
+        border-radius: 0.95rem;
+    }
+    .admin-analytics .res-badge strong {
+        font-size: 1.2rem;
+    }
+    .admin-analytics .res-badge span {
+        font-size: 0.62rem;
+    }
+}
+
+/* ============================================================ */
+/* 4. CATEGORY TABLE → NATIVE STACKED CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-analytics .table-modern tbody tr {
+        padding: 1rem 0.95rem 0.95rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 0.8rem;
+    }
+
+    .admin-analytics .table-modern tbody td {
+        padding: 0.38rem 0;
+        font-size: 0.85rem;
+        gap: 0.4rem;
+    }
+
+    /* Top row: category name as title + total chip on the right */
+    .admin-analytics .table-modern tbody td[data-label="Category"] {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .admin-analytics .table-modern tbody td[data-label="Category"]::before {
+        display: none;
+    }
+
+    /* Meta chips inline */
+    .admin-analytics .table-modern tbody td[data-label="Positive"],
+    .admin-analytics .table-modern tbody td[data-label="Negative"],
+    .admin-analytics .table-modern tbody td[data-label="Neutral"] {
+        display: inline-flex;
+        align-items: center;
+        width: auto;
+        border: none;
+        padding: 0.15rem 0.1rem;
+        margin-right: 0.35rem;
+    }
+
+    .admin-analytics .table-modern tbody td[data-label="Positive"] .sentiment-dot,
+    .admin-analytics .table-modern tbody td[data-label="Negative"] .sentiment-dot {
+        font-size: 0.68rem;
+        padding: 0.18rem 0.45rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+    }
+
+    .admin-analytics .table-modern tbody td[data-label="Avg Urgency"] {
+        display: inline-flex;
+        align-items: center;
+        width: auto;
+        border: none;
+        padding: 0.15rem 0.1rem;
+        margin-right: 0.35rem;
+    }
+
+    .admin-analytics .table-modern tbody td[data-label="Avg Urgency"] .urgency-badge {
+        font-size: 0.68rem;
+        padding: 0.18rem 0.5rem;
+    }
+
+    /* Progress row full width */
+    .admin-analytics .table-modern tbody td[data-label="Progress"] {
+        border-top: 1px solid var(--border-color);
+        margin-top: 0.4rem;
+        padding-top: 0.6rem;
+    }
+
+    .admin-analytics .table-modern tbody td[data-label="Progress"] .progress-bar {
+        height: 0.6rem;
+    }
+}
+
+/* ============================================================ */
+/* 5. HOUR + DAY + LOCATION CHARTS → STACKED CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-analytics .charts-row-analytics {
+        grid-template-columns: 1fr;
+        gap: 0.85rem;
+        margin-bottom: 0;
+    }
+
+    #hourChart,
+    #dayChart {
+        max-height: 200px;
+    }
+
+    /* Location list → glass rows with gradient meters */
+    .admin-analytics .loc-row {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.55rem 0.7rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 0.9rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .admin-analytics .loc-row:active {
+        transform: scale(0.99);
+    }
+
+    .admin-analytics .loc-name {
+        font-weight: 600;
+        font-size: 0.8rem;
+        min-width: 0;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .admin-analytics .loc-meter {
+        flex: 1;
+        max-width: 90px;
+        height: 0.5rem;
+        background: var(--border-color);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+
+    .admin-analytics .loc-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--danger), #f87171);
+        border-radius: var(--radius-full);
+        transition: width 0.3s ease;
+    }
+}
+
+/* ============================================================ */
+/* 6. DEPARTMENT TABLE → NATIVE STACKED CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-analytics .dept-row {
+        padding: 1rem 0.95rem 0.95rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 0.8rem;
+    }
+
+    .admin-analytics .dept-row td {
+        padding: 0.38rem 0;
+        font-size: 0.85rem;
+        gap: 0.4rem;
+    }
+
+    .admin-analytics .dept-row td[data-label="Department"] {
+        font-size: 0.95rem;
+        font-weight: 800;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .admin-analytics .dept-row td[data-label="Department"]::before {
+        display: none;
+    }
+
+    .admin-analytics .dept-row td[data-label="Resolution Rate"],
+    .admin-analytics .dept-row td[data-label="Avg Time"] {
+        display: inline-flex;
+        align-items: center;
+        width: auto;
+        border: none;
+        padding: 0.15rem 0.1rem;
+        margin-right: 0.35rem;
+    }
+
+    .admin-analytics .dept-row td[data-label="Progress"] {
+        border-top: 1px solid var(--border-color);
+        margin-top: 0.4rem;
+        padding-top: 0.6rem;
+    }
+
+    .admin-analytics .dept-row td[data-label="Progress"] .progress-bar {
+        height: 0.6rem;
+    }
+}
+
+/* ---- Dark mode refinements ---- */
+@media (max-width: 768px) {
+    html.theme-dark .admin-analytics .predictive-card,
+    html.theme-dark .admin-analytics .chart-card-premium,
+    html.theme-dark .admin-analytics .progress-card-premium,
+    html.theme-dark .admin-analytics .loc-row {
+        background: var(--card-bg);
+    }
+}
+
+/* ---- Extra-small phones (≤480px) ---- */
+@media (max-width: 480px) {
+    .admin-analytics .stat-card-value {
+        font-size: 1.4rem;
+    }
+
+    .admin-analytics .predictive-event {
+        font-size: 0.88rem;
+    }
+
+    .admin-analytics .chart-card-premium-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+    }
+}
+
+/* ============================================================ */
+/* 📢 ADMIN ANNOUNCEMENTS → PREMIUM NATIVE MOBILE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   admin announcements page (admin_announcements.html) into a
+   cohesive, native app-like experience:
+     • Create card    → app glass card w/ animated gradient accent
+     • Category/Prio  → touch-optimized glass selector tiles
+     • Fields         → pill inputs + focus glow + segmented counter
+     • Publish btn    → gradient + pulse ring
+     • Search/filter  → horizontal scrollable snap-scroll pill bar
+     • Listing        → native touch cards w/ category accent bar,
+                        stagger entry, meta chips, thumb-friendly delete
+     • Empty state    → polish
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- Shared tokens ---- */
+@media (max-width: 768px) {
+    .admin-announcements {
+        --mob-ann-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --mob-ann-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+/* ============================================================ */
+/* 1. CREATE CARD → APP GLASS CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-announcements .split-panel-left .chart-card,
+    .admin-announcements .split-panel-right .chart-card {
+        position: relative;
+        padding: 1.15rem 1rem 1.4rem;
+        border-radius: 1.5rem;
+        border: 1px solid var(--border-color);
+        background:
+            radial-gradient(ellipse 480px 260px at 92% -6%, rgba(16,185,129,0.1) 0%, transparent 60%),
+            linear-gradient(180deg, var(--card-bg), var(--card-bg));
+        box-shadow: 0 18px 44px rgba(16,185,129,0.14);
+        overflow: hidden;
+        margin: 0 0 1.1rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Animated green gradient accent strip along the top */
+    .admin-announcements .split-panel-left .chart-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--success), #34d399, var(--primary-light), var(--success));
+        background-size: 300% 100%;
+        animation: annBorderMove 5s linear infinite;
+        opacity: 0.85;
+    }
+
+    @keyframes annBorderMove {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 300% 50%; }
+    }
+
+    html.theme-dark .admin-announcements .split-panel-left .chart-card,
+    html.theme-dark .admin-announcements .split-panel-right .chart-card {
+        background:
+            radial-gradient(ellipse 480px 260px at 92% -6%, rgba(16,185,129,0.14) 0%, transparent 60%),
+            linear-gradient(180deg, var(--card-bg), var(--card-bg));
+        box-shadow: 0 18px 44px rgba(0,0,0,0.4);
+    }
+
+    /* Card headers → compact app headers with icon chip */
+    .admin-announcements .chart-card-header {
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.9rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .admin-announcements .chart-card-title {
+        font-size: 1rem;
+        letter-spacing: -0.02em;
+        font-weight: 800;
+    }
+}
+
+/* ============================================================ */
+/* 2. CATEGORY + PRIORITY → TOUCH-OPTIMIZED GLASS TILES
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-announcements .form-group-enhanced > div[style*="flex"] {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+    }
+
+    .admin-announcements .filter-pill {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        min-height: 3rem;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border-radius: 1rem;
+        border: 1.5px solid var(--border-color);
+        background: linear-gradient(180deg, var(--card-bg), rgba(16,185,129,0.03));
+        box-shadow: var(--shadow-sm);
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 0.28s var(--mob-ann-spring), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    }
+
+    .admin-announcements .filter-pill:active {
+        transform: scale(0.95);
+    }
+
+    .admin-announcements .filter-pill.active {
+        border-color: var(--success);
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: #fff;
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.16), 0 8px 22px rgba(16,185,129,0.22);
+        transform: scale(1.02);
+    }
+
+.admin-announcements .filter-pill:focus,
+    .admin-announcements .filter-pill:focus-within {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+    }
+}
+
+/* ============================================================ */
+/* 3. FORM FIELDS → PILL INPUTS + FOCUS GLOW
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-announcements .form-group-enhanced {
+        margin-bottom: 1.15rem;
+    }
+
+    .admin-announcements .form-group-enhanced .form-label {
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .admin-announcements .form-group-enhanced .form-label-hint {
+        font-size: 0.74rem;
+        margin-top: 0.15rem;
+    }
+
+    .admin-announcements .form-input-enhanced,
+    .admin-announcements .form-textarea-enhanced {
+        border-radius: 1rem;
+        border: 1.5px solid var(--border-color);
+        background: var(--bg-color);
+        font-size: 16px;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+
+    .admin-announcements .form-input-enhanced:focus,
+    .admin-announcements .form-textarea-enhanced:focus {
+        outline: none;
+        border-color: var(--success);
+        background: var(--card-bg);
+        box-shadow: 0 0 0 4px rgba(16,185,129,0.14);
+    }
+
+    .admin-announcements .form-textarea-enhanced {
+        min-height: 130px;
+        line-height: 1.55;
+    }
+
+    /* Expiry number input pill */
+    .admin-announcements input[name="expires_days"] {
+        width: 6.5rem !important;
+        border-radius: 1rem;
+    }
+
+    /* No-expiry toggle chip */
+    .admin-announcements .checkbox-label {
+        padding: 0.7rem 0.9rem;
+        border-radius: 1rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        font-size: 0.82rem;
+        font-weight: 700;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .admin-announcements .checkbox-label:active {
+        transform: scale(0.98);
+    }
+
+    .admin-announcements .checkbox-label input[type="checkbox"] {
+        width: 1.25rem;
+        height: 1.25rem;
+        accent-color: var(--success);
+    }
+
+    /* Segmented pill char counter */
+    .admin-announcements .char-counter {
+        margin-top: 0.45rem;
+        padding: 0.4rem 0.6rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 0.8rem;
+    }
+
+    .admin-announcements .char-counter-hint {
+        font-size: 0.72rem;
+    }
+
+    .admin-announcements .char-counter-count {
+        font-size: 0.72rem;
+        padding: 0.12rem 0.5rem;
+        border-radius: var(--radius-full);
+        background: rgba(16,185,129,0.1);
+        color: var(--success);
+    }
+}
+
+/* ============================================================ */
+/* 4. PUBLISH BUTTON → GRADIENT + PULSE RING
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-announcements #announcementForm button[type="submit"] {
+        position: relative;
+        width: 100%;
+        min-height: 3.1rem;
+        font-size: 0.95rem;
+        border-radius: 0.95rem;
+        background: linear-gradient(135deg, var(--success), #059669);
+        box-shadow: 0 8px 26px rgba(16,185,129,0.35);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .admin-announcements #announcementForm button[type="submit"]::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        border: 2px solid rgba(255,255,255,0.35);
+        animation: annSubmitPulse 2.2s var(--mob-ann-ease) infinite;
+        pointer-events: none;
+    }
+
+    @keyframes annSubmitPulse {
+        0% { transform: scale(1); opacity: 0.6; }
+        100% { transform: scale(1.06); opacity: 0; }
+    }
+
+    .admin-announcements #announcementForm button[type="submit"]:active {
+        transform: scale(0.97);
+    }
+}
+
+/* ============================================================ */
+/* 5. SEARCH + FILTER → HORIZONTAL SNAP-SCROLL PILL BAR
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-announcements .filter-bar-enhanced {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.75rem 0.85rem;
+        margin-bottom: 1.05rem;
+        border-radius: 1.15rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .admin-announcements .filter-bar-enhanced::-webkit-scrollbar {
+        display: none;
+    }
+
+    .admin-announcements .filter-bar-enhanced .filter-label {
+        font-size: 0.68rem;
+        margin-right: 0.1rem;
+        flex-shrink: 0;
+    }
+
+    .admin-announcements .filter-bar-enhanced .filter-input {
+        flex: 1 1 11rem;
+        min-width: 11rem;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.78rem;
+        border-radius: var(--radius-full);
+        min-height: 2.4rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Filter pills → scrollable snap chips */
+    .admin-announcements .announcements-filter-pills {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.4rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .admin-announcements .announcements-filter-pills::-webkit-scrollbar {
+        display: none;
+    }
+
+    .admin-announcements .announcements-filter-pill {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+        border-radius: var(--radius-full);
+        border: 1.5px solid var(--border-color);
+        background: var(--bg-color);
+        min-height: 2.4rem;
+        display: inline-flex;
+        align-items: center;
+        scroll-snap-align: start;
+        -webkit-tap-highlight-color: transparent;
+        transition: all var(--transition-fast);
+    }
+
+    .admin-announcements .announcements-filter-pill:active {
+        transform: scale(0.95);
+    }
+
+    .admin-announcements .announcements-filter-pill.active {
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: #fff;
+        border-color: var(--success);
+        box-shadow: 0 4px 12px rgba(16,185,129,0.25);
+    }
+}
+
+/* ============================================================ */
+/* 6. ANNOUNCEMENT CARDS → NATIVE TOUCH CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-announcements .announcements-list {
+        max-height: none !important;
+        overflow-y: visible !important;
+        padding-right: 0 !important;
+    }
+
+    .admin-announcements .announcement-list-item {
+        padding: 1rem 0.95rem;
+        border-radius: 1.15rem;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 0.75rem;
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        animation: annCardIn 0.4s var(--mob-ann-spring) both;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .admin-announcements .announcement-list-item:nth-child(1) { animation-delay: 0.02s; }
+    .admin-announcements .announcement-list-item:nth-child(2) { animation-delay: 0.06s; }
+    .admin-announcements .announcement-list-item:nth-child(3) { animation-delay: 0.1s; }
+    .admin-announcements .announcement-list-item:nth-child(4) { animation-delay: 0.14s; }
+    .admin-announcements .announcement-list-item:nth-child(5) { animation-delay: 0.18s; }
+    .admin-announcements .announcement-list-item:nth-child(6) { animation-delay: 0.22s; }
+
+    @keyframes annCardIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .admin-announcements .announcement-list-item:active {
+        transform: scale(0.99);
+    }
+
+    /* Category accent bar on the left */
+    .admin-announcements .announcement-list-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 0 2px 2px 0;
+        background: var(--primary);
+        opacity: 0.6;
+    }
+
+    .admin-announcements .announcement-list-item[data-category="Urgent"]::before { background: var(--danger); opacity: 0.75; }
+    .admin-announcements .announcement-list-item[data-category="Academic"]::before { background: #6366f1; }
+    .admin-announcements .announcement-list-item[data-category="Event"]::before { background: var(--warning); }
+
+    /* Title → prominent */
+    .admin-announcements .announcement-list-item strong {
+        font-size: 0.98rem;
+        line-height: 1.35;
+        padding-right: 0.5rem;
+    }
+
+    /* Meta → inline chips row */
+    .admin-announcements .announcement-list-item p {
+        font-size: 0.74rem;
+        line-height: 1.5;
+    }
+
+    /* Category badge + status badge restyle */
+    .admin-announcements .announcement-card-category-v2 {
+        font-size: 0.68rem !important;
+        padding: 0.2rem 0.55rem !important;
+        border-radius: var(--radius-full);
+    }
+
+    .admin-announcements .announcement-list-item .badge {
+        font-size: 0.62rem !important;
+        padding: 0.18rem 0.5rem !important;
+        border-radius: var(--radius-full);
+    }
+
+    /* Delete action → compact thumb-friendly chip */
+    .admin-announcements .announcement-list-item .btn-danger {
+        min-height: 2.4rem;
+        padding: 0.45rem 0.7rem;
+        font-size: 0.76rem;
+        border-radius: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 4px 12px rgba(239,68,68,0.18);
+    }
+
+    .admin-announcements .announcement-list-item .btn-danger:active {
+        transform: scale(0.95);
+    }
+}
+
+/* ============================================================ */
+/* 7. EMPTY STATE + NO RESULTS POLISH
+/* ============================================================ */
+@media (max-width: 768px) {
+    .admin-announcements .empty-state-premium {
+        padding: 2.5rem 1.25rem;
+        border-radius: 1.15rem;
+    }
+
+    .admin-announcements .empty-state-premium-icon {
+        font-size: 3.25rem;
+    }
+
+    .admin-announcements .empty-state-premium-title {
+        font-size: 1.15rem;
+    }
+
+    .admin-announcements .empty-state-premium-desc {
+        font-size: 0.85rem;
+    }
+}
+
+/* ============================================================ */
+/* 8. EXTRA-SMALL PHONES (≤480px)
+/* ============================================================ */
+@media (max-width: 480px) {
+    .admin-announcements .split-panel-left .chart-card,
+    .admin-announcements .split-panel-right .chart-card {
+        padding: 1rem 0.85rem 1.25rem;
+        border-radius: 1.35rem;
+    }
+
+    .admin-announcements .chart-card-title {
+        font-size: 0.95rem;
+    }
+
+    .admin-announcements .form-group-enhanced > div[style*="flex"] {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-announcements .announcement-list-item {
+        padding: 0.9rem 0.85rem;
+    }
+
+    .admin-announcements .announcement-list-item strong {
+        font-size: 0.92rem;
+    }
+
+.filter-bar-enhanced .filter-input {
+        min-width: 9rem;
+        flex-basis: 9rem;
+    }
+}
+
+/* ============================================================ */
+/* 📊 PUBLIC BOARD → PREMIUM NATIVE MOBILE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   public sentiment board (public_board.html) into a cohesive,
+   native app-like experience:
+     • Hero                → app greeting card w/ chart avatar + stacked CTAs
+     • Quick summary chips → glass sentiment legend that wraps
+     • Sentiment donut     → centered ring w/ compact progress bars below
+     • Top complaints      → native touch cards w/ urgency accent
+     • Category sentiment  → segmented progress rows w/ meta chips
+     • Forum activity      → compact 2×2 glass stat widgets + rounded bar
+     • SRC performance     → centered 1-col metric cards
+     • Footer note         → clean app-style footnote
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- Shared tokens for the public board mobile redesign ---- */
+@media (max-width: 768px) {
+    :root {
+        --mob-board-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --mob-board-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+/* ============================================================ */
+/* 1. HERO → APP GREETING CARD
+/* ============================================================ */
+@media (max-width: 768px) {
+    .dashboard-hero-premium {
+        margin: 0.25rem 0 1.1rem;
+        padding: 1.5rem 1.15rem 1.35rem;
+        border-radius: 1.6rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        background:
+            radial-gradient(ellipse 480px 260px at 88% -8%, rgba(96,165,250,0.28) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(252,211,77,0.14) 0%, transparent 60%),
+            linear-gradient(135deg, #1e40af 0%, #1e3a8a 55%, #162d50 100%);
+        box-shadow: 0 18px 44px rgba(30, 64, 175, 0.32);
+        overflow: hidden;
+    }
+
+    html.theme-dark .dashboard-hero-premium {
+        background:
+            radial-gradient(ellipse 480px 260px at 88% -8%, rgba(96,165,250,0.16) 0%, transparent 60%),
+            radial-gradient(ellipse 320px 220px at 0% 110%, rgba(252,211,77,0.08) 0%, transparent 60%),
+            linear-gradient(135deg, #0f2557 0%, #0e1f47 55%, #0a1836 100%);
+        box-shadow: 0 18px 44px rgba(0,0,0,0.45);
+    }
+
+    .dashboard-hero-greeting {
+        gap: 0.85rem;
+        margin-bottom: 0;
+    }
+
+    .dashboard-hero-avatar {
+        width: 3.4rem;
+        height: 3.4rem;
+        font-size: 1.35rem;
+        border: 2px solid rgba(255,255,255,0.35);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.22), 0 0 0 4px rgba(255,255,255,0.08);
+        background: linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0.1));
+    }
+
+    .dashboard-hero-title {
+        font-size: 1.35rem;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+    }
+
+    .dashboard-hero-subtitle {
+        font-size: 0.82rem;
+        line-height: 1.5;
+        color: rgba(255,255,255,0.78);
+        margin-top: 0.2rem;
+    }
+
+    /* Stacked, full-width, touch-friendly CTAs */
+    .dashboard-hero-actions {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 0.1rem;
+    }
+
+    .dashboard-hero-actions > * {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem 1rem;
+        border-radius: 1rem;
+        font-size: 0.95rem;
+        min-height: 3rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .dashboard-hero-actions .btn-hero-primary {
+        background: #fff;
+        color: var(--primary);
+        box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+    }
+
+    .dashboard-hero-actions .btn-hero:not(.btn-hero-primary) {
+        background: rgba(255,255,255,0.08);
+        color: #fff;
+        border: 1.5px solid rgba(255,255,255,0.22);
+    }
+
+    .dashboard-hero-actions > *:active {
+        transform: scale(0.97);
+    }
+}
+
+/* ============================================================ */
+/* 2. SENTIMENT DISTRIBUTION → GLASS CARD + CENTERED DONUT
+/* ============================================================ */
+@media (max-width: 768px) {
+    .chart-card-premium {
+        padding: 1.15rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.1rem;
+    }
+
+    .chart-card-premium-title {
+        font-size: 0.9rem;
+        line-height: 1.35;
+    }
+
+    /* Legend chips wrap cleanly on small screens */
+    .chart-card-premium-stats {
+        flex-wrap: wrap;
+        gap: 0.4rem 0.6rem;
+    }
+
+    .chart-stat-dot {
+        font-size: 0.68rem;
+        gap: 0.3rem;
+        padding: 0.2rem 0.5rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+        white-space: nowrap;
+    }
+
+    /* Stack the donut + progress bars vertically, center the ring */
+    .chart-card-premium > div[style*="display: flex"] {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.1rem;
+    }
+
+    .chart-card-premium > div[style*="display: flex"] > div[style*="width: 180px"] {
+        width: 100% !important;
+        height: auto !important;
+        display: flex;
+        justify-content: center;
+        margin: 0;
+    }
+
+    #sentimentDonutChart {
+        max-width: 9.5rem;
+        max-height: 9.5rem;
+        margin: 0 auto;
+    }
+
+    /* Progress column fills the card width */
+    .chart-card-premium > div[style*="display: flex"] > div[style*="flex: 1"] {
+        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+/* ============================================================ */
+/* 3. TOP COMPLAINTS → NATIVE TOUCH CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .feedback-card-premium {
+        border-radius: 1.15rem;
+        margin-bottom: 0.85rem;
+        box-shadow: var(--shadow-sm);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .feedback-card-premium:active {
+        transform: scale(0.99);
+    }
+
+    .feedback-card-premium-inner {
+        flex-direction: column;
+    }
+
+    .feedback-card-premium-accent {
+        width: 100%;
+        height: 3px;
+        border-radius: 2px 2px 0 0;
+    }
+
+    .feedback-card-premium-body {
+        padding: 1rem;
+    }
+
+    .feedback-card-premium-badges {
+        gap: 0.35rem;
+    }
+
+    .feedback-card-premium-time {
+        font-size: 0.68rem;
+        margin-top: 0.1rem;
+    }
+
+    .feedback-card-premium-text {
+        font-size: 0.88rem;
+        line-height: 1.55;
+        padding: 0.8rem 0.9rem;
+        border-radius: 0.9rem;
+    }
+}
+
+/* ============================================================ */
+/* 4. SENTIMENT BY CATEGORY → SEGMENTED PROGRESS ROWS
+/* ============================================================ */
+@media (max-width: 768px) {
+    /* Category rows */
+    .chart-card-premium > div[style*="flex-direction: column"] > div {
+        margin-bottom: 0.15rem;
+    }
+
+    .chart-card-premium .font-bold.text-sm {
+        font-size: 0.82rem;
+    }
+
+    .chart-card-premium .text-xs.text-secondary {
+        font-size: 0.68rem;
+    }
+
+    .chart-card-premium .progress-bar-premium {
+        height: 0.55rem;
+    }
+}
+
+/* ============================================================ */
+/* 5. FORUM ACTIVITY → COMPACT 2×2 GLASS WIDGETS + ROUNDED BAR
+/* ============================================================ */
+@media (max-width: 768px) {
+    /* Collapse the inline 4-column stat grid to 2×2 */
+    .chart-card-premium .stats-grid-premium[style*="grid-template-columns: repeat(4, 1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.6rem;
+        margin-bottom: 1rem;
+    }
+
+    .chart-card-premium .stats-grid-premium[style*="grid-template-columns: repeat(4, 1fr)"] .stat-card-premium {
+        padding: 0.9rem 0.75rem;
+        border-radius: 1rem;
+        text-align: center;
+    }
+
+    .chart-card-premium .stat-card-premium-value {
+        font-size: 1.4rem;
+    }
+
+    .chart-card-premium .stat-card-premium-label {
+        font-size: 0.62rem;
+    }
+
+    /* Rounded segmented forum-sentiment bar */
+    .chart-card-premium .progress-bar-premium[style*="display: flex"] {
+        height: 0.6rem;
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+
+    .chart-card-premium .progress-bar-premium[style*="display: flex"] > div {
+        border-radius: 0 !important;
+    }
+
+    .chart-card-premium .progress-bar-premium[style*="display: flex"] > div:first-child {
+        border-radius: var(--radius-full) 0 0 var(--radius-full) !important;
+    }
+
+    .chart-card-premium .progress-bar-premium[style*="display: flex"] > div:last-child {
+        border-radius: 0 var(--radius-full) var(--radius-full) 0 !important;
+    }
+
+    /* Forum sentiment header chip */
+    .chart-card-premium .justify-between.text-sm {
+        font-size: 0.8rem;
+    }
+}
+
+/* ============================================================ */
+/* 6. SRC PERFORMANCE → CENTERED 1-COL METRIC CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    /* Collapse the inline 3-column grid to 1 column */
+    .chart-card-premium .stats-grid-premium[style*="grid-template-columns: repeat(3, 1fr)"] {
+        grid-template-columns: 1fr !important;
+        gap: 0.6rem;
+    }
+
+    .chart-card-premium .stats-grid-premium[style*="grid-template-columns: repeat(3, 1fr)"] .stat-card-premium {
+        padding: 1rem 0.9rem;
+        border-radius: 1rem;
+    }
+
+    .chart-card-premium .stats-grid-premium[style*="grid-template-columns: repeat(3, 1fr)"] .stat-card-premium-value {
+        font-size: 1.7rem;
+    }
+
+    .chart-card-premium .stats-grid-premium[style*="grid-template-columns: repeat(3, 1fr)"] .stat-card-premium-label {
+        font-size: 0.68rem;
+    }
+}
+
+/* ============================================================ */
+/* 7. FOOTER NOTE → CLEAN APP FOOTNOTE
+/* ============================================================ */
+@media (max-width: 768px) {
+    .chart-card-premium ~ .text-center.mt-8.text-secondary.text-sm {
+        margin-top: 1.25rem;
+        padding: 1rem 1.1rem;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        font-size: 0.78rem;
+        line-height: 1.6;
+    }
+
+    .chart-card-premium ~ .text-center.mt-8.text-secondary.text-sm a {
+        font-weight: 700;
+    }
+}
+
+/* ============================================================ */
+/* 8. PREMIUM POLISH & SAFE AREAS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .chart-card-premium,
+    .feedback-card-premium,
+    .stat-card-premium {
+        will-change: transform, opacity;
+    }
+
+    .dashboard-hero-premium,
+    .chart-card-premium,
+    .feedback-card-premium {
+        scroll-margin-bottom: 1rem;
+    }
+
+    .dashboard-hero-actions a,
+    .chart-card-premium .filter-pill,
+    .feedback-card-premium {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ---- Extra-small phones (≤480px) ---- */
+@media (max-width: 480px) {
+    .dashboard-hero-title {
+        font-size: 1.2rem;
+    }
+
+    .dashboard-hero-avatar {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.2rem;
+    }
+
+    #sentimentDonutChart {
+        max-width: 8.5rem;
+        max-height: 8.5rem;
+    }
+
+    .chart-card-premium .stats-grid-premium[style*="grid-template-columns: repeat(4, 1fr)"] {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .chart-stat-dot {
+        font-size: 0.64rem;
+    }
+}
+
+/* ============================================================ */
+/* 💬 ADMIN CHAT ROOMS + MESSAGES → PREMIUM NATIVE REDESIGN
+/* ============================================================ */
+/* Additive-only. Only activates on mobile widths. Elevates the
+   admin chat room management (admin_chat_rooms.html) and admin
+   chat message monitoring (admin_chat_messages.html) pages into
+   a cohesive, native app-like experience:
+     • Page header   → compact app header w/ icon badge + stacked links
+     • Stats         → compact 2×2 glass stat widgets w/ stagger
+     • Filter bar    → horizontal scrollable snap-scroll pill bar
+     • Room cards    → native touch cards w/ gradient accent, staggered
+                       entry, badges row, meta chips, segmented sentiment
+                       bar, thumb-friendly delete chip
+     • Message cards → chat-style cards w/ gradient avatar, name, meta
+                       chips, urgency/sentiment row, flagged accent
+     • Modals        → bottom-sheet style polish
+     • Empty state   → polish
+   Desktop (style.css) and all other pages are left untouched.   */
+
+/* ---- Shared tokens ---- */
+@media (max-width: 768px) {
+    :root {
+        --mob-chatadmin-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        --mob-chatadmin-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+}
+
+/* ============================================================ */
+/* 1. PAGE HEADER → COMPACT APP HEADER
+/* ============================================================ */
+@media (max-width: 768px) {
+    .mb-6 > .flex.justify-between.items-center.flex-wrap.gap-3.mb-2 {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.7rem;
+    }
+
+    .mb-6 > .flex.justify-between.items-center.flex-wrap.gap-3.mb-2 h2 {
+        font-size: 1.2rem;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .mb-6 > .flex.justify-between.items-center.flex-wrap.gap-3.mb-2 h2::before {
+        content: '';
+        width: 2.7rem;
+        height: 2.7rem;
+        border-radius: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        background: linear-gradient(135deg, rgba(30,64,175,0.12), rgba(59,130,246,0.06));
+        border: 1px solid rgba(30,64,175,0.18);
+        box-shadow: 0 6px 18px rgba(30,64,175,0.15);
+        flex-shrink: 0;
+    }
+
+    .mb-6 > .flex.justify-between.items-center.flex-wrap.gap-3.mb-2 p {
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    /* Stack full-width back button */
+    .mb-6 > .flex.justify-between.items-center.flex-wrap.gap-3.mb-2 .btn,
+    .mb-6 > .flex.justify-between.items-center.flex-wrap.gap-3.mb-2 .flex .btn {
+        width: 100%;
+        justify-content: center;
+        min-height: 2.75rem;
+        border-radius: 0.9rem;
+    }
+
+    /* Message page action row (Flagged / All / Back) */
+    .mb-6 .flex.gap-2.flex-wrap {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+    }
+
+    .mb-6 .flex.gap-2.flex-wrap .btn {
+        flex: 1 1 auto;
+        min-width: 6.5rem;
+        justify-content: center;
+        min-height: 2.5rem;
+        font-size: 0.8rem;
+        border-radius: var(--radius-full);
+    }
+
+    /* Flagged warning alert → glass chip */
+    .alert.alert-warning.mb-4 {
+        border-radius: 1rem;
+        padding: 0.8rem 1rem;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(245,158,11,0.22);
+    }
+}
+
+/* ============================================================ */
+/* 2. STATS → COMPACT 2×2 GLASS WIDGETS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .grid.grid-cols-4.gap-3.mb-4 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.7rem;
+        margin-bottom: 1.05rem;
+    }
+
+    .stat-card-room,
+    .stat-card-mini {
+        padding: 0.95rem 0.85rem 0.85rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        animation: chatAdmStatIn 0.4s var(--mob-card-ease) both;
+    }
+
+    .stat-card-room:nth-child(1),
+    .stat-card-mini:nth-child(1) { animation-delay: 0.02s; }
+    .stat-card-room:nth-child(2),
+    .stat-card-mini:nth-child(2) { animation-delay: 0.06s; }
+    .stat-card-room:nth-child(3),
+    .stat-card-mini:nth-child(3) { animation-delay: 0.1s; }
+    .stat-card-room:nth-child(4),
+    .stat-card-mini:nth-child(4) { animation-delay: 0.14s; }
+
+    @keyframes chatAdmStatIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card-room:active,
+    .stat-card-mini:active { transform: scale(0.98); }
+
+    .stat-card-room .stat-val,
+    .stat-card-mini .stat-val {
+        font-size: 1.6rem;
+        margin-bottom: 0.1rem;
+    }
+
+    .stat-card-room .stat-lbl,
+    .stat-card-mini .stat-lbl {
+        font-size: 0.68rem;
+        letter-spacing: 0.03em;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-card-room .stat-val,
+    .stat-card-mini .stat-val { font-size: 1.45rem; }
+}
+
+/* ============================================================ */
+/* 3. FILTER BAR → HORIZONTAL SCROLLABLE PILL BAR
+/* ============================================================ */
+@media (max-width: 768px) {
+    .filter-bar-enhanced.mb-4 {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.7rem 0.85rem;
+        margin-bottom: 0.9rem;
+        border-radius: 1.15rem;
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filter-bar-enhanced.mb-4::-webkit-scrollbar { display: none; }
+
+    .filter-bar-enhanced .filter-label {
+        font-size: 0.68rem;
+        margin-right: 0.1rem;
+        flex-shrink: 0;
+    }
+
+    .filter-bar-enhanced .filter-input {
+        flex: 1 1 11rem;
+        min-width: 11rem;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.78rem;
+        border-radius: var(--radius-full);
+        min-height: 2.4rem;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .filter-bar-enhanced .filter-select {
+        flex: 0 0 auto;
+        max-width: 8.5rem;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.78rem;
+        border-radius: var(--radius-full);
+        min-height: 2.4rem;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .filter-bar-enhanced .ml-auto,
+    .filter-bar-enhanced .live-indicator.ml-auto {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    /* Live indicator → floating pulse chip */
+    .live-indicator#liveIndicator {
+        padding: 0.4rem 0.75rem;
+        border-radius: var(--radius-full);
+        font-size: 0.72rem;
+        box-shadow: 0 4px 12px rgba(16,185,129,0.2);
+        flex-shrink: 0;
+    }
+}
+
+/* ============================================================ */
+/* 4. ROOM CARDS → NATIVE TOUCH CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .grid.grid-cols-2.gap-4#roomGrid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+
+    .room-card {
+        padding: 1.05rem 1rem 1rem;
+        border-radius: 1.15rem;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+        animation: roomCardIn 0.4s var(--mob-card-ease) both;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .room-card:nth-child(1) { animation-delay: 0.02s; }
+    .room-card:nth-child(2) { animation-delay: 0.06s; }
+    .room-card:nth-child(3) { animation-delay: 0.1s; }
+    .room-card:nth-child(4) { animation-delay: 0.14s; }
+    .room-card:nth-child(5) { animation-delay: 0.18s; }
+    .room-card:nth-child(6) { animation-delay: 0.22s; }
+
+    @keyframes roomCardIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .room-card:active { transform: scale(0.99); }
+
+    /* Redundant top accent (inline colored bar) → keep subtle */
+    .room-card-accent {
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        border-radius: 0 0 2px 2px;
+    }
+
+    .room-card-top {
+        margin-bottom: 0.5rem;
+    }
+
+    .room-card-name {
+        font-size: 1rem;
+        line-height: 1.3;
+    }
+
+    .room-card-time {
+        font-size: 0.68rem;
+        padding: 0.2rem 0.5rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+    }
+
+    /* Badges row → compact chips */
+    .room-card > div[style*="margin-bottom: 0.5rem"] {
+        gap: 0.35rem;
+        margin-bottom: 0.45rem !important;
+    }
+
+    .room-card .badge {
+        font-size: 0.66rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: var(--radius-full);
+    }
+
+    /* Meta chips */
+    .room-card-stats {
+        gap: 0.6rem;
+        font-size: 0.74rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .room-card-stats span {
+        gap: 0.25rem;
+        padding: 0.25rem 0.6rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+    }
+
+    /* Segmented sentiment bar */
+    .room-card-sentiment {
+        margin-bottom: 0.7rem;
+    }
+
+    .sentiment-bar {
+        height: 0.55rem;
+        border-radius: var(--radius-full);
+    }
+
+    .sentiment-labels {
+        font-size: 0.66rem;
+        margin-top: 0.3rem;
+    }
+
+    /* Delete action → full-width thumb-friendly chip */
+    .room-card-actions {
+        margin-top: 0.4rem;
+    }
+
+    .room-card-actions form {
+        display: block;
+        width: 100%;
+        margin: 0;
+    }
+
+    .room-card-actions .btn-danger {
+        width: 100%;
+        justify-content: center;
+        min-height: 2.6rem;
+        font-size: 0.82rem;
+        border-radius: 0.85rem;
+        box-shadow: 0 4px 12px rgba(239,68,68,0.18);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .room-card-actions .btn-danger:active {
+        transform: scale(0.97);
+    }
+}
+
+/* ============================================================ */
+/* 5. MESSAGE CARDS → NATIVE CHAT-STYLE CARDS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .msg-card {
+        padding: 0.95rem 1rem;
+        border-radius: 1.1rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 0.7rem;
+        border: 1px solid var(--border-color);
+        -webkit-tap-highlight-color: transparent;
+        animation: msgCardIn 0.4s var(--mob-card-ease) both;
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .msg-card:nth-child(1) { animation-delay: 0.02s; }
+    .msg-card:nth-child(2) { animation-delay: 0.06s; }
+    .msg-card:nth-child(3) { animation-delay: 0.1s; }
+    .msg-card:nth-child(4) { animation-delay: 0.14s; }
+    .msg-card:nth-child(5) { animation-delay: 0.18s; }
+
+    @keyframes msgCardIn {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-card:active { transform: scale(0.99); }
+
+    .msg-card:hover { transform: none; box-shadow: var(--shadow-md); }
+
+    /* Flagged → red left accent (replace full left border) */
+    .msg-card-flagged {
+        border-left: none;
+        position: relative;
+    }
+    .msg-card-flagged::before {
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 4px;
+        border-radius: 0 2px 2px 0;
+        content: '⚠️';
+        width: auto;
+        height: auto;
+        padding: 0;
+        font-size: 0.9rem;
+        background: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--danger);
+        background: linear-gradient(to bottom, var(--danger), #f87171);
+        opacity: 0.85;
+        letter-spacing: normal;
+    }
+
+    .msg-card-top {
+        gap: 0.55rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .msg-avatar {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 0.75rem;
+        border-radius: 0.8rem;
+        box-shadow: 0 4px 12px rgba(30,64,175,0.2);
+    }
+
+    .msg-student {
+        font-size: 0.88rem;
+    }
+
+    .msg-room {
+        font-size: 0.68rem;
+        padding: 0.18rem 0.5rem;
+        border-radius: var(--radius-full);
+    }
+
+    .msg-time {
+        font-size: 0.66rem;
+        padding: 0.2rem 0.5rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+    }
+
+    .msg-text {
+        font-size: 0.88rem;
+        line-height: 1.55;
+        padding: 0.7rem 0.85rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 0.9rem;
+        margin-left: 0;
+        margin-top: 0.15rem;
+    }
+
+    .msg-meta {
+        gap: 0.35rem;
+        margin-top: 0.5rem;
+        padding-left: 0;
+    }
+
+    .msg-meta .badge {
+        font-size: 0.66rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-full);
+    }
+}
+
+/* ============================================================ */
+/* 6. MODALS + EMPTY STATE POLISH
+/* ============================================================ */
+@media (max-width: 768px) {
+    /* Bottom-sheet modals (delete + message detail) */
+    .modal-content {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 1.4rem 1.4rem 0 0;
+        max-height: 88vh;
+    }
+
+    .modal-header {
+        font-size: 1.05rem;
+    }
+
+    .modal-detail-row {
+        font-size: 0.82rem;
+        padding: 0.55rem 0;
+    }
+
+    .modal-detail-value {
+        font-size: 0.82rem;
+    }
+
+    /* Detail modal message box */
+    .modal-content > div[style*="background: var(--bg-color)"] {
+        border-radius: 0.9rem;
+    }
+
+    /* Empty / no-results states */
+    .no-results,
+    .empty-state.mt-6 {
+        padding: 2.5rem 1.25rem;
+        border-radius: 1.15rem;
+    }
+
+    .no-results span[style*="font-size: 3rem"],
+    .empty-state-icon {
+        font-size: 3rem;
+    }
+
+    .no-results .btn-primary,
+    .empty-state .btn-primary {
+        width: 100%;
+        justify-content: center;
+        min-height: 3rem;
+        border-radius: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .modal-content {
+        border-radius: 1.4rem 1.4rem 0 0;
+        padding: 1.4rem 1.1rem calc(1.4rem + env(safe-area-inset-bottom, 0));
+    }
+}
+
+/* ============================================================ */
+/* 7. PREMIUM POLISH & SAFE AREAS
+/* ============================================================ */
+@media (max-width: 768px) {
+    .room-card,
+    .msg-card,
+    .stat-card-room,
+    .stat-card-mini,
+    .filter-bar-enhanced.mb-4 {
+        will-change: transform, opacity;
+    }
+
+    .room-card,
+    .msg-card,
+    .stat-card-room,
+    .stat-card-mini,
+    .filter-bar-enhanced.mb-4,
+    .no-results,
+    .empty-state.mt-6 {
+        scroll-margin-bottom: 1rem;
+    }
+
+    .room-card,
+    .msg-card,
+    .msg-avatar,
+    .room-card-actions .btn-danger,
+    .filter-bar-enhanced .filter-input,
+    .filter-bar-enhanced .filter-select,
+    .live-indicator#liveIndicator {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Disable hover-lift on touch */
+    .room-card:hover { transform: none; }
+    .msg-card:hover { transform: none; }
+}
+
+/* ---- Dark mode refinements ---- */
+@media (max-width: 768px) {
+    html.theme-dark .room-card,
+    html.theme-dark .msg-card,
+    html.theme-dark .stat-card-room,
+    html.theme-dark .stat-card-mini,
+    html.theme-dark .filter-bar-enhanced.mb-4 {
+        background: var(--card-bg);
+    }
+
+    html.theme-dark .msg-text {
+        background: rgba(148,163,184,0.06);
+        border-color: var(--border-color);
+    }
+
+    html.theme-dark .msg-card-flagged::before {
+        opacity: 0.7;
+    }
+}
+
+/* ---- Extra-small phones (≤480px) ---- */
+@media (max-width: 480px) {
+    .mb-6 > .flex.justify-between.items-center.flex-wrap.gap-3.mb-2 h2 {
+        font-size: 1.1rem;
+    }
+
+    .mb-6 > .flex.justify-between.items-center.flex-wrap.gap-3.mb-2 h2::before {
+        width: 2.4rem;
+        height: 2.4rem;
+        font-size: 1.15rem;
+    }
+
+    .room-card-name {
+        font-size: 0.95rem;
+    }
+
+    .room-card-stats {
+        gap: 0.4rem;
+    }
+
+    .msg-student {
+        font-size: 0.84rem;
+    }
+
+    .msg-text {
+        font-size: 0.85rem;
+    }
+
+    .filter-bar-enhanced .filter-input {
+        min-width: 9rem;
+        flex-basis: 9rem;
+    }
+}
