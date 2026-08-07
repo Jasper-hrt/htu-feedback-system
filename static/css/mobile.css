@@ -485,10 +485,11 @@
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
     }
 
-    .navbar-container {
+.navbar-container {
         height: 56px;
         padding: 0 0.75rem;
         gap: 0.4rem;
+        justify-content: space-between;
     }
 
     .navbar-brand-with-logo {
@@ -629,17 +630,25 @@
         margin: -0.75rem -0.75rem 0.6rem;
     }
 
-    /* ---- Header: avatar + name on its own row ---- */
+/* ---- Header: tappable dropdown trigger ---- */
     .student-side-menu-header {
         display: flex;
         align-items: center;
         gap: 0.6rem;
         width: 100%;
         flex: 0 0 auto;
-        padding: 0 0.25rem 0.6rem;
-        border-bottom: 1px solid var(--border-color);
+        padding: 0.35rem 0.4rem;
+        margin: -0.75rem -0.75rem 0;
+        border-radius: var(--radius-lg);
+        border-bottom: none;
         background: transparent;
-        margin-bottom: 0.5rem;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+
+    .student-side-menu-header:active {
+        background: rgba(59, 130, 246, 0.08);
     }
 
     .student-side-menu-avatar {
@@ -669,23 +678,57 @@
         display: none;
     }
 
-    /* ---- Section labels reinstated ---- */
+    /* ---- Dropdown chevron ---- */
+    .student-side-menu-chevron {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: var(--radius-full);
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+        flex-shrink: 0;
+        transition: transform 0.28s var(--mob-card-ease), color var(--transition-fast), background var(--transition-fast);
+    }
+
+    .student-side-menu.open .student-side-menu-chevron {
+        transform: rotate(180deg);
+        color: var(--primary);
+        background: rgba(59, 130, 246, 0.1);
+        border-color: rgba(59, 130, 246, 0.25);
+    }
+
+    /* ---- Collapsed body (hidden by default) ---- */
     .student-side-menu-label {
+        display: none;
+    }
+
+    .student-side-menu-nav {
+        display: none;
+    }
+
+    .student-side-menu-footer {
+        display: none;
+    }
+
+    /* ---- Revealed body when .open ---- */
+    .student-side-menu.open .student-side-menu-label {
         display: block;
         font-size: 0.66rem;
         font-weight: 800;
         color: var(--text-muted);
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        padding: 0.35rem 0.25rem 0.3rem;
+        padding: 0.55rem 0.25rem 0.3rem;
         border-bottom: none;
     }
 
-    /* ---- Nav groups: stacked, chips wrap neatly ---- */
-    .student-side-menu-nav {
+    .student-side-menu.open .student-side-menu-nav {
         display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
+        flex-direction: column;
         flex: 0 0 auto;
         width: 100%;
         align-items: stretch;
@@ -696,52 +739,51 @@
         scrollbar-width: none;
     }
 
-    .student-side-menu-nav::-webkit-scrollbar {
+    .student-side-menu.open .student-side-menu-nav::-webkit-scrollbar {
         display: none;
     }
 
-    .student-side-menu-link {
-        flex: 1 1 calc(50% - 0.4rem);
-        min-width: 7rem;
+    .student-side-menu.open .student-side-menu-link {
+        flex: 1 1 auto;
+        min-width: 0;
         justify-content: flex-start;
-        padding: 0.5rem 0.7rem;
-        font-size: 0.8rem;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.82rem;
         white-space: nowrap;
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-lg);
         background: var(--bg-color);
         border: 1px solid var(--border-color);
         box-shadow: var(--shadow-sm);
         transition: all var(--transition-fast);
     }
 
-    .student-side-menu-link:active {
-        transform: scale(0.96);
+    .student-side-menu.open .student-side-menu-link:active {
+        transform: scale(0.97);
     }
 
-    .student-side-menu-link.active::before {
+    .student-side-menu.open .student-side-menu-link.active::before {
         display: none;
     }
 
-    .student-side-menu-link.active {
+    .student-side-menu.open .student-side-menu-link.active {
         background: linear-gradient(135deg, rgba(30, 64, 175, 0.12), rgba(59, 130, 246, 0.06));
         border-color: rgba(30, 64, 175, 0.3);
         box-shadow: 0 4px 14px rgba(30, 64, 175, 0.16);
     }
 
-    html.theme-dark .student-side-menu-link.active {
+    html.theme-dark .student-side-menu.open .student-side-menu-link.active {
         background: linear-gradient(135deg, rgba(96, 165, 250, 0.18), rgba(96, 165, 250, 0.08));
         border-color: rgba(96, 165, 250, 0.35);
     }
 
-    .student-side-menu-link-icon {
+    .student-side-menu.open .student-side-menu-link-icon {
         width: 1.85rem;
         height: 1.85rem;
         font-size: 0.85rem;
         flex-shrink: 0;
     }
 
-    /* ---- Footer: full-width logout ---- */
-    .student-side-menu-footer {
+    .student-side-menu.open .student-side-menu-footer {
         display: block;
         flex: 0 0 auto;
         width: 100%;
@@ -749,7 +791,7 @@
         border-top: 1px solid var(--border-color);
     }
 
-    .student-side-menu-logout {
+    .student-side-menu.open .student-side-menu-logout {
         justify-content: flex-start;
         width: 100%;
         padding: 0.55rem 0.75rem;
@@ -758,14 +800,21 @@
         box-shadow: 0 4px 12px rgba(239, 68, 68, 0.14);
     }
 
-    /* Collapsed state is irrelevant on mobile — force full layout */
+    /* Reveal a subtle border only when opened */
+    .student-side-menu.open .student-side-menu-header {
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.6rem;
+        margin-bottom: 0.4rem;
+        border-radius: 0;
+    }
+
+    /* Collapsed state is irrelevant on mobile — the dropdown owns it.
+       Undo only the desktop collapsed-specific hides (header, texts) so the
+       trigger stays intact. nav/footer/label remain hidden until `.open`. */
     .student-side-menu.collapsed .student-side-menu-header,
     .student-side-menu.collapsed .student-side-menu-user,
-    .student-side-menu.collapsed .student-side-menu-nav,
     .student-side-menu.collapsed .student-side-menu-link,
     .student-side-menu.collapsed .student-side-menu-link-text,
-    .student-side-menu.collapsed .student-side-menu-label,
-    .student-side-menu.collapsed .student-side-menu-footer,
     .student-side-menu.collapsed .student-side-menu-logout,
     .student-side-menu.collapsed .student-side-menu-logout-text {
         display: revert;

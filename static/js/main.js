@@ -542,7 +542,7 @@ function initActivePageHighlight() {
 }
 
 // ============================================
-// 🧭 Student Side Menu Collapse Toggle
+// 🧭 Student Side Menu Collapse Toggle (desktop)
 // ============================================
 function initStudentSideMenu() {
     const menu = document.getElementById('studentSideMenu');
@@ -559,6 +559,81 @@ function initStudentSideMenu() {
     collapseBtn.addEventListener('click', function() {
         const collapsed = menu.classList.toggle('collapsed');
         localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
+    });
+}
+
+// ============================================
+// 📱 Student Side Menu → Mobile Dropdown Toggle
+// (Tapping the header collapses/expands the menu)
+// ============================================
+function initMobileStudentDropdown() {
+    const menu = document.getElementById('studentSideMenu');
+    if (!menu) return;
+
+    const header = menu.querySelector('.student-side-menu-header');
+    if (!header) return;
+
+    function isMobile() {
+        return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    // On mobile the dropdown owns the layout — drop any persisted
+    // desktop "collapsed" rail state so it can't interfere.
+    if (isMobile()) {
+        menu.classList.remove('collapsed');
+    }
+
+    function setOpen(open) {
+        menu.classList.toggle('open', open);
+        header.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    // Toggle on header tap
+    header.addEventListener('click', function(e) {
+        if (!isMobile()) return;
+        e.stopPropagation();
+        setOpen(!menu.classList.contains('open'));
+    });
+
+    // Close when a link inside the menu is clicked
+    menu.querySelectorAll('a').forEach(function(link) {
+        link.addEventListener('click', function() {
+            if (isMobile()) setOpen(false);
+        });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+        if (isMobile() && menu.classList.contains('open') && !menu.contains(e.target)) {
+            setOpen(false);
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && menu.classList.contains('open')) {
+            setOpen(false);
+        }
+    });
+
+    // Reset state when resizing between breakpoints
+    window.addEventListener('resize', function() {
+        if (isMobile()) {
+            menu.classList.remove('collapsed');
+        } else if (menu.classList.contains('open')) {
+            setOpen(false);
+        }
+    });
+
+    // Ensure the header is keyboard-focusable for accessibility
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('role', 'button');
+    header.setAttribute('aria-expanded', menu.classList.contains('open') ? 'true' : 'false');
+    header.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (isMobile()) setOpen(!menu.classList.contains('open'));
+        }
     });
 }
 
@@ -809,8 +884,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initAnnouncementFilters();
     initHeroParallax();
     initImageHandling();
-    initStudentDropdown();
+initStudentDropdown();
     initStudentSideMenu();
+    initMobileStudentDropdown();
     initActivePageHighlight();
     initMobileMoreMenu();
     initAdminMobileDrawer();
