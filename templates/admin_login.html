@@ -48,6 +48,7 @@
         {% endif %}
 
         <form method="POST" class="auth-form" id="adminLoginForm" autocomplete="off">
+            {{ csrf_field() }}
             <div class="form-group">
                 <label class="form-label" style="color: var(--text-primary);">
                     <span>👤</span> Username

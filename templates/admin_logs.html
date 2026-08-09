@@ -19,10 +19,13 @@
             <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
         </nav>
         <div style="margin-top: 1.25rem;">
-            <a href="/admin/logout" class="btn-logout btn-logout--student student-sidebar-logout">
-                <span class="btn-logout-icon">⏻</span>
-                <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
-            </a>
+            <form method="POST" action="/admin/logout" style="margin:0;">
+                {{ csrf_field() }}
+                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
+                    <span class="btn-logout-icon">⏻</span>
+                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+                </button>
+            </form>
         </div>
     </aside>
     <section class="student-content">

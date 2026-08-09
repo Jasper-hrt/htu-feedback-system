@@ -52,6 +52,7 @@
         <div class="form-card-header">📋 Add New Template</div>
         <div class="form-card-sub">Create a new response template for commonly used replies.</div>
         <form method="POST" action="/admin/templates">
+            {{ csrf_field() }}
             <div class="form-group">
                 <label class="form-label">Template Name</label>
                 <input type="text" name="template_key" class="form-input" placeholder="e.g., Library Issues" required>
@@ -111,6 +112,7 @@
     <div class="modal-content" style="max-width: 40rem;">
         <div class="modal-header">✏️ Edit Template</div>
         <form method="POST" action="/admin/templates" id="editForm">
+            {{ csrf_field() }}
             <div class="form-group">
                 <label class="form-label">Template Name</label>
                 <input type="text" name="template_key" id="editKey" class="form-input" required>

@@ -19,6 +19,7 @@
         </div>
         {% if error %}<div class="auth-alert auth-alert-error">{{ error }}</div>{% endif %}
         <form method="POST" class="auth-form">
+            {{ csrf_field() }}
             <div class="form-group">
                 <label class="form-label" style="color: #cbd5e1;">👤 Username</label>
                 <input type="text" name="username" required class="form-input" placeholder="Enter admin username" style="background: rgba(15, 23, 42, 0.6); border-color: rgba(148, 163, 184, 0.2); color: #e2e8f0;">

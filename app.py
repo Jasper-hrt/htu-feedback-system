@@ -21,6 +21,7 @@ import secrets
 from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
+from markupsafe import Markup
 
 # ==================== EMOTION EMOJI MAPPING ====================
 
@@ -63,7 +64,9 @@ def _parse_json_field(value, default):
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'htu-src-secret-key-change-in-production')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_urlsafe(32)
+if not os.environ.get('SECRET_KEY'):
+    app.logger.warning('Using an auto-generated SECRET_KEY. Set the SECRET_KEY environment variable in production to preserve sessions and protect cookies.')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
@@ -77,6 +80,47 @@ ASSET_VERSION = str(int(_time.time()))
 @app.context_processor
 def inject_asset_version():
     return {'asset_version': ASSET_VERSION}
+
+
+def generate_csrf_token():
+    token = session.get('_csrf_token')
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session['_csrf_token'] = token
+    return token
+
+
+@app.context_processor
+def inject_csrf_helpers():
+    return {
+        'csrf_token': generate_csrf_token,
+        'csrf_field': lambda: Markup(f'<input type="hidden" name="csrf_token" value="{generate_csrf_token()}">')
+    }
+
+
+def _csrf_exempt_path():
+    return request.path.startswith('/socket.io') or request.endpoint == 'static'
+
+
+@app.before_request
+def ensure_csrf_token():
+    if '_csrf_token' not in session:
+        session['_csrf_token'] = secrets.token_urlsafe(32)
+
+
+@app.before_request
+def validate_csrf_token():
+    if request.method not in ('POST', 'PUT', 'PATCH', 'DELETE'):
+        return
+
+    if _csrf_exempt_path():
+        return
+
+    token = request.headers.get('X-CSRF-Token') or request.form.get('csrf_token')
+    if not token or token != session.get('_csrf_token'):
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'error': 'Invalid or missing CSRF token'}), 400
+        return render_template('error.html', error='Invalid CSRF token. Please refresh the page and try again.'), 400
 
 # On Render, DATABASE_URL / SQLALCHEMY_DATABASE_URI point to PostgreSQL.
 # Locally (no env var), fall back to the existing SQLite file.
@@ -149,10 +193,10 @@ def check_session_timeout():
         last_activity = session.get('last_activity')
         if last_activity:
             last = datetime.fromisoformat(last_activity)
-            if datetime.now() - last > timedelta(hours=2):
+            if datetime.utcnow() - last > timedelta(hours=2):
                 session.clear()
                 return redirect(url_for('student_login'))
-        session['last_activity'] = datetime.now().isoformat()
+        session['last_activity'] = datetime.utcnow().isoformat()
 
 # ==================== CREATE TABLES / SCHEMA REPAIR ====================
 
@@ -644,7 +688,7 @@ def reset_password():
     
     return render_template('reset_password.html')
 
-@app.route('/student/logout')
+@app.route('/student/logout', methods=['POST'])
 def student_logout():
     student_id = session.get('student_id')
     log_student_action(student_id, 'Logout', 'User logged out')
@@ -950,6 +994,9 @@ def create_topic():
 @student_required
 def vote_topic(topic_id):
     vote_type = request.json.get('vote_type')
+    if vote_type not in ('up', 'down'):
+        return jsonify({'error': 'Invalid vote type'}), 400
+
     student_id = session['student_id']
     
     existing = ForumTopicVote.query.filter_by(topic_id=topic_id, student_id=student_id).first()
@@ -1143,6 +1190,11 @@ def handle_send_message(data):
     if not student_id:
         emit('error', {'message': 'Not authenticated'})
         return
+
+    member = ChatRoomMember.query.filter_by(room_id=room_id, student_id=student_id).first()
+    if not member:
+        emit('error', {'message': 'You must be a member of this room to send messages'})
+        return
     
     analysis = analyze_chat_message(message_text)
     
@@ -1248,7 +1300,7 @@ def admin_announcements():
     announcements = Announcement.query.order_by(Announcement.created_at.desc()).all()
     return render_template('admin_announcements.html', announcements=announcements, datetime=datetime)
 
-@app.route('/admin/announcements/delete/<int:id>')
+@app.route('/admin/announcements/delete/<int:id>', methods=['POST'])
 @src_required
 def delete_announcement(id):
     announcement = Announcement.query.get_or_404(id)
@@ -1755,7 +1807,8 @@ def admin_chat_messages():
     messages = [m.to_dict() for m in messages]
     return render_template('admin_chat_messages.html', messages=messages, flagged_only=flagged_only)
 
-@app.route('/admin/logout')
+@app.route('/admin/logout', methods=['POST'])
+@src_required
 def admin_logout():
     admin_name = session.get('admin_name')
     log_admin_action(admin_name, 'Logout', 'Admin logged out')
@@ -1863,6 +1916,9 @@ def index():
 @student_required
 def set_theme():
     theme = request.json.get('theme')
+    if theme not in ('light', 'dark'):
+        return jsonify({'error': 'Invalid theme selection'}), 400
+
     student = Student.query.filter_by(student_id=session['student_id']).first()
     if student:
         student.theme_preference = theme
@@ -1871,4 +1927,5 @@ def set_theme():
 
 if __name__ == '__main__':
     log_system_action('System', 'Startup', 'HTU SRC Feedback System started with all features')
-    socketio.run(app, debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', '0').lower() in ('1', 'true', 'yes')
+    socketio.run(app, debug=debug_mode)

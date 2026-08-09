@@ -14,6 +14,7 @@
         <p>Start a new real-time discussion space for students</p>
     </div>
     <form method="POST">
+        {{ csrf_field() }}
         <div class="form-group-enhanced">
             <label class="form-label">Room Name <span style="color: var(--danger);">*</span></label>
             <input type="text" name="name" required class="form-input-enhanced" placeholder="e.g., Azania Hall Water Issues" style="font-weight: 600;">

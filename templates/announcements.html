@@ -37,17 +37,25 @@
     </div>
     <div class="announcement-pinned-content-v2">{{ announcements[0].content|safe }}</div>
 </div>
-{% endif %}
 
 <!-- Timeline -->
 <div class="announcements-timeline-v2" id="announcementsTimeline">
     {% for a in announcements %}
-    <div class="announcement-card-v2" data-title="{{ a.title|lower }}" data-content="{{ a.content|striptags|lower }}" data-category="General">
+    {% set announcement_text = (a.title ~ ' ' ~ a.content)|lower %}
+    {% set category = 'General' %}
+    {% if 'exam' in announcement_text or 'class' in announcement_text or 'academic' in announcement_text %}
+    {% set category = 'Academic' %}
+    {% elif 'event' in announcement_text or 'program' in announcement_text or 'meeting' in announcement_text %}
+    {% set category = 'Event' %}
+    {% elif 'urgent' in announcement_text or 'deadline' in announcement_text or 'critical' in announcement_text %}
+    {% set category = 'Urgent' %}
+    {% endif %}
+    <div class="announcement-card-v2" data-title="{{ a.title|lower }}" data-content="{{ a.content|striptags|lower }}" data-category="{{ category }}">
         <div class="announcement-card-inner-v2">
             <div class="announcement-card-header-v2">
                 <div class="announcement-card-title-v2">{{ a.title }}</div>
                 <div class="announcement-card-badges-v2">
-                    <span class="announcement-card-category-v2 announcement-card-category-general">📋 General</span>
+                    <span class="announcement-card-category-v2 announcement-card-category-{{ category|lower }}">{{ category }}</span>
                     {% if loop.index <= 2 %}
                     <span class="announcement-card-new-badge-v2">🆕 New</span>
                     {% endif %}
@@ -58,10 +66,10 @@
                 <span>✍️ {{ a.author }}</span>
                 <span>👁️ Read</span>
             </div>
-            <div class="announcement-card-body-v2 collapsed" id="announcementBody{{ loop.index }}">
+            <div class="announcement-card-body-v2 collapsed" id="announcementBody{{ loop.index }}" aria-live="polite">
                 {{ a.content|safe }}
             </div>
-            <button class="announcement-card-toggle-v2" onclick="toggleAnnouncement({{ loop.index }})">
+            <button class="announcement-card-toggle-v2" type="button" onclick="toggleAnnouncement({{ loop.index }})" aria-expanded="false" aria-controls="announcementBody{{ loop.index }}">
                 📖 Read more
             </button>
         </div>
@@ -84,9 +92,11 @@ function toggleAnnouncement(index) {
     if (body.classList.contains('collapsed')) {
         body.classList.remove('collapsed');
         btn.innerHTML = '🔼 Show less';
+        btn.setAttribute('aria-expanded', 'true');
     } else {
         body.classList.add('collapsed');
         btn.innerHTML = '📖 Read more';
+        btn.setAttribute('aria-expanded', 'false');
     }
 }
 

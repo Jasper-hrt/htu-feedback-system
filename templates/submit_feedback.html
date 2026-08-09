@@ -33,6 +33,7 @@
             </div>
 
             <form method="POST" id="feedbackForm" novalidate>
+                {{ csrf_field() }}
                 <!-- STEP 1: Category -->
                 <div class="step-panel active" id="step1">
                     <div class="step-title">📂 Select Category</div>

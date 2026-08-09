@@ -1,5 +1,37 @@
 // HTU SRC Feedback System - Main JavaScript
 
+function getCsrfToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+}
+
+function addCsrfToAllForms() {
+    var token = getCsrfToken();
+    if (!token) {
+        return;
+    }
+    document.querySelectorAll('form').forEach(function(form) {
+        if (form.method.toUpperCase() !== 'POST') {
+            return;
+        }
+        if (!form.querySelector('input[name="csrf_token"]')) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrf_token';
+            input.value = token;
+            form.appendChild(input);
+        }
+    });
+}
+
+function csrfFetch(url, options) {
+    options = options || {};
+    var headers = Object.assign({}, options.headers || {}, {
+        'X-CSRF-Token': getCsrfToken()
+    });
+    return fetch(url, Object.assign({}, options, { headers: headers }));
+}
+
 function initUrgencySlider() {
     const slider = document.getElementById('urgencySlider');
     const urgencySpan = document.getElementById('urgencyValue');
@@ -68,11 +100,11 @@ function initAdminFilters() {
         const urgency = urgencyFilter?.value || '';
         const rows = document.querySelectorAll('#feedbackTableBody tr');
         
-        rows.forEach(row => {
+rows.forEach(row => {
             const text = row.cells[1]?.innerText.toLowerCase() || '';
-            const rowCategory = row.cells[2]?.innerText || '';
-            const rowStatus = row.cells[5]?.innerText || '';
-            const urgencyScore = parseInt(row.cells[4]?.innerText.match(/\d+/)?.[0] || '0');
+            const rowCategory = row.cells[3]?.innerText || '';
+            const rowStatus = row.cells[6]?.querySelector('select')?.value || row.cells[6]?.innerText || '';
+            const urgencyScore = parseInt(row.cells[5]?.innerText.match(/\d+/)?.[0] || '0');
             
             let match = text.includes(search);
             if (category && rowCategory !== category) match = false;
@@ -149,7 +181,7 @@ function filterStatus(status) {
 }
 
 function voteFeedback(feedbackId) {
-    fetch(`/vote/${feedbackId}`, { method: 'POST' })
+    csrfFetch(`/vote/${feedbackId}`, { method: 'POST' })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -269,6 +301,109 @@ function initNavbarMobileMenu() {
             if (mobileThemeUi && mobileThemeUi !== themeUi) mobileThemeUi.textContent = dark ? '🌙 Dark' : '☀️ Light';
         });
     }
+}
+
+// ============================================
+// 👤 Navbar Profile Dropdown Menus (Student/Admin)
+// ============================================
+function initNavProfileMenus() {
+    const profileMenus = document.querySelectorAll('.nav-profile');
+    if (profileMenus.length === 0) return;
+
+    function closeAll() {
+        profileMenus.forEach(function(pm) {
+            pm.classList.add('closing');
+            const toggle = pm.querySelector('.nav-profile-toggle');
+            const dropdown = pm.querySelector('.nav-profile-dropdown');
+            if (toggle) {
+                toggle.classList.remove('active');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+            if (dropdown) dropdown.classList.remove('active');
+            // Remove the closing class after the transition so state resets cleanly
+            setTimeout(function() {
+                pm.classList.remove('closing');
+            }, 200);
+        });
+    }
+
+    profileMenus.forEach(function(pm) {
+        const toggle = pm.querySelector('.nav-profile-toggle');
+        const dropdown = pm.querySelector('.nav-profile-dropdown');
+        if (!toggle || !dropdown) return;
+
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = dropdown.classList.contains('active');
+            closeAll();
+            if (!isOpen) {
+                pm.classList.add('closing');
+                toggle.classList.add('active');
+                toggle.setAttribute('aria-expanded', 'true');
+                dropdown.classList.add('active');
+                pm.classList.remove('closing');
+            }
+        });
+
+        // Close when a link inside the dropdown is clicked
+        dropdown.querySelectorAll('a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                closeAll();
+            });
+        });
+
+        // Stop clicks inside the dropdown from bubbling to the document handler
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+        let insideProfile = false;
+        profileMenus.forEach(function(pm) {
+            if (pm.contains(e.target)) insideProfile = true;
+        });
+        if (!insideProfile) closeAll();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeAll();
+    });
+}
+
+// ============================================
+// 🎯 Navbar Active Page Highlight (top nav)
+// ============================================
+function initNavbarActivePage() {
+    const links = document.querySelectorAll('.nav-link[data-navpage]');
+    if (links.length === 0) return;
+
+    const path = window.location.pathname;
+    let activePage = '';
+
+    if (path === '/' || path === '/index') {
+        activePage = 'home';
+    } else if (path.startsWith('/student/login')) {
+        activePage = 'student-login';
+    } else if (path.startsWith('/admin/login')) {
+        activePage = 'admin-login';
+    } else if (path.startsWith('/announcements')) {
+        activePage = 'announcements';
+    } else if (path.startsWith('/public')) {
+        activePage = 'public';
+    } else if (path.startsWith('/submit')) {
+        activePage = 'submit';
+    }
+
+    if (!activePage) return;
+
+    links.forEach(function(link) {
+        if (link.dataset.navpage === activePage) {
+            link.classList.add('active');
+        }
+    });
 }
 
 // ============================================
@@ -876,8 +1011,10 @@ function initMobileBadges() {
 document.addEventListener('DOMContentLoaded', function() {
     initUrgencySlider();
     initFollowupToggle();
-    initAdminFilters();
+initAdminFilters();
     initThemeToggle();
+    initNavProfileMenus();
+    initNavbarActivePage();
     initNavbarMobileMenu();
     initScrollReveal();
     initCounters();

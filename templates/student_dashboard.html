@@ -205,6 +205,7 @@
                             {% if f.short_term_solution or f.long_term_solution %}<button type="button" onclick="togglePremiumSolution('{{ f.id }}')" class="feedback-card-premium-action">💡 Recommendations</button>{% endif %}
                             <a href="/edit-feedback/{{ f.id }}" class="feedback-card-premium-action">✏️ Edit</a>
                             <form method="POST" action="/delete-feedback/{{ f.id }}" onsubmit="return confirm('Delete this feedback permanently?')" style="display:inline;margin:0;">
+                                {{ csrf_field() }}
                                 <button type="submit" class="feedback-card-premium-action feedback-card-premium-action-danger">🗑️ Delete</button>
                             </form>
                         </div>

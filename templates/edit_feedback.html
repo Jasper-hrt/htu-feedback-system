@@ -14,6 +14,7 @@
         <p style="font-size: 0.85rem; color: var(--warning); font-weight: 600;">⚠️ You can only edit within 1 hour of submission</p>
     </div>
     <form method="POST">
+        {{ csrf_field() }}
         <div class="form-group-enhanced">
             <label class="form-label">Category</label>
             <select name="category" class="form-select-enhanced" required>

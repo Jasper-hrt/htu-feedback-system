@@ -19,10 +19,13 @@
             <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
         </nav>
         <div style="margin-top: 1.25rem;">
-            <a href="/admin/logout" class="btn-logout btn-logout--student student-sidebar-logout">
-                <span class="btn-logout-icon">⏻</span>
-                <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
-            </a>
+            <form method="POST" action="/admin/logout" style="margin:0;">
+                {{ csrf_field() }}
+                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
+                    <span class="btn-logout-icon">⏻</span>
+                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+                </button>
+            </form>
         </div>
     </aside>
     <section class="student-content">
@@ -138,9 +141,9 @@
                         <td data-label="Category"><span class="badge badge-info">{{ f.category }}</span></td>
                         <td data-label="Sentiment"><span class="sentiment-dot sentiment-dot-{{ f.sentiment.lower() }}">{{ f.sentiment }}</span></td>
                         <td data-label="Urgency Score">{% set u = f.urgency_score %}{% if u >= 5 %}<span class="urgency-badge urgency-critical">🔴 {{ u }}/5</span>{% elif u >= 4 %}<span class="urgency-badge urgency-high">🟠 {{ u }}/5</span>{% elif u >= 3 %}<span class="urgency-badge urgency-medium">🟡 {{ u }}/5</span>{% else %}<span class="urgency-badge urgency-low">🟢 {{ u }}/5</span>{% endif %}</td>
-                        <td data-label="Status"><form method="POST" action="/admin/update/{{ f.id }}"><select name="status" onchange="this.form.submit()" class="status-select status-{{ f.status.lower().replace(' ', '-') }}">{% for s in ['Pending', 'Acknowledged', 'In Progress', 'Resolved', 'Escalated'] %}<option value="{{ s }}" {% if f.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></form></td>
-                        <td data-label="Assigned To"><form method="POST" action="/admin/update/{{ f.id }}" style="display: flex; gap: 0.25rem; align-items: center;"><input type="text" name="assigned_to" value="{{ f.assigned_to or '' }}" placeholder="Assign" style="padding: 0.25rem 0.5rem; border: 1px solid var(--border-color); border-radius: 0.4rem; font-size: 0.8rem; width: 85px; background: var(--card-bg); color: var(--text-primary);"><button type="submit" class="action-btn" title="Save assignment">💾</button></form></td>
-                        <td data-label="Actions"><div class="action-btn-group"><button onclick="showAnalyzeModal({{ f.id }})" class="action-btn" title="Analyze sentiment">🔍</button><button onclick="showSolutionModal({{ f.id }})" class="action-btn" title="View recommendations">💡</button><button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn" title="Add response">💬</button><form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Are you sure you want to permanently delete this feedback?')" style="display:inline; margin:0;"><button type="submit" class="action-btn action-btn-danger" title="Delete feedback">🗑️</button></form></div></td>
+                        <td data-label="Status"><form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}<select name="status" onchange="this.form.submit()" class="status-select status-{{ f.status.lower().replace(' ', '-') }}">{% for s in ['Pending', 'Acknowledged', 'In Progress', 'Resolved', 'Escalated'] %}<option value="{{ s }}" {% if f.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></form></td>
+                        <td data-label="Assigned To"><form method="POST" action="/admin/update/{{ f.id }}" style="display: flex; gap: 0.25rem; align-items: center;">{{ csrf_field() }}<input type="text" name="assigned_to" value="{{ f.assigned_to or '' }}" placeholder="Assign" style="padding: 0.25rem 0.5rem; border: 1px solid var(--border-color); border-radius: 0.4rem; font-size: 0.8rem; width: 85px; background: var(--card-bg); color: var(--text-primary);"><button type="submit" class="action-btn" title="Save assignment">💾</button></form></td>
+                        <td data-label="Actions"><div class="action-btn-group"><button onclick="showAnalyzeModal({{ f.id }})" class="action-btn" title="Analyze sentiment">🔍</button><button onclick="showSolutionModal({{ f.id }})" class="action-btn" title="View recommendations">💡</button><button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn" title="Add response">💬</button><form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Are you sure you want to permanently delete this feedback?')" style="display:inline; margin:0;">{{ csrf_field() }}<button type="submit" class="action-btn action-btn-danger" title="Delete feedback">🗑️</button></form></div></td>
                     </tr>
                     {% else %}
                     <tr><td colspan="9" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);"><div style="font-size: 2rem; margin-bottom: 0.5rem;">📭</div><div style="font-weight: 700; font-size: 1rem;">No feedback found</div><div style="font-size: 0.85rem; margin-top: 0.25rem;">Feedback submissions will appear here.</div></td></tr>
@@ -156,7 +159,7 @@
             <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
         </div>
         {% endif %}
-        <div id="responseModal" class="modal"><div class="modal-content"><div class="modal-header">💬 Add SRC Response</div><form method="POST" id="responseForm"><textarea name="src_response" rows="4" class="form-textarea mb-3" placeholder="Write your official response here..."></textarea><div class="flex justify-end gap-2"><button type="button" onclick="closeResponseModal()" class="btn btn-secondary">Cancel</button><button type="submit" class="btn btn-primary">✉️ Submit Response</button></div></form></div></div>
+        <div id="responseModal" class="modal"><div class="modal-content"><div class="modal-header">💬 Add SRC Response</div><form method="POST" id="responseForm">{{ csrf_field() }}<textarea name="src_response" rows="4" class="form-textarea mb-3" placeholder="Write your official response here..."></textarea><div class="flex justify-end gap-2"><button type="button" onclick="closeResponseModal()" class="btn btn-secondary">Cancel</button><button type="submit" class="btn btn-primary">✉️ Submit Response</button></div></form></div></div>
 <div id="analyzeModal" class="modal"><div class="modal-content"><div class="modal-header">🔍 Feedback Analysis</div><div class="mb-3"><div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;"><span class="badge badge-info" id="analyzeSentimentBadge">Sentiment</span><span class="badge badge-warning" id="analyzeUrgencyBadge">Urgency</span></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎭 Emotion & Confidence</h4><div id="analyzeEmotion" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🧠 Sentiment Explanation</h4><div id="sentimentExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Urgency Explanation</h4><div id="urgencyExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeAnalyzeModal()" class="btn btn-secondary">Close</button></div></div></div>
         <div id="solutionModal" class="modal"><div class="modal-content"><div class="modal-header">💡 Solution Recommendations</div><div class="mb-3"><div id="solutionDepartment" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; margin-bottom: 0.75rem; border: 1px solid var(--border-color);"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🏷️ Matched Keywords</h4><div id="solutionKeywords" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color); min-height: 50px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⏱️ Short-Term Solution</h4><div id="solutionShortTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Long-Term Solution</h4><div id="solutionLongTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeSolutionModal()" class="btn btn-secondary">Close</button></div></div></div>
         <script>
@@ -217,11 +220,11 @@
             var c = document.getElementById('categoryFilter').value;
             var t = document.getElementById('statusFilter').value;
             var u = document.getElementById('urgencyFilter').value;
-            document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
+document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
                 var text = row.cells[1]?.innerText.toLowerCase() || '';
-                var cat = row.cells[2]?.innerText || '';
-                var stat = row.cells[5]?.querySelector('select')?.value || row.cells[5]?.innerText || '';
-                var urgMatch = (row.cells[4]?.innerText || '').match(/(\d+)\/5/);
+                var cat = row.cells[3]?.innerText || '';
+                var stat = row.cells[6]?.querySelector('select')?.value || row.cells[6]?.innerText || '';
+                var urgMatch = (row.cells[5]?.innerText || '').match(/(\d+)\/5/);
                 var urgScore = urgMatch ? parseInt(urgMatch[1]) : 0;
                 var match = text.includes(s);
                 if (c && cat !== c) match = false;

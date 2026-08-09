@@ -26,6 +26,7 @@
         </div>
         {% if error %}<div class="auth-alert auth-alert-error">{{ error }}</div>{% endif %}
         <form method="POST" class="auth-form">
+            {{ csrf_field() }}
             <div class="form-group">
                 <label class="form-label">📧 HTU Email</label>
                 <input type="email" name="email" required class="form-input" placeholder="0322080001@htu.edu.gh">

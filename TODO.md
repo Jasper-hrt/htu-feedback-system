@@ -1,14 +1,13 @@
-# TODO — Public Board → Premium Native Mobile Redesign
+# Navbar Redesign — Task Tracker
 
-## Plan Steps
-- [x] Add dedicated "PUBLIC BOARD → PREMIUM NATIVE MOBILE REDESIGN" section to `static/css/mobile.css` (additive-only, mobile-gated).
-  - [x] Hero polish (refine existing `.dashboard-hero-premium` mobile treatment for public board).
-  - [x] Sentiment Distribution: stack donut + progress bars, center & size donut, wrap legend chips.
-  - [x] Top Complaints: polish `.feedback-card-premium` with public-board accent touches.
-  - [x] Sentiment by Category: mobile-friendly spacing/typography for progress rows.
-  - [x] Forum Activity Summary: collapse inline 4-col grid to 2×2, rounded segmented bar.
-  - [x] SRC Performance Metrics: collapse inline 3-col grid to 1 column, centered stat cards.
-  - [x] Footer note: clean app-style footnote.
-  - [x] Dark mode + extra-small (≤480px) refinements.
-  - [x] Native polish: springy reveal, tap-highlight, safe-area scroll margins, will-change.
-- [x] Verified all CSS selectors against actual `public_board.html` markup (donut flex container, 4-col/3-col grids, segmented bar, footer note).
+## Goal
+Redesign the desktop navigation bar (appearance + structure) while preserving all existing mobile navigation systems.
+
+## Steps
+- [x] 1. Analyze current navbar (base.html, style.css, mobile.css, main.js)
+- [x] 2. Get plan approved by user
+- [x] 3. Restructure navbar in `templates/base.html` (active states, student/admin profile menus, Submit Feedback CTA)
+- [ ] 4. Modernize navbar styles in `static/css/style.css` (glassmorphism, hover/active animations, dropdown menus, CTA button)
+- [x] 5. Add dropdown + active-page logic in `static/js/main.js`
+- [ ] 6. Add mobile-safe rules in `static/css/mobile.css`
+- [ ] 7. Verify all three user states (guest/student/admin) + both themes

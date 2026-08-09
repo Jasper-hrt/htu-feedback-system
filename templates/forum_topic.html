@@ -99,6 +99,7 @@
 <div class="reply-form">
     <h4>💬 Post a Reply</h4>
     <form method="POST">
+        {{ csrf_field() }}
         <div class="form-group-enhanced" style="margin-bottom: 0.75rem;">
             <textarea name="content" rows="4" required class="form-textarea-enhanced" placeholder="Type your reply here..." style="min-height: 100px;"></textarea>
         </div>
@@ -116,7 +117,7 @@
 function vote(voteType) {
     fetch('/forum/topic/{{ topic.id }}/vote', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
         body: JSON.stringify({ vote_type: voteType })
     })
     .then(function(r) { return r.json(); })
@@ -162,7 +163,7 @@ function saveEdit(replyId) {
     var nc = document.getElementById('et').value;
     fetch('/forum/reply/' + replyId + '/edit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
         body: JSON.stringify({ content: nc })
     })
     .then(function(r) { return r.json(); })

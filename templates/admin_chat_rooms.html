@@ -112,6 +112,7 @@
             </div>
             <div class="room-card-actions">
                 <form method="POST" action="/admin/chat/rooms/{{ room_data.room.id }}/delete" style="display: inline;" onsubmit="return confirmDelete(event, '{{ room_data.room.name }}')">
+                    {{ csrf_field() }}
                     <button type="submit" class="btn btn-danger btn-sm">🗑️ Delete Room</button>
                 </form>
             </div>

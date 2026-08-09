@@ -20,10 +20,13 @@
             <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
         </nav>
         <div style="margin-top: 1.25rem;">
-            <a href="/admin/logout" class="btn-logout btn-logout--student student-sidebar-logout">
-                <span class="btn-logout-icon">⏻</span>
-                <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
-            </a>
+            <form method="POST" action="/admin/logout" style="margin:0;">
+                {{ csrf_field() }}
+                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
+                    <span class="btn-logout-icon">⏻</span>
+                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+                </button>
+            </form>
         </div>
     </aside>
 
@@ -58,6 +61,7 @@
                         <div class="chart-card-title">📝 Create New Announcement</div>
                     </div>
                     <form method="POST" id="announcementForm">
+                        {{ csrf_field() }}
                         <!-- Title -->
                         <div class="form-group-enhanced">
                             <label class="form-label">📌 Title</label>
@@ -234,12 +238,12 @@
 
                                 <!-- Actions -->
                                 <div style="display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0;">
-                                    <a href="/admin/announcements/delete/{{ a.id }}" 
-                                       class="btn btn-danger btn-sm" 
-                                       style="font-size: 0.7rem; padding: 0.25rem 0.6rem;"
-                                       onclick="return confirm('⚠️ Delete this announcement?\n\n\"{{ a.title }}\"\n\nThis action cannot be undone. Are you sure?')">
-                                        🗑️ Delete
-                                    </a>
+                                    <form method="POST" action="/admin/announcements/delete/{{ a.id }}" style="margin:0;">
+                                        {{ csrf_field() }}
+                                        <button type="submit" class="btn btn-danger btn-sm" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;" onclick="return confirm('⚠️ Delete this announcement?\n\n\"{{ a.title }}\"\n\nThis action cannot be undone. Are you sure?')">
+                                           🗑️ Delete
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
