@@ -193,7 +193,7 @@ class DecisionEngine:
         neg_count = len(neg_scores)
         neu_count = len(neu_scores)
 
-        # Find winner
+# Find winner
         if pos_count > neg_count and pos_count > neu_count:
             return sum(pos_scores) / len(pos_scores) if pos_scores else 0.0
         elif neg_count > pos_count and neg_count > neu_count:

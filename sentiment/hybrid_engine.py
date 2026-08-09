@@ -30,6 +30,7 @@ from sentiment.confidence import ConfidenceCalculator
 from sentiment.preprocessing import TextPreprocessor
 from sentiment.custom_lexicon import CustomLexiconManager
 from sentiment.unknown_detector import UnknownWordDetector
+from sentiment.safety_vocabulary import has_critical_safety, has_safety_concern
 
 
 # ================================================================
@@ -73,13 +74,16 @@ ASPECT_KEYWORDS = {
         "sports", "gym", "football", "basketball", "court", "field",
         "auditorium", "lounge", "study area", "parking"
     ],
-    "safety": [
-        "security", "safe", "theft", "stolen", "robbery", "dark",
+"safety": [
+        "security", "safe", "theft", "stolen", "robbery", "robbed", "dark",
         "lighting", "patrol", "gate", "guard", "cctv", "camera",
         "danger", "unsafe", "gunshots", "shooting", "weapon", "violence",
-        "assault", "harassment", "emergency", "threat", "attack",
-        "fight", "blood", "injured", "injury", "panic", "hazard",
-        "intruder", "suspicious", "vandalism", "fire"
+        "assault", "assaulted", "harassment", "emergency", "threat", "threatened",
+        "attack", "attacked", "fight", "blood", "injured", "injury", "panic",
+        "hazard", "intruder", "suspicious", "vandalism", "fire",
+        "kidnap", "kidnapped", "kidnapping", "kidnapper", "abduct", "abducted",
+        "abduction", "hostage", "stab", "stabbed", "stabbing", "rape", "raped",
+        "bomb", "explosion", "explode", "shooter", "gun", "firearm"
     ],
     "transport": [
         "bus", "shuttle", "parking", "transport", "vehicle", "car",
@@ -270,6 +274,46 @@ class HybridSentimentEngine:
             sentiment = "Negative"
         else:
             sentiment = "Neutral"
+
+# STEP 15.5: Critical safety override.
+        # A genuine critical safety incident (kidnapping, assault, shooting,
+        # weapon, threat of violence, etc.) MUST never be downgraded to
+        # Neutral or Positive by the voting ensemble. When such language is
+        # detected we force a strong negative score so downstream urgency and
+        # category logic treat it as the emergency it is. This is an additive
+        # guard only -- it does not alter the normal voting thresholds.
+        critical_safety_hit = has_critical_safety(cleaned_text)
+        if critical_safety_hit:
+            final_score = min(final_score, -0.8)
+            sentiment = "Negative"
+
+        # STEP 15.6: Safety-concern override.
+        # Ordinary safety concerns (e.g. "someone was injured", "harassment")
+        # are negative even if the ensemble happens to vote Neutral because
+        # not every engine recognises the term. We only nudge these to a mild
+        # negative (they are NOT forced to -0.8 like a critical incident).
+        # This is a focused guard for safety language only and does not change
+        # normal (non-safety) sentiment behaviour.
+        elif has_safety_concern(cleaned_text) and sentiment == "Neutral":
+            final_score = min(final_score, -0.05)
+            sentiment = "Negative"
+
+        # STEP 15.7: Domain-lexicon override for otherwise-neutral results.
+        # The custom lexicon only carries ~10% of the ensemble vote, and the
+        # confidence calculator treats a clean 0.0 from an engine that simply
+        # didn't recognise any words as "high confidence neutral" -- so a
+        # clear signal from the custom lexicon (e.g. "high cost", "still not
+        # fixed") can get diluted below the +-0.05 threshold and wrongly
+        # read as Neutral even though it's the only engine that actually
+        # understood the text. When the ensemble lands on Neutral but the
+        # custom lexicon alone is clearly one-sided, trust it.
+        elif sentiment == "Neutral" and abs(custom_score) >= 0.15:
+            if custom_score < 0:
+                final_score = min(final_score, -0.05)
+                sentiment = "Negative"
+            else:
+                final_score = max(final_score, 0.05)
+                sentiment = "Positive"
 
         # STEP 16: Unknown words
         unknown_words = self.unknown.detect(cleaned_text)

@@ -2,6 +2,15 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from cleaning import clean_text as unified_clean_text, censor_text as unified_censor_text
 
+# Authoritative critical-safety vocabulary shared across the whole stack.
+# Guarantees kidnapping/assault/shooting/etc. are never downgraded to Neutral.
+from sentiment.safety_vocabulary import (
+    has_critical_safety,
+    has_safety_concern,
+    get_critical_terms,
+    get_safety_concern_terms,
+)
+
 analyzer = SentimentIntensityAnalyzer()
 from sentiment.hybrid_engine import HybridSentimentEngine
 
@@ -134,6 +143,11 @@ def calculate_urgency(text, sentiment):
     text_lower = text.lower()
     urgency = 1
 
+    # A genuine critical safety incident (kidnapping, assault, shooting,
+    # weapon, threat of violence, etc.) is ALWAYS an emergency.
+    if has_critical_safety(text):
+        return 5
+
     urgency_keywords = {
         5: ['emergency', 'danger', 'injured', 'unsafe', 'hazard', 'assault', 'harassment', 'urgent', 'critical',
             'gunshots', 'gunshot', 'shooting', 'weapon', 'violence', 'hostage', 'threat', 'armed', 'attack',
@@ -168,6 +182,19 @@ def get_urgency_explanation(text, sentiment):
         text = ''
 
     text_lower = str(text).lower()
+
+    # Critical safety incidents are always urgency 5 and should be reported
+    # transparently in the explanation.
+    if has_critical_safety(str(text)):
+        critical_terms = [t for t in get_critical_terms() if t in text_lower]
+        return {
+            'urgency_keywords_detected': critical_terms[:12],
+            'sentiment_boost_applied': False,
+            'base_urgency_from_keywords': 5,
+            'final_urgency': 5,
+            'sentiment': sentiment,
+            'critical_safety_override': True,
+        }
 
     urgency_keywords = {
         5: ['emergency', 'danger', 'injured', 'unsafe', 'hazard', 'assault', 'harassment', 'urgent', 'critical',
@@ -216,7 +243,12 @@ def get_urgency_explanation(text, sentiment):
 
 def detect_category(text):
     text_lower = text.lower()
-    
+
+    # A genuine critical safety incident always maps to the Safety category,
+    # regardless of any incidental keywords from other categories.
+    if has_critical_safety(str(text)):
+        return 'Safety'
+
     category_keywords = {
         'Accommodation': ['hostel', 'dorm', 'room', 'bed', 'water', 'toilet', 'shower', 'accommodation', 'hall', 'bathroom', 'flood', 'leak'],
         'ICT/Wi-Fi': ['wifi', 'internet', 'network', 'connection', 'computer', 'lab', 'portal', 'slow', 'disconnect', 'server'],
@@ -226,7 +258,7 @@ def detect_category(text):
         'Safety': ['security', 'safe', 'theft', 'dark', 'lighting', 'patrol', 'gate', 'danger', 'unsafe', 'cctv',
                      'gunshots', 'gunshot', 'shooting', 'weapon', 'violence', 'assault', 'harassment', 'emergency',
                      'threat', 'threatened', 'hostage', 'armed', 'attack', 'fight', 'blood', 'injured', 'injury',
-                     'panic', 'hazard', 'unsafe'],
+                     'panic', 'hazard', 'unsafe'] + get_critical_terms() + get_safety_concern_terms(),
         'Transport': ['bus', 'shuttle', 'parking', 'transport', 'vehicle', 'car', 'driver', 'fuel', 'trotro'],
         'Mental Health': ['stress', 'anxiety', 'counseling', 'mental', 'wellness', 'support', 'depression', 'pressure']
     }
@@ -356,6 +388,12 @@ def analyze_chat_message(message):
     cleaned = clean_text(message)
     sentiment, score = analyze_sentiment(cleaned)
     urgency = calculate_urgency(cleaned, sentiment)
+
+    # Critical safety content must never be flagged Neutral/Positive in chat.
+    if has_critical_safety(cleaned) and sentiment != 'Negative':
+        sentiment = 'Negative'
+        score = min(score, -0.8)
+
     is_flagged = (sentiment == 'Negative' and urgency >= 3)
     
     return {
@@ -370,7 +408,12 @@ def analyze_topic(content, replies=[]):
     cleaned_main = clean_text(content)
     main_sentiment, main_score = analyze_sentiment(cleaned_main)
     main_urgency = calculate_urgency(cleaned_main, main_sentiment)
-    
+
+    # Critical safety content in the main post must never be Neutral/Positive.
+    if has_critical_safety(cleaned_main) and main_sentiment != 'Negative':
+        main_sentiment = 'Negative'
+        main_score = min(main_score, -0.8)
+
     reply_sentiments = []
     reply_urgencies = []
     reply_scores = []
@@ -379,6 +422,10 @@ def analyze_topic(content, replies=[]):
             cleaned_reply = clean_text(reply.content)
             reply_sent, reply_score = analyze_sentiment(cleaned_reply)
             reply_urg = calculate_urgency(cleaned_reply, reply_sent)
+            # Critical safety content in a reply is also forced Negative.
+            if has_critical_safety(cleaned_reply) and reply_sent != 'Negative':
+                reply_sent = 'Negative'
+                reply_score = min(reply_score, -0.8)
             reply_sentiments.append(reply_sent)
             reply_urgencies.append(reply_urg)
             reply_scores.append(reply_score)
