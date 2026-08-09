@@ -304,109 +304,6 @@ function initNavbarMobileMenu() {
 }
 
 // ============================================
-// 👤 Navbar Profile Dropdown Menus (Student/Admin)
-// ============================================
-function initNavProfileMenus() {
-    const profileMenus = document.querySelectorAll('.nav-profile');
-    if (profileMenus.length === 0) return;
-
-    function closeAll() {
-        profileMenus.forEach(function(pm) {
-            pm.classList.add('closing');
-            const toggle = pm.querySelector('.nav-profile-toggle');
-            const dropdown = pm.querySelector('.nav-profile-dropdown');
-            if (toggle) {
-                toggle.classList.remove('active');
-                toggle.setAttribute('aria-expanded', 'false');
-            }
-            if (dropdown) dropdown.classList.remove('active');
-            // Remove the closing class after the transition so state resets cleanly
-            setTimeout(function() {
-                pm.classList.remove('closing');
-            }, 200);
-        });
-    }
-
-    profileMenus.forEach(function(pm) {
-        const toggle = pm.querySelector('.nav-profile-toggle');
-        const dropdown = pm.querySelector('.nav-profile-dropdown');
-        if (!toggle || !dropdown) return;
-
-        toggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const isOpen = dropdown.classList.contains('active');
-            closeAll();
-            if (!isOpen) {
-                pm.classList.add('closing');
-                toggle.classList.add('active');
-                toggle.setAttribute('aria-expanded', 'true');
-                dropdown.classList.add('active');
-                pm.classList.remove('closing');
-            }
-        });
-
-        // Close when a link inside the dropdown is clicked
-        dropdown.querySelectorAll('a').forEach(function(link) {
-            link.addEventListener('click', function() {
-                closeAll();
-            });
-        });
-
-        // Stop clicks inside the dropdown from bubbling to the document handler
-        dropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    });
-
-    // Close on outside click
-    document.addEventListener('click', function(e) {
-        let insideProfile = false;
-        profileMenus.forEach(function(pm) {
-            if (pm.contains(e.target)) insideProfile = true;
-        });
-        if (!insideProfile) closeAll();
-    });
-
-    // Close on Escape
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeAll();
-    });
-}
-
-// ============================================
-// 🎯 Navbar Active Page Highlight (top nav)
-// ============================================
-function initNavbarActivePage() {
-    const links = document.querySelectorAll('.nav-link[data-navpage]');
-    if (links.length === 0) return;
-
-    const path = window.location.pathname;
-    let activePage = '';
-
-    if (path === '/' || path === '/index') {
-        activePage = 'home';
-    } else if (path.startsWith('/student/login')) {
-        activePage = 'student-login';
-    } else if (path.startsWith('/admin/login')) {
-        activePage = 'admin-login';
-    } else if (path.startsWith('/announcements')) {
-        activePage = 'announcements';
-    } else if (path.startsWith('/public')) {
-        activePage = 'public';
-    } else if (path.startsWith('/submit')) {
-        activePage = 'submit';
-    }
-
-    if (!activePage) return;
-
-    links.forEach(function(link) {
-        if (link.dataset.navpage === activePage) {
-            link.classList.add('active');
-        }
-    });
-}
-
-// ============================================
 // 🎬 Scroll Reveal Animations
 // ============================================
 function initScrollReveal() {
@@ -667,7 +564,7 @@ function initActivePageHighlight() {
         activePage = 'public';
     }
 
-    if (!activePage) return;
+if (!activePage) return;
 
     links.forEach(link => {
         if (link.dataset.page === activePage) {
@@ -963,6 +860,95 @@ function initMobileFab() {
 }
 
 // ============================================
+// 👤 Navbar Profile Menus (Student & Admin dropdowns)
+// ============================================
+function initNavProfileMenus() {
+    const menus = document.querySelectorAll('.nav-profile');
+    if (menus.length === 0) return;
+
+    function closeOthers(exceptMenu) {
+        menus.forEach(function(m) {
+            if (m === exceptMenu) return;
+            const dd = m.querySelector('.nav-profile-dropdown');
+            const toggle = m.querySelector('.nav-profile-toggle');
+            if (dd) dd.classList.remove('active');
+            if (toggle) toggle.classList.remove('active');
+            toggle && toggle.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    menus.forEach(function(menu) {
+        const toggle = menu.querySelector('.nav-profile-toggle');
+        const dropdown = menu.querySelector('.nav-profile-dropdown');
+        if (!toggle || !dropdown) return;
+
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = dropdown.classList.contains('active');
+            closeOthers(menu);
+            const open = !isOpen;
+            dropdown.classList.toggle('active', open);
+            toggle.classList.toggle('active', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        // Close when a link inside the dropdown is clicked
+        dropdown.querySelectorAll('a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                dropdown.classList.remove('active');
+                toggle.classList.remove('active');
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+    });
+
+    // Close all on outside click
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.nav-profile')) {
+            closeOthers(null);
+        }
+    });
+
+    // Close all on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeOthers(null);
+    });
+}
+
+// ============================================
+// 🧭 Top Navbar Active Page Highlighting
+// ============================================
+function initNavActivePage() {
+    const links = document.querySelectorAll('.nav-link[data-navpage]');
+    if (links.length === 0) return;
+
+    const path = window.location.pathname;
+    let activePage = '';
+
+    if (path === '/' || path === '/index') {
+        activePage = 'home';
+    } else if (path.startsWith('/announcements')) {
+        activePage = 'announcements';
+    } else if (path.startsWith('/public')) {
+        activePage = 'public';
+    } else if (path.startsWith('/submit')) {
+        activePage = 'submit';
+    } else if (path.startsWith('/student/login')) {
+        activePage = 'student-login';
+    } else if (path.startsWith('/admin')) {
+        activePage = 'admin-login';
+    }
+
+    if (!activePage) return;
+
+    links.forEach(function(link) {
+        if (link.dataset.navpage === activePage) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// ============================================
 // 🔔 Mobile Bottom Nav Unread Badges
 // ============================================
 function initMobileBadges() {
@@ -1011,10 +997,10 @@ function initMobileBadges() {
 document.addEventListener('DOMContentLoaded', function() {
     initUrgencySlider();
     initFollowupToggle();
-initAdminFilters();
+    initAdminFilters();
     initThemeToggle();
     initNavProfileMenus();
-    initNavbarActivePage();
+    initNavActivePage();
     initNavbarMobileMenu();
     initScrollReveal();
     initCounters();

@@ -248,8 +248,29 @@ def process_feedback(text, user_category=None):
     # =====================================
     # 1. Run the Hybrid Sentiment Engine
     # =====================================
-
-    hybrid_result = hybrid_engine.analyze(text)
+    # This can fail if NLTK language data isn't available yet (e.g. a cold
+    # start on Render where the background NLTK download hasn't finished).
+    # A sentiment-analysis failure must never cost a student their feedback
+    # submission, so we fall back to a safe neutral result instead of
+    # letting the exception propagate into a 500 error.
+    try:
+        hybrid_result = hybrid_engine.analyze(text)
+    except Exception as e:
+        print(f"[sentiment_analyzer] hybrid_engine.analyze failed, falling back to neutral: {e}")
+        hybrid_result = {
+            "cleaned_text": text,
+            "sentiment": "Neutral",
+            "final_score": 0.0,
+            "confidence": 0.0,
+            "emotion": {
+                "dominant_emotion": "neutral",
+                "emotion_scores": {},
+                "emotion_intensities": {},
+                "secondary_emotions": [],
+                "compound_mood": "neutral",
+            },
+            "unknown_words": [],
+        }
 
 
     # =====================================

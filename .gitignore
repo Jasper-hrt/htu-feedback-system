@@ -152,3 +152,8 @@ instance/feedback.db
 logs/
 *.db
 
+# Ad-hoc diagnostic / verification scripts
+_check_*.py
+_test_*.py
+_run_*.py
+

@@ -484,7 +484,6 @@
 /* ============================================ */
 @media (max-width: 768px) {
     .navbar-hamburger,
-    .navbar-admin-btn,
     .navbar-mobile-menu {
         display: none !important;
     }
@@ -1599,6 +1598,15 @@
     .navbar-admin-btn:hover,
     .navbar-admin-btn.active {
         background: rgba(255, 255, 255, 0.2);
+    }
+
+    .navbar-admin-btn-icon {
+        font-size: 0.95rem;
+        line-height: 1;
+    }
+
+    .navbar-admin-btn-label {
+        line-height: 1;
     }
 }
 

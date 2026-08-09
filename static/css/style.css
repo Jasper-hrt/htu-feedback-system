@@ -105,31 +105,32 @@ body {
 }
 
 /* ============================================ */
-/* 🧭 Premium Navbar
+/* 🧭 Premium Navbar (Glassmorphism Redesign)
 /* ============================================ */
 .navbar {
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 30px rgba(30, 64, 175, 0.2);
+    background: linear-gradient(135deg, rgba(30, 64, 175, 0.92) 0%, rgba(30, 58, 138, 0.94) 100%);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 30px rgba(30, 64, 175, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 html.theme-dark .navbar {
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.92) 100%);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(148, 163, 184, 0.06);
 }
 
 .navbar-container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 1.5rem;
-    height: var(--nav-height);
+    min-height: var(--nav-height);
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
@@ -185,6 +186,19 @@ html.theme-dark .navbar {
     font-size: 0.95rem;
     line-height: 1;
     transition: transform var(--transition-fast);
+}
+
+.nav-link-text {
+    line-height: 1.2;
+}
+
+.nav-cta-icon {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.nav-cta-text {
+    line-height: 1.2;
 }
 
 .nav-link:hover {
@@ -614,20 +628,14 @@ html.theme-dark .navbar-mobile-menu {
     width: 100%;
 }
 
-@media (max-width: 992px) {
-    .mobile-theme-toggle {
-        display: flex;
-    }
-}
-
-/* Show hamburger & hide inline links on small screens */
-@media (max-width: 992px) {
-    .navbar-links {
-        display: none;
-    }
-    .navbar-hamburger {
-        display: flex;
-    }
+/* NOTE: the hamburger menu / secondary mobile theme toggle below is legacy
+   and is intentionally kept hidden at all widths now. mobile.css owns all
+   responsive navbar behavior below 768px and keeps .navbar-links (with the
+   single primary .theme-toggle) visible in a compact layout instead. This
+   avoids two competing responsive systems both firing in the 768-992px
+   range, which was producing a duplicate theme-toggle pill on screen. */
+.mobile-theme-toggle {
+    display: none !important;
 }
 
 /* ============================================ */
