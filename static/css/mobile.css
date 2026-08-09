@@ -534,11 +534,23 @@
         display: none;
     }
 
-    .navbar-links {
+.navbar-links {
         display: flex;
         align-items: center;
         gap: 0.45rem;
         margin-left: auto;
+        /* Desktop links are hidden on mobile; only the theme toggle stays.
+           Navigation remains available via the mobile bottom nav / More menu. */
+        min-width: 0;
+    }
+
+    /* Hide the desktop nav links (Home, Announcements, Public Board, Submit,
+       profile menus, SRC Admin, Login) inside the compact mobile header so
+       they no longer overlap the logo / each other / the hero below. */
+    .navbar-links .nav-link,
+    .navbar-links .nav-cta,
+    .navbar-links .nav-profile {
+        display: none !important;
     }
 
     .navbar-links .theme-toggle {
@@ -7493,7 +7505,7 @@
         font-size: 0.85rem;
     }
 
-    /* Hide the CTA text label on very small screens, keep icon only */
+/* Hide the CTA text label on very small screens, keep icon only */
     @media (max-width: 480px) {
         .nav-profile-name {
             display: none;
@@ -7504,5 +7516,97 @@
         .nav-cta {
             padding: 0.35rem 0.6rem;
         }
+    }
+}
+
+/* ============================================ */
+/* 🔧 MOBILE OVERLAP & CLEARANCE FIXES
+/* (Additive only — restores proper spacing so the
+/*   header, hero, feature cards and bottom nav never
+/*   overlap or get cut off. No design/color changes.) */
+/* ============================================ */
+
+/* ---- 1. Guarantee the top header never overlaps the hero ----
+   The compact mobile header is 56px tall. Give the main content a
+   clear top gap so the hero (Welcome section) always starts below
+   the header instead of being overlapped. */
+@media (max-width: 768px) {
+    .main-container {
+        padding-top: 1rem;
+    }
+
+    /* First element after the sticky header gets breathing room */
+    .main-container > *:first-child {
+        margin-top: 0;
+    }
+
+    .landing-hero-v2,
+    .landing-hero,
+    .dashboard-hero-premium,
+    .admin-hero,
+    .announcements-hero-v2,
+    .forum-hero {
+        margin-top: 0.25rem;
+    }
+}
+
+/* ---- 2. Reinforce the bottom-nav clearance ----
+   The floating bottom nav is fixed at the bottom. Ensure every
+   page's content clears it so cards/buttons are never covered. */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: calc(5.6rem + env(safe-area-inset-bottom, 0));
+    }
+
+    .main-container {
+        padding-bottom: calc(5.6rem + env(safe-area-inset-bottom, 0));
+    }
+
+    /* Last in-flow element inside main also gets extra bottom room */
+    .main-container > *:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* ---- 3. Prevent feature / step / stat cards from being cut off ----
+   Cards must never overflow horizontally or get clipped on the
+   right edge. Enforce full-width layout and safe box sizing. */
+@media (max-width: 768px) {
+    .steps-grid-v2,
+    .steps-grid,
+    .features-grid-v2,
+    .features-grid,
+    .stats-grid-premium,
+    .stats-grid,
+    .charts-row-premium,
+    .charts-row,
+    .quick-actions-grid,
+    .category-grid-modern,
+    .category-grid {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .step-card-v2,
+    .step-card,
+    .feature-card-v2,
+    .feature-card,
+    .stat-card-premium,
+    .stat-card,
+    .chart-card-premium,
+    .chart-card,
+    .quick-action-card,
+    .category-card {
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    /* Prevent any accidental horizontal page scroll */
+    html,
+    body {
+        overflow-x: hidden;
     }
 }
