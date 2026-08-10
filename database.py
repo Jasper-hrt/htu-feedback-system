@@ -143,10 +143,16 @@ class ForumTopic(db.Model):
     tags = db.relationship('ForumTopicTag', backref='topic', lazy=True, cascade='all, delete-orphan')
     
     @property
+    def upvotes(self):
+        return ForumTopicVote.query.filter_by(topic_id=self.id, vote_type='up').count()
+
+    @property
+    def downvotes(self):
+        return ForumTopicVote.query.filter_by(topic_id=self.id, vote_type='down').count()
+
+    @property
     def vote_count(self):
-        upvotes = ForumTopicVote.query.filter_by(topic_id=self.id, vote_type='up').count()
-        downvotes = ForumTopicVote.query.filter_by(topic_id=self.id, vote_type='down').count()
-        return upvotes - downvotes
+        return self.upvotes - self.downvotes
     
     @property
     def is_hot(self):
@@ -169,6 +175,29 @@ class ForumReply(db.Model):
     edited_at = db.Column(db.DateTime)
     
     student = db.relationship('Student', backref='replies')
+
+    @property
+    def upvotes(self):
+        return ForumReplyVote.query.filter_by(reply_id=self.id, vote_type='up').count()
+
+    @property
+    def downvotes(self):
+        return ForumReplyVote.query.filter_by(reply_id=self.id, vote_type='down').count()
+
+    @property
+    def vote_count(self):
+        return self.upvotes - self.downvotes
+
+class ForumReplyVote(db.Model):
+    __tablename__ = 'forum_reply_votes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reply_id = db.Column(db.Integer, db.ForeignKey('forum_replies.id'), nullable=False)
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=False)
+    vote_type = db.Column(db.String(10))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('reply_id', 'student_id', name='unique_reply_vote'),)
 
 class ForumTopicVote(db.Model):
     __tablename__ = 'forum_topic_votes'
@@ -220,12 +249,32 @@ class ChatMessage(db.Model):
     urgency_score = db.Column(db.Integer, default=1)
     is_flagged = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
+    # === Reply-to-message support ===
+    reply_to_id = db.Column(db.Integer, db.ForeignKey('chat_messages.id'), nullable=True)
+
+    # === Voice note support ===
+    message_type = db.Column(db.String(10), default='text')   # 'text' or 'voice'
+    voice_data = db.Column(db.Text)                            # base64-encoded audio data URL
+    voice_duration = db.Column(db.Integer)                      # duration in whole seconds
+
     student = db.relationship('Student', backref='chat_messages')
-    
+    reply_to = db.relationship('ChatMessage', remote_side=[id], backref='thread_replies')
+
     def to_dict(self):
         student_name = self.student.full_name if self.student else 'Unknown Student'
         room_name = self.room.name if self.room else 'Unknown Room'
+
+        reply_to_data = None
+        if self.reply_to:
+            rt_student_name = self.reply_to.student.full_name if self.reply_to.student else 'Unknown Student'
+            reply_to_data = {
+                'id': self.reply_to.id,
+                'username': rt_student_name.split()[0] if rt_student_name else 'Student',
+                'preview': ('🎤 Voice note' if self.reply_to.message_type == 'voice'
+                            else (self.reply_to.message[:80] if self.reply_to.message else ''))
+            }
+
         return {
             'id': self.id,
             'room_id': self.room_id,
@@ -239,6 +288,10 @@ class ChatMessage(db.Model):
             'sentiment_score': self.sentiment_score,
             'urgency_score': self.urgency_score,
             'is_flagged': bool(self.is_flagged),
+            'message_type': self.message_type or 'text',
+            'voice_data': self.voice_data,
+            'voice_duration': self.voice_duration,
+            'reply_to': reply_to_data,
             'timestamp': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
             'student': {

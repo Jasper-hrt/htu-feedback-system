@@ -2662,6 +2662,58 @@ html.theme-dark .dept-badge {
     text-align: center;
 }
 
+.vote-btn-count {
+    font-weight: 800;
+    opacity: 0.85;
+}
+
+/* Reply-level voting (compact) */
+.reply-voting {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.6rem;
+}
+
+.reply-vote-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-color);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.reply-vote-btn:hover {
+    border-color: var(--primary-light);
+}
+
+.reply-vote-btn.upvoted {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.reply-vote-btn.downvoted {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.reply-vote-net {
+    font-weight: 800;
+    font-size: 0.78rem;
+    color: var(--text-primary);
+    min-width: 1.4rem;
+    text-align: center;
+}
+
 /* Reply Card */
 .reply-card {
     background: var(--card-bg);
@@ -3072,6 +3124,215 @@ html.theme-dark .dept-badge {
     color: var(--text-secondary);
     padding: 0.4rem 0;
     font-weight: 500;
+}
+
+/* Reply-to-message support */
+.chat-bubble-wrap {
+    display: flex;
+    max-width: 80%;
+    position: relative;
+}
+
+.chat-bubble-wrap.own {
+    align-self: flex-end;
+    justify-content: flex-end;
+}
+
+.chat-bubble-reply-action {
+    align-self: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+    flex-shrink: 0;
+    margin: 0 0.35rem;
+    align-self: flex-end;
+}
+
+.chat-bubble-wrap:hover .chat-bubble-reply-action {
+    opacity: 1;
+}
+
+.chat-bubble-reply-action:hover {
+    color: var(--primary);
+    border-color: var(--primary-light);
+}
+
+.chat-bubble-quote {
+    border-left: 3px solid var(--primary-light);
+    background: rgba(30, 64, 175, 0.06);
+    border-radius: var(--radius-sm, 6px);
+    padding: 0.3rem 0.55rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    cursor: pointer;
+}
+
+.chat-bubble-quote-author {
+    font-weight: 700;
+    color: var(--primary);
+    display: block;
+}
+
+.chat-bubble-quote-text {
+    color: var(--text-secondary);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+}
+
+.chat-reply-preview {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.5rem 0.9rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-color);
+    font-size: 0.78rem;
+}
+
+.chat-reply-preview.active {
+    display: flex;
+}
+
+.chat-reply-preview-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+    border-left: 3px solid var(--primary);
+    padding-left: 0.6rem;
+}
+
+.chat-reply-preview-author {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.chat-reply-preview-text {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-reply-preview-cancel {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+    padding: 0.15rem 0.4rem;
+}
+
+.chat-reply-preview-cancel:hover {
+    color: var(--danger);
+}
+
+/* Voice note bubble */
+.chat-voice-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chat-voice-note audio {
+    height: 2.1rem;
+    max-width: 210px;
+}
+
+.chat-voice-note-duration {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Voice record button */
+.chat-enhanced-input .record-btn {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.chat-enhanced-input .record-btn:hover {
+    border-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.chat-enhanced-input .record-btn.recording {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: var(--danger);
+    color: var(--danger);
+    animation: livePulse 1.2s ease-in-out infinite;
+}
+
+.chat-recording-indicator {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--danger);
+    border-top: 1px solid var(--border-color);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.chat-recording-indicator.active {
+    display: flex;
+}
+
+.chat-recording-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--danger);
+    animation: livePulse 1.2s ease-in-out infinite;
+}
+
+.chat-recording-cancel {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.78rem;
+}
+
+.chat-recording-cancel:hover {
+    color: var(--danger);
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.55; transform: scale(0.85); }
 }
 
 /* Legacy Chat Styles (kept for compatibility) */
@@ -4259,6 +4520,11 @@ html.theme-dark .dept-badge {
 .quick-action-icon-purple {
     background: rgba(139, 92, 246, 0.1);
     color: #8b5cf6;
+}
+
+.quick-action-icon-pink {
+    background: rgba(236, 72, 153, 0.1);
+    color: #ec4899;
 }
 
 .quick-action-info {

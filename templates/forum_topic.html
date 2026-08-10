@@ -49,23 +49,32 @@
     <!-- Voting Controls -->
     <div class="voting-controls">
         <button id="upvoteBtn" class="vote-btn {% if user_vote and user_vote.vote_type == 'up' %}upvoted{% endif %}" onclick="vote('up')">
-            <span>👍</span> <span>Upvote</span>
+            <span>👍</span> <span>Upvote</span> <span id="upvoteCount" class="vote-btn-count">{{ topic.upvotes }}</span>
         </button>
-        <span class="vote-count" id="netVotes">{{ topic.vote_count }}</span>
+        <span class="vote-count" id="netVotes" title="Net score">{{ topic.vote_count }}</span>
         <button id="downvoteBtn" class="vote-btn {% if user_vote and user_vote.vote_type == 'down' %}downvoted{% endif %}" onclick="vote('down')">
-            <span>👎</span> <span>Downvote</span>
+            <span>👎</span> <span>Downvote</span> <span id="downvoteCount" class="vote-btn-count">{{ topic.downvotes }}</span>
         </button>
     </div>
 </div>
 
 <!-- ==================== REPLIES SECTION ==================== -->
-<div class="section-header">
+<div class="section-header flex justify-between items-center flex-wrap gap-2">
     <h3 class="section-title">💬 Replies ({{ replies|length }})</h3>
+    {% if replies|length > 1 %}
+    <div class="flex items-center gap-2">
+        <label for="replySort" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Sort:</label>
+        <select id="replySort" class="filter-input" style="width: auto; padding: 0.3rem 0.6rem; font-size: 0.8rem;" onchange="sortReplies(this.value)">
+            <option value="oldest">Oldest first</option>
+            <option value="top">Top voted</option>
+        </select>
+    </div>
+    {% endif %}
 </div>
 
 <div id="repliesContainer" class="flex flex-col gap-3">
     {% for reply in replies %}
-    <div class="reply-card" id="reply-{{ reply.id }}">
+    <div class="reply-card" id="reply-{{ reply.id }}" data-net-votes="{{ reply.vote_count }}" data-created="{{ loop.index }}">
         <div class="reply-card-header">
             <div class="reply-avatar">{{ reply.student.full_name.split()[0][0] if reply.student else 'S' }}</div>
             <span class="reply-author">{{ reply.student.full_name.split()[0] if reply.student else 'Student' }}</span>
@@ -79,6 +88,17 @@
             {% if reply.is_edited %}<span style="font-size: 0.7rem; color: var(--text-secondary);">(edited)</span>{% endif %}
         </div>
         <div class="reply-content">{{ reply.content }}</div>
+        <div class="reply-voting" id="reply-voting-{{ reply.id }}">
+            <button class="reply-vote-btn {% if reply_user_votes.get(reply.id) == 'up' %}upvoted{% endif %}"
+                    onclick="voteReply({{ reply.id }}, 'up')" {% if reply.student_id == session.student_id %}disabled title="You can't vote on your own reply"{% endif %}>
+                <span>👍</span><span class="reply-vote-count-up">{{ reply.upvotes }}</span>
+            </button>
+            <span class="reply-vote-net">{{ reply.vote_count }}</span>
+            <button class="reply-vote-btn {% if reply_user_votes.get(reply.id) == 'down' %}downvoted{% endif %}"
+                    onclick="voteReply({{ reply.id }}, 'down')" {% if reply.student_id == session.student_id %}disabled title="You can't vote on your own reply"{% endif %}>
+                <span>👎</span><span class="reply-vote-count-down">{{ reply.downvotes }}</span>
+            </button>
+        </div>
         {% if reply.student_id == session.student_id %}
         <div class="reply-actions">
             <button class="btn btn-secondary btn-sm" onclick="editReply({{ reply.id }})">✏️ Edit</button>
@@ -124,6 +144,10 @@ function vote(voteType) {
     .then(function(data) {
         if (data.success) {
             document.getElementById('netVotes').textContent = data.net_votes;
+            var upCountEl = document.getElementById('upvoteCount');
+            if (upCountEl) upCountEl.textContent = data.upvotes;
+            var downCountEl = document.getElementById('downvoteCount');
+            if (downCountEl) downCountEl.textContent = data.downvotes;
             var upBtn = document.getElementById('upvoteBtn');
             var downBtn = document.getElementById('downvoteBtn');
             if (data.action === 'added' && voteType === 'up') {
@@ -144,6 +168,42 @@ function vote(voteType) {
                     upBtn.classList.remove('upvoted', 'downvoted');
                 }
             }
+        } else if (data.error) {
+            alert(data.error);
+        }
+    });
+}
+
+function voteReply(replyId, voteType) {
+    fetch('/forum/reply/' + replyId + '/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ vote_type: voteType })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (!data.success) {
+            if (data.error) alert(data.error);
+            return;
+        }
+        var wrap = document.getElementById('reply-voting-' + replyId);
+        if (!wrap) return;
+        var upBtn = wrap.children[0];
+        var downBtn = wrap.children[2];
+        var netEl = wrap.querySelector('.reply-vote-net');
+        wrap.querySelector('.reply-vote-count-up').textContent = data.upvotes;
+        wrap.querySelector('.reply-vote-count-down').textContent = data.downvotes;
+        netEl.textContent = data.net_votes;
+
+        if (data.action === 'added' && voteType === 'up') {
+            upBtn.classList.add('upvoted'); downBtn.classList.remove('upvoted', 'downvoted');
+        } else if (data.action === 'added' && voteType === 'down') {
+            downBtn.classList.add('downvoted'); upBtn.classList.remove('upvoted', 'downvoted');
+        } else if (data.action === 'removed') {
+            upBtn.classList.remove('upvoted', 'downvoted'); downBtn.classList.remove('upvoted', 'downvoted');
+        } else if (data.action === 'changed') {
+            if (voteType === 'up') { upBtn.classList.add('upvoted'); downBtn.classList.remove('upvoted', 'downvoted'); }
+            else { downBtn.classList.add('downvoted'); upBtn.classList.remove('upvoted', 'downvoted'); }
         }
     });
 }
@@ -174,5 +234,18 @@ function saveEdit(replyId) {
 }
 
 function cancelEdit(replyId) { location.reload(); }
+
+function sortReplies(mode) {
+    var container = document.getElementById('repliesContainer');
+    var cards = Array.prototype.slice.call(container.querySelectorAll('.reply-card'));
+    cards.sort(function(a, b) {
+        if (mode === 'top') {
+            var diff = parseInt(b.dataset.netVotes, 10) - parseInt(a.dataset.netVotes, 10);
+            if (diff !== 0) return diff;
+        }
+        return parseInt(a.dataset.created, 10) - parseInt(b.dataset.created, 10);
+    });
+    cards.forEach(function(c) { container.appendChild(c); });
+}
 </script>
 {% endblock %}

@@ -6,7 +6,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import os
 from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken
-from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag
+from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag, ForumReplyVote
 from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
 from database import is_valid_htu_email, extract_student_id_from_email
 from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation
@@ -695,6 +695,38 @@ def student_logout():
     session.clear()
     return redirect(url_for('index'))
 
+@app.route('/student/change-password', methods=['GET', 'POST'])
+@student_required
+@limiter.limit("5 per hour")
+def student_change_password():
+    if request.method == 'POST':
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        student = Student.query.filter_by(student_id=session['student_id']).first()
+
+        if not student or not check_password_hash(student.password_hash, current_password):
+            return render_template('change_password.html', role='student', error='Current password is incorrect')
+
+        if new_password != confirm_password:
+            return render_template('change_password.html', role='student', error='New passwords do not match')
+
+        if len(new_password) < 6:
+            return render_template('change_password.html', role='student', error='New password must be at least 6 characters')
+
+        if check_password_hash(student.password_hash, new_password):
+            return render_template('change_password.html', role='student', error='New password must be different from your current password')
+
+        student.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+
+        log_student_action(student.student_id, 'Password Change', 'Password changed successfully from dashboard')
+        add_db_log('auth', 'INFO', 'student', student.student_id, 'Password Change', '')
+        return render_template('change_password.html', role='student', success='Your password has been updated successfully.')
+
+    return render_template('change_password.html', role='student')
+
 # ==================== STUDENT DASHBOARD & FEEDBACK ====================
 
 @app.route('/student/dashboard')
@@ -957,7 +989,14 @@ def view_topic(topic_id):
             return redirect(url_for('view_topic', topic_id=topic_id))
     
     replies = ForumReply.query.filter_by(topic_id=topic_id).order_by(ForumReply.created_at.asc()).all()
-    return render_template('forum_topic.html', topic=topic, replies=replies, user_vote=user_vote, student_id=student_id)
+
+    reply_votes = ForumReplyVote.query.filter_by(student_id=student_id).filter(
+        ForumReplyVote.reply_id.in_([r.id for r in replies])
+    ).all() if replies else []
+    reply_user_votes = {v.reply_id: v.vote_type for v in reply_votes}
+
+    return render_template('forum_topic.html', topic=topic, replies=replies, user_vote=user_vote,
+                            student_id=student_id, reply_user_votes=reply_user_votes)
 
 @app.route('/forum/create', methods=['GET', 'POST'])
 @student_required
@@ -1018,6 +1057,40 @@ def vote_topic(topic_id):
     upvotes = ForumTopicVote.query.filter_by(topic_id=topic_id, vote_type='up').count()
     downvotes = ForumTopicVote.query.filter_by(topic_id=topic_id, vote_type='down').count()
     
+    return jsonify({'success': True, 'action': action, 'upvotes': upvotes, 'downvotes': downvotes, 'net_votes': upvotes - downvotes})
+
+@app.route('/forum/reply/<int:reply_id>/vote', methods=['POST'])
+@student_required
+def vote_reply(reply_id):
+    reply = ForumReply.query.get_or_404(reply_id)
+    vote_type = (request.json or {}).get('vote_type')
+    if vote_type not in ('up', 'down'):
+        return jsonify({'error': 'Invalid vote type'}), 400
+
+    student_id = session['student_id']
+
+    if reply.student_id == student_id:
+        return jsonify({'error': 'Cannot vote on your own reply'}), 400
+
+    existing = ForumReplyVote.query.filter_by(reply_id=reply_id, student_id=student_id).first()
+
+    if existing:
+        if existing.vote_type == vote_type:
+            db.session.delete(existing)
+            action = 'removed'
+        else:
+            existing.vote_type = vote_type
+            action = 'changed'
+    else:
+        vote = ForumReplyVote(reply_id=reply_id, student_id=student_id, vote_type=vote_type)
+        db.session.add(vote)
+        action = 'added'
+
+    db.session.commit()
+
+    upvotes = ForumReplyVote.query.filter_by(reply_id=reply_id, vote_type='up').count()
+    downvotes = ForumReplyVote.query.filter_by(reply_id=reply_id, vote_type='down').count()
+
     return jsonify({'success': True, 'action': action, 'upvotes': upvotes, 'downvotes': downvotes, 'net_votes': upvotes - downvotes})
 
 @app.route('/forum/reply/<int:reply_id>/edit', methods=['POST'])
@@ -1184,9 +1257,8 @@ def handle_leave(data):
 @socketio.on('send_message')
 def handle_send_message(data):
     room_id = data['room_id']
-    message_text = data['message']
     student_id = session.get('student_id')
-    
+
     if not student_id:
         emit('error', {'message': 'Not authenticated'})
         return
@@ -1195,14 +1267,43 @@ def handle_send_message(data):
     if not member:
         emit('error', {'message': 'You must be a member of this room to send messages'})
         return
-    
-    analysis = analyze_chat_message(message_text)
-    
+
+    message_type = data.get('message_type') or 'text'
+    voice_data = None
+    voice_duration = None
+
+    # ---- Reply-to validation ----
+    reply_to_id = data.get('reply_to_id')
+    reply_to_msg = None
+    if reply_to_id:
+        reply_to_msg = ChatMessage.query.filter_by(id=reply_to_id, room_id=room_id).first()
+        if not reply_to_msg:
+            reply_to_id = None
+
+    if message_type == 'voice':
+        voice_data = data.get('voice_data') or ''
+        voice_duration = data.get('voice_duration')
+        # Guard against absurdly large payloads (~3.5MB of base64, roughly a few
+        # minutes of compressed audio) so a bad client can't blow up the DB row.
+        if not voice_data or len(voice_data) > 3500000:
+            emit('error', {'message': 'Voice note is missing or too large to send.'})
+            return
+        message_text = '🎤 Voice note'
+        analysis = {'cleaned_message': None, 'sentiment': 'Neutral', 'sentiment_score': 0.0,
+                    'urgency_score': 1, 'is_flagged': False}
+    else:
+        message_text = (data.get('message') or '').strip()
+        if not message_text:
+            emit('error', {'message': 'Message cannot be empty'})
+            return
+        analysis = analyze_chat_message(message_text)
+
     chat_message = ChatMessage(
         room_id=room_id, student_id=student_id, message=message_text,
         cleaned_message=analysis['cleaned_message'], sentiment=analysis['sentiment'],
         sentiment_score=analysis['sentiment_score'], urgency_score=analysis['urgency_score'],
-        is_flagged=analysis['is_flagged']
+        is_flagged=analysis['is_flagged'], reply_to_id=reply_to_id,
+        message_type=message_type, voice_data=voice_data, voice_duration=voice_duration
     )
     db.session.add(chat_message)
     
@@ -1215,11 +1316,25 @@ def handle_send_message(data):
     student = Student.query.get(student_id)
     student_name = student.full_name.split()[0] if student else "Student"
 
+    reply_to_payload = None
+    if reply_to_msg:
+        rt_student = Student.query.get(reply_to_msg.student_id)
+        rt_name = rt_student.full_name.split()[0] if rt_student else 'Student'
+        reply_to_payload = {
+            'id': reply_to_msg.id,
+            'username': rt_name,
+            'preview': '🎤 Voice note' if reply_to_msg.message_type == 'voice' else (reply_to_msg.message or '')[:80]
+        }
+
     payload = {
         'id': chat_message.id,
         'room_id': room_id,
         'room_name': room.name if room else None,
         'message': message_text,
+        'message_type': message_type,
+        'voice_data': voice_data,
+        'voice_duration': voice_duration,
+        'reply_to': reply_to_payload,
         'username': student_name,
         'sentiment': analysis['sentiment'],
         'sentiment_score': analysis['sentiment_score'],
@@ -1806,6 +1921,38 @@ def admin_chat_messages():
     # Convert to dicts for JSON serialization in the template
     messages = [m.to_dict() for m in messages]
     return render_template('admin_chat_messages.html', messages=messages, flagged_only=flagged_only)
+
+@app.route('/admin/change-password', methods=['GET', 'POST'])
+@src_required
+@limiter.limit("5 per hour")
+def admin_change_password():
+    admin_user = SRCUser.query.get(session['admin_id'])
+
+    if request.method == 'POST':
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not admin_user or not check_password_hash(admin_user.password_hash, current_password):
+            return render_template('change_password.html', role='admin', error='Current password is incorrect')
+
+        if new_password != confirm_password:
+            return render_template('change_password.html', role='admin', error='New passwords do not match')
+
+        if len(new_password) < 6:
+            return render_template('change_password.html', role='admin', error='New password must be at least 6 characters')
+
+        if check_password_hash(admin_user.password_hash, new_password):
+            return render_template('change_password.html', role='admin', error='New password must be different from your current password')
+
+        admin_user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+
+        log_admin_action(admin_user.full_name, 'Password Change', 'Password changed successfully from dashboard')
+        add_db_log('auth', 'INFO', 'admin', admin_user.username, 'Password Change', '')
+        return render_template('change_password.html', role='admin', success='Your password has been updated successfully.')
+
+    return render_template('change_password.html', role='admin')
 
 @app.route('/admin/logout', methods=['POST'])
 @src_required

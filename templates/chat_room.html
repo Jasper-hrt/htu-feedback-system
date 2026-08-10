@@ -35,42 +35,80 @@
     <div class="chat-enhanced-messages" id="chatMessages">
         {% for msg in messages %}
         {% set is_own = msg.student_id == session.student_id %}
-        <div class="chat-bubble {% if is_own %}own{% endif %} {% if msg.is_flagged %}chat-bubble-flagged{% endif %}" data-message-id="{{ msg.id }}">
-            {% if not is_own %}
-            <div class="chat-bubble-avatar">{{ (msg.student.full_name.split()[0][0] if msg.student else 'S') }}</div>
-            {% endif %}
-            <div class="chat-bubble-body">
-                {% if not is_own %}
-                <div class="chat-bubble-author">{{ msg.student.full_name.split()[0] if msg.student else 'Student' }}</div>
-                {% endif %}
-                <div class="chat-bubble-text">
-                    {{ msg.message }}
-                    {% if msg.is_flagged %}
-                    <span style="display: inline-flex; align-items: center; gap: 0.2rem; margin-left: 0.3rem; font-size: 0.65rem; font-weight: 700; color: var(--danger);">⚠️</span>
-                    {% endif %}
-                </div>
-                <div class="chat-bubble-time">
-                    {{ msg.created_at.strftime('%H:%M') }}
-                    {% if msg.sentiment == 'Positive' %}
-                    <span style="margin-left: 0.25rem;">😊</span>
-                    {% elif msg.sentiment == 'Negative' %}
-                    <span style="margin-left: 0.25rem;">😞</span>
-                    {% else %}
-                    <span style="margin-left: 0.25rem;">😐</span>
-                    {% endif %}
-                </div>
-            </div>
+        <div class="chat-bubble-wrap {% if is_own %}own{% endif %}">
             {% if is_own %}
-            <div class="chat-bubble-avatar" style="background: linear-gradient(135deg, var(--success), #059669);">{{ session.student_name.split()[0][0] }}</div>
+            <button class="chat-bubble-reply-action" title="Reply" onclick="startReply({{ msg.id }}, {{ (msg.student.full_name.split()[0] if msg.student else 'Student')|tojson }}, {{ ('🎤 Voice note' if msg.message_type == 'voice' else msg.message)|tojson }})">↩</button>
+            {% endif %}
+            <div class="chat-bubble {% if is_own %}own{% endif %} {% if msg.is_flagged %}chat-bubble-flagged{% endif %}" data-message-id="{{ msg.id }}">
+                {% if not is_own %}
+                <div class="chat-bubble-avatar">{{ (msg.student.full_name.split()[0][0] if msg.student else 'S') }}</div>
+                {% endif %}
+                <div class="chat-bubble-body">
+                    {% if not is_own %}
+                    <div class="chat-bubble-author">{{ msg.student.full_name.split()[0] if msg.student else 'Student' }}</div>
+                    {% endif %}
+                    {% if msg.reply_to %}
+                    <div class="chat-bubble-quote" onclick="scrollToMessage({{ msg.reply_to.id }})">
+                        <span class="chat-bubble-quote-author">{{ msg.reply_to.student.full_name.split()[0] if msg.reply_to.student else 'Student' }}</span>
+                        <span class="chat-bubble-quote-text">{{ '🎤 Voice note' if msg.reply_to.message_type == 'voice' else msg.reply_to.message }}</span>
+                    </div>
+                    {% endif %}
+                    {% if msg.message_type == 'voice' and msg.voice_data %}
+                    <div class="chat-voice-note">
+                        <audio controls src="{{ msg.voice_data }}"></audio>
+                        {% if msg.voice_duration %}<span class="chat-voice-note-duration">{{ msg.voice_duration }}s</span>{% endif %}
+                    </div>
+                    {% else %}
+                    <div class="chat-bubble-text">
+                        {{ msg.message }}
+                        {% if msg.is_flagged %}
+                        <span style="display: inline-flex; align-items: center; gap: 0.2rem; margin-left: 0.3rem; font-size: 0.65rem; font-weight: 700; color: var(--danger);">⚠️</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="chat-bubble-time">
+                        {{ msg.created_at.strftime('%H:%M') }}
+                        {% if msg.sentiment == 'Positive' %}
+                        <span style="margin-left: 0.25rem;">😊</span>
+                        {% elif msg.sentiment == 'Negative' %}
+                        <span style="margin-left: 0.25rem;">😞</span>
+                        {% else %}
+                        <span style="margin-left: 0.25rem;">😐</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if is_own %}
+                <div class="chat-bubble-avatar" style="background: linear-gradient(135deg, var(--success), #059669);">{{ session.student_name.split()[0][0] }}</div>
+                {% endif %}
+            </div>
+            {% if not is_own %}
+            <button class="chat-bubble-reply-action" title="Reply" onclick="startReply({{ msg.id }}, {{ (msg.student.full_name.split()[0] if msg.student else 'Student')|tojson }}, {{ ('🎤 Voice note' if msg.message_type == 'voice' else msg.message)|tojson }})">↩</button>
             {% endif %}
         </div>
         {% endfor %}
     </div>
 
+    <!-- Reply Preview Bar -->
+    <div class="chat-reply-preview" id="replyPreview">
+        <div class="chat-reply-preview-info">
+            <span class="chat-reply-preview-author" id="replyPreviewAuthor"></span>
+            <span class="chat-reply-preview-text" id="replyPreviewText"></span>
+        </div>
+        <button class="chat-reply-preview-cancel" id="replyPreviewCancel" title="Cancel reply">✕</button>
+    </div>
+
+    <!-- Recording Indicator -->
+    <div class="chat-recording-indicator" id="recordingIndicator">
+        <span class="chat-recording-dot"></span>
+        <span id="recordingTimer">Recording… 0:00</span>
+        <button class="chat-recording-cancel" id="cancelRecordingBtn">Cancel</button>
+    </div>
+
     <!-- Enhanced Input Bar -->
     <div class="chat-enhanced-input">
         <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
-        <button class="voice-btn" id="voiceChatBtn" title="Voice input">🎤</button>
+        <button class="voice-btn" id="voiceChatBtn" title="Voice-to-text input">🎤</button>
+        <button class="record-btn" id="recordVoiceBtn" title="Record a voice note">🎙️</button>
         <button class="send-btn" id="sendBtn" title="Send message">➤</button>
     </div>
 </div>
@@ -82,10 +120,42 @@ var studentName = "{{ session.student_name.split()[0] }}";
 var studentInitial = "{{ session.student_name.split()[0][0] }}";
 socket.emit('join', { room_id: roomId, username: studentName });
 
+var currentReply = null; // { id, author, preview }
+
+function startReply(id, author, previewText) {
+    currentReply = { id: id, author: author, preview: previewText };
+    document.getElementById('replyPreviewAuthor').textContent = 'Replying to ' + author;
+    document.getElementById('replyPreviewText').textContent = previewText;
+    document.getElementById('replyPreview').classList.add('active');
+    document.getElementById('messageInput').focus();
+}
+
+function cancelReply() {
+    currentReply = null;
+    document.getElementById('replyPreview').classList.remove('active');
+}
+document.getElementById('replyPreviewCancel').onclick = cancelReply;
+
+function scrollToMessage(id) {
+    var el = document.querySelector('[data-message-id="' + id + '"]');
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'background-color 0.3s ease';
+        el.style.backgroundColor = 'rgba(59,130,246,0.15)';
+        setTimeout(function() { el.style.backgroundColor = ''; }, 900);
+    }
+}
+
 function sendMessage() {
     var inp = document.getElementById('messageInput');
     var msg = inp.value.trim();
-    if (msg) { socket.emit('send_message', { room_id: roomId, message: msg }); inp.value = ''; }
+    if (msg) {
+        var payload = { room_id: roomId, message: msg, message_type: 'text' };
+        if (currentReply) payload.reply_to_id = currentReply.id;
+        socket.emit('send_message', payload);
+        inp.value = '';
+        cancelReply();
+    }
 }
 document.getElementById('sendBtn').onclick = sendMessage;
 document.getElementById('messageInput').onkeypress = function(e) { if (e.key === 'Enter') sendMessage(); };
@@ -95,35 +165,68 @@ function esc(t) { var d = document.createElement('div'); d.textContent = t; retu
 var md = document.getElementById('chatMessages');
 md.scrollTop = md.scrollHeight;
 
+function buildQuoteHtml(replyTo) {
+    if (!replyTo) return '';
+    return '<div class="chat-bubble-quote" onclick="scrollToMessage(' + replyTo.id + ')">' +
+        '<span class="chat-bubble-quote-author">' + esc(replyTo.username) + '</span>' +
+        '<span class="chat-bubble-quote-text">' + esc(replyTo.preview) + '</span></div>';
+}
+
+function buildBodyHtml(data) {
+    var quoteHtml = buildQuoteHtml(data.reply_to);
+    var contentHtml;
+    if (data.message_type === 'voice' && data.voice_data) {
+        var durHtml = data.voice_duration ? '<span class="chat-voice-note-duration">' + data.voice_duration + 's</span>' : '';
+        contentHtml = '<div class="chat-voice-note"><audio controls src="' + data.voice_data + '"></audio>' + durHtml + '</div>';
+    } else {
+        var flagHtml = data.is_flagged ? ' <span style="display:inline-flex;align-items:center;gap:0.2rem;margin-left:0.3rem;font-size:0.65rem;font-weight:700;color:var(--danger);">⚠️</span>' : '';
+        contentHtml = '<div class="chat-bubble-text">' + esc(data.message) + flagHtml + '</div>';
+    }
+    return quoteHtml + contentHtml;
+}
+
 socket.on('new_message', function(data) {
     var isOwn = data.username === studentName;
+    var wrap = document.createElement('div');
+    wrap.className = 'chat-bubble-wrap' + (isOwn ? ' own' : '');
+
     var d = document.createElement('div');
     d.className = 'chat-bubble';
+    d.setAttribute('data-message-id', data.id);
     if (isOwn) d.classList.add('own');
     if (data.is_flagged) d.classList.add('chat-bubble-flagged');
 
-    var flagHtml = data.is_flagged ? ' <span style="display:inline-flex;align-items:center;gap:0.2rem;margin-left:0.3rem;font-size:0.65rem;font-weight:700;color:var(--danger);">⚠️</span>' : '';
     var sentimentEmoji = data.sentiment === 'Positive' ? '😊' : data.sentiment === 'Negative' ? '😞' : '😐';
-
     var avatarInitial = data.username.charAt(0).toUpperCase();
+    var replyPreviewText = data.message_type === 'voice' ? '🎤 Voice note' : data.message;
+
+    var replyBtnHtml = '<button class="chat-bubble-reply-action" title="Reply" onclick=\'startReply(' + data.id + ', ' + JSON.stringify(data.username) + ', ' + JSON.stringify(replyPreviewText) + ')\'>↩</button>';
 
     if (!isOwn) {
         d.innerHTML = '<div class="chat-bubble-avatar">' + esc(avatarInitial) + '</div>' +
             '<div class="chat-bubble-body">' +
                 '<div class="chat-bubble-author">' + esc(data.username) + '</div>' +
-                '<div class="chat-bubble-text">' + esc(data.message) + flagHtml + '</div>' +
+                buildBodyHtml(data) +
                 '<div class="chat-bubble-time">' + data.timestamp + ' ' + sentimentEmoji + '</div>' +
             '</div>';
+        wrap.appendChild(d);
+        wrap.insertAdjacentHTML('beforeend', replyBtnHtml);
     } else {
         d.innerHTML = '<div class="chat-bubble-body">' +
-                '<div class="chat-bubble-text">' + esc(data.message) + flagHtml + '</div>' +
+                buildBodyHtml(data) +
                 '<div class="chat-bubble-time">' + data.timestamp + ' ' + sentimentEmoji + '</div>' +
             '</div>' +
             '<div class="chat-bubble-avatar" style="background:linear-gradient(135deg,var(--success),#059669);">' + esc(studentInitial) + '</div>';
+        wrap.insertAdjacentHTML('afterbegin', replyBtnHtml);
+        wrap.appendChild(d);
     }
 
-    md.appendChild(d);
+    md.appendChild(wrap);
     md.scrollTop = md.scrollHeight;
+});
+
+socket.on('error', function(data) {
+    alert(data.message || 'Something went wrong sending your message.');
 });
 
 socket.on('user_joined', function(data) {
@@ -165,6 +268,108 @@ socket.on('user_left', function(data) {
         recognition.onend = function() { isListening = false; vb.textContent = '🎤'; vb.classList.remove('recording'); };
     } else { vb.style.display = 'none'; }
 })();
+
+// ==================== VOICE NOTE RECORDING ====================
+(function() {
+    var recordBtn = document.getElementById('recordVoiceBtn');
+    var indicator = document.getElementById('recordingIndicator');
+    var timerEl = document.getElementById('recordingTimer');
+    var cancelBtn = document.getElementById('cancelRecordingBtn');
+
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+        recordBtn.style.display = 'none';
+        return;
+    }
+
+    var mediaRecorder = null;
+    var audioChunks = [];
+    var recordStart = null;
+    var timerInterval = null;
+    var stream = null;
+    var wasCancelled = false;
+    var MAX_SECONDS = 120; // 2 minute cap
+
+    function fmtTime(totalSeconds) {
+        var m = Math.floor(totalSeconds / 60);
+        var s = totalSeconds % 60;
+        return m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function stopStreamTracks() {
+        if (stream) {
+            stream.getTracks().forEach(function(t) { t.stop(); });
+            stream = null;
+        }
+    }
+
+    function startRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function(s) {
+            stream = s;
+            audioChunks = [];
+            wasCancelled = false;
+            var mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+            mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType: mimeType }) : new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = function(e) {
+                if (e.data && e.data.size > 0) audioChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = function() {
+                stopStreamTracks();
+                clearInterval(timerInterval);
+                indicator.classList.remove('active');
+                recordBtn.classList.remove('recording');
+                recordBtn.textContent = '🎙️';
+
+                if (wasCancelled || audioChunks.length === 0) return;
+
+                var durationSeconds = Math.round((Date.now() - recordStart) / 1000);
+                var blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+
+                var reader = new FileReader();
+                reader.onloadend = function() {
+                    var base64data = reader.result;
+                    var payload = { room_id: roomId, message_type: 'voice', voice_data: base64data, voice_duration: durationSeconds };
+                    if (currentReply) payload.reply_to_id = currentReply.id;
+                    socket.emit('send_message', payload);
+                    cancelReply();
+                };
+                reader.readAsDataURL(blob);
+            };
+
+            mediaRecorder.start();
+            recordStart = Date.now();
+            recordBtn.classList.add('recording');
+            recordBtn.textContent = '⏹️';
+            indicator.classList.add('active');
+            timerEl.textContent = 'Recording… 0:00';
+
+            timerInterval = setInterval(function() {
+                var elapsed = Math.round((Date.now() - recordStart) / 1000);
+                timerEl.textContent = 'Recording… ' + fmtTime(elapsed);
+                if (elapsed >= MAX_SECONDS) stopRecording(false);
+            }, 500);
+        }).catch(function(err) {
+            alert('Microphone access is needed to record a voice note.');
+        });
+    }
+
+    function stopRecording(cancelled) {
+        wasCancelled = !!cancelled;
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+    }
+
+    recordBtn.onclick = function() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            stopRecording(false);
+        } else {
+            startRecording();
+        }
+    };
+
+    cancelBtn.onclick = function() { stopRecording(true); };
+})();
 </script>
 {% endblock %}
-

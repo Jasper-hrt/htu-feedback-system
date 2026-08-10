@@ -88,6 +88,9 @@
                             <a href="/chat" class="nav-profile-link" data-page="chat">
                                 <span class="nav-profile-link-icon">💬</span><span>Chat</span>
                             </a>
+                            <a href="/student/change-password" class="nav-profile-link" data-page="change-password">
+                                <span class="nav-profile-link-icon">🔑</span><span>Change Password</span>
+                            </a>
                         </nav>
                         <a href="/student/logout" class="nav-profile-logout">
                             <span class="nav-profile-logout-icon">⏻</span>
@@ -127,6 +130,9 @@
                             </a>
                             <a href="/admin/announcements" class="nav-profile-link" data-page="announcements">
                                 <span class="nav-profile-link-icon">📢</span><span>Announcements</span>
+                            </a>
+                            <a href="/admin/change-password" class="nav-profile-link" data-page="change-password">
+                                <span class="nav-profile-link-icon">🔑</span><span>Change Password</span>
                             </a>
                         </nav>
                         <a href="/admin/logout" class="nav-profile-logout">
@@ -183,7 +189,8 @@
             or request.path.startswith('/submit')
             or request.path.startswith('/edit-feedback')
             or request.path.startswith('/forum')
-            or request.path.startswith('/chat') %}
+            or request.path.startswith('/chat')
+            or request.path.startswith('/student/change-password') %}
         {% if session.student_id and is_student_page %}
         <div class="student-layout">
             <aside class="student-side-menu" id="studentSideMenu">
@@ -227,6 +234,13 @@
                     <a href="/public" class="student-side-menu-link" data-page="public" data-tooltip="Public Board">
                         <span class="student-side-menu-link-icon tile-pink">🧾</span>
                         <span class="student-side-menu-link-text">Public Board</span>
+                    </a>
+                </nav>
+                <div class="student-side-menu-label">Account</div>
+                <nav class="student-side-menu-nav">
+                    <a href="/student/change-password" class="student-side-menu-link" data-page="change-password" data-tooltip="Change Password">
+                        <span class="student-side-menu-link-icon tile-blue">🔑</span>
+                        <span class="student-side-menu-link-text">Change Password</span>
                     </a>
                 </nav>
                 <div class="student-side-menu-footer">
