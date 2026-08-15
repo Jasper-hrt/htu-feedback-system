@@ -8,9 +8,11 @@ import os
 from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken
 from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag, ForumReplyVote
 from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
+from database import SolutionTemplate, SolutionFeedback
 from database import is_valid_htu_email, extract_student_id_from_email
 from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation
 from solution_recommender import recommend_solutions
+from recommendation_learning import RecommendationLearner
 from logger import log_student_action, log_admin_action, log_feedback_action, log_system_action
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -62,6 +64,51 @@ def _parse_json_field(value, default):
         return default
 
 
+def _get_db_templates_for_category(category):
+    """Fetch admin-configured SolutionTemplate overrides for a category.
+
+    Returns a list of dicts shaped like the hardcoded SOLUTION_TEMPLATES
+    entries (plus an internal '_db_id' so the winning template can be
+    credited with a usage_count bump). Returns [] when no active
+    overrides exist for the category, so callers can fall back to the
+    built-in templates in solution_recommender.py.
+    """
+    rows = SolutionTemplate.query.filter_by(category=category, is_active=True).all()
+    templates = []
+    for r in rows:
+        keywords = [k.strip() for k in (r.keywords or '').split(',') if k.strip()]
+        if not keywords:
+            continue
+        templates.append({
+            'keywords': keywords,
+            'short_term_solution': r.short_term_solution,
+            'long_term_solution': r.long_term_solution,
+            'responsible_department': r.responsible_department,
+            'estimated_time': r.estimated_time,
+            '_db_id': r.id,
+        })
+    return templates
+
+
+def _apply_recommendation(feedback, rec):
+    """Persist a Recommendation onto a Feedback row and credit the winning
+    SolutionTemplate (if the recommendation came from an admin-configured
+    override) with a usage_count increment."""
+    feedback.recommended_keywords = ','.join(rec.matched_keywords) if rec.matched_keywords else None
+    feedback.short_term_solution = rec.short_term_solution
+    feedback.long_term_solution = rec.long_term_solution
+    feedback.responsible_department = rec.responsible_department
+    feedback.estimated_time = rec.estimated_time
+    feedback.recommendation_confidence = rec.confidence
+    feedback.secondary_categories = json.dumps(rec.secondary_categories) if rec.secondary_categories else None
+
+    if rec.source_template_id and feedback.used_template_id != rec.source_template_id:
+        tmpl = SolutionTemplate.query.get(rec.source_template_id)
+        if tmpl:
+            tmpl.usage_count = (tmpl.usage_count or 0) + 1
+    feedback.used_template_id = rec.source_template_id
+
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_urlsafe(32)
@@ -96,6 +143,12 @@ def inject_csrf_helpers():
         'csrf_token': generate_csrf_token,
         'csrf_field': lambda: Markup(f'<input type="hidden" name="csrf_token" value="{generate_csrf_token()}">')
     }
+
+
+@app.template_filter('fromjson')
+def _jinja_fromjson(value):
+    """Parse a JSON-encoded DB column (e.g. Feedback.secondary_categories) in templates."""
+    return _parse_json_field(value, [])
 
 
 def _csrf_exempt_path():
@@ -791,6 +844,7 @@ def submit_feedback():
             sentiment=sentiment_label,
             sentiment_score=sentiment_val,
             emotion=emotion_data,
+            db_templates=_get_db_templates_for_category(detected_category),
         )
 
         # Persist confidence score and emotion data from hybrid analysis
@@ -808,11 +862,6 @@ def submit_feedback():
             sentiment_score=analysis['sentiment_score'],
             urgency_score=final_urgency,
             has_profanity=analysis['has_profanity'],
-            recommended_keywords=','.join(rec.matched_keywords) if rec.matched_keywords else None,
-            short_term_solution=rec.short_term_solution,
-            long_term_solution=rec.long_term_solution,
-            responsible_department=rec.responsible_department,
-            estimated_time=rec.estimated_time,
             # New confidence & emotion fields
             confidence_score=confidence_val,
             dominant_emotion=emotion_data.get('dominant_emotion') if emotion_data else None,
@@ -820,6 +869,7 @@ def submit_feedback():
             emotion_intensities=json.dumps(emotion_data.get('emotion_intensities')) if emotion_data and emotion_data.get('emotion_intensities') else None,
             secondary_emotions=json.dumps(emotion_data.get('secondary_emotions')) if emotion_data and emotion_data.get('secondary_emotions') else None,
         )
+        _apply_recommendation(feedback, rec)
 
         db.session.add(feedback)
         db.session.commit()
@@ -866,7 +916,20 @@ def edit_feedback(feedback_id):
         feedback.compound_mood = emotion_data.get('compound_mood') if emotion_data else None
         feedback.emotion_intensities = json.dumps(emotion_data.get('emotion_intensities')) if emotion_data and emotion_data.get('emotion_intensities') else None
         feedback.secondary_emotions = json.dumps(emotion_data.get('secondary_emotions')) if emotion_data and emotion_data.get('secondary_emotions') else None
-        
+
+        # Recompute the solution recommendation too -- the category or
+        # wording may have changed enough to point at a different fix.
+        rec = recommend_solutions(
+            text=new_text,
+            category=feedback.category,
+            urgency_score=feedback.urgency_score,
+            sentiment=feedback.sentiment,
+            sentiment_score=feedback.sentiment_score,
+            emotion=emotion_data,
+            db_templates=_get_db_templates_for_category(feedback.category),
+        )
+        _apply_recommendation(feedback, rec)
+
         db.session.commit()
         log_feedback_action(feedback.id, session['student_id'], 'Edit', 'Feedback edited')
         return redirect(url_for('student_dashboard'))
@@ -1526,12 +1589,20 @@ def admin_dashboard():
             'secondary_emotions': _parse_json_field(f.secondary_emotions, []),
         }
 
+        helpful_count = SolutionFeedback.query.filter_by(feedback_id=f.id, was_helpful=True).count()
+        unhelpful_count = SolutionFeedback.query.filter_by(feedback_id=f.id, was_helpful=False).count()
+
         recommendations_by_id[f.id] = {
             'recommended_keywords': f.recommended_keywords,
             'short_term_solution': f.short_term_solution,
             'long_term_solution': f.long_term_solution,
             'responsible_department': f.responsible_department,
             'estimated_time': f.estimated_time,
+            'confidence': f.recommendation_confidence,
+            'secondary_categories': _parse_json_field(f.secondary_categories, []),
+            'used_template_id': f.used_template_id,
+            'helpful_count': helpful_count,
+            'unhelpful_count': unhelpful_count,
         }
 
     return render_template('admin_dashboard.html', feedbacks=paginated.items, pagination=paginated,
@@ -1564,6 +1635,146 @@ def update_feedback(feedback_id):
     
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/feedback/<int:feedback_id>/regenerate-recommendation', methods=['POST'])
+@src_required
+def regenerate_recommendation(feedback_id):
+    """Recompute the solution recommendation for a feedback item on demand.
+
+    Useful when an admin reclassifies the category, or when new
+    SolutionTemplate overrides have been added since the item was
+    originally submitted -- the stored recommendation would otherwise
+    stay frozen at whatever it was on submission day.
+    """
+    feedback = Feedback.query.get_or_404(feedback_id)
+    base_text = (feedback.cleaned_text or '').strip() or (feedback.feedback_text or '').strip()
+    emotion_data = {
+        'dominant_emotion': feedback.dominant_emotion,
+        'compound_mood': feedback.compound_mood,
+    }
+
+    rec = recommend_solutions(
+        text=base_text,
+        category=feedback.category,
+        urgency_score=feedback.urgency_score,
+        sentiment=feedback.sentiment,
+        sentiment_score=feedback.sentiment_score,
+        emotion=emotion_data,
+        db_templates=_get_db_templates_for_category(feedback.category),
+    )
+    _apply_recommendation(feedback, rec)
+    db.session.commit()
+
+    log_admin_action(session['admin_name'], 'Recommendation Regenerated', f'Feedback ID: {feedback_id}')
+
+    return jsonify({
+        'success': True,
+        'recommended_keywords': feedback.recommended_keywords,
+        'short_term_solution': feedback.short_term_solution,
+        'long_term_solution': feedback.long_term_solution,
+        'responsible_department': feedback.responsible_department,
+        'estimated_time': feedback.estimated_time,
+        'confidence': feedback.recommendation_confidence,
+        'secondary_categories': _parse_json_field(feedback.secondary_categories, []),
+    })
+
+@app.route('/admin/feedback/<int:feedback_id>/solution-feedback', methods=['POST'])
+@src_required
+def rate_solution_feedback(feedback_id):
+    """Admin marks a recommendation as helpful/unhelpful.
+
+    Feeds the SolutionFeedback table, which RecommendationLearner uses to
+    score keyword and template effectiveness over time -- this is the
+    data source for the Recommendation Insights panel in Analytics.
+    """
+    feedback = Feedback.query.get_or_404(feedback_id)
+    data = request.get_json(silent=True) or request.form
+    was_helpful = str(data.get('was_helpful')).lower() in ('true', '1', 'yes')
+    comment = (data.get('comment') or '').strip() or None
+
+    resolution_hours = None
+    if feedback.status == 'Resolved' and feedback.resolved_at:
+        resolution_hours = round((feedback.resolved_at - feedback.created_at).total_seconds() / 3600, 1)
+
+    entry = SolutionFeedback(
+        feedback_id=feedback.id,
+        template_category=feedback.category,
+        was_helpful=was_helpful,
+        resolved_after=(feedback.status == 'Resolved'),
+        resolution_time_hours=resolution_hours,
+        comment=comment,
+        created_by=session.get('admin_name'),
+    )
+    db.session.add(entry)
+
+    if feedback.used_template_id and was_helpful:
+        tmpl = SolutionTemplate.query.get(feedback.used_template_id)
+        if tmpl:
+            tmpl.resolution_count = (tmpl.resolution_count or 0) + 1
+
+    db.session.commit()
+
+    helpful_count = SolutionFeedback.query.filter_by(feedback_id=feedback.id, was_helpful=True).count()
+    unhelpful_count = SolutionFeedback.query.filter_by(feedback_id=feedback.id, was_helpful=False).count()
+
+    return jsonify({'success': True, 'helpful_count': helpful_count, 'unhelpful_count': unhelpful_count})
+
+@app.route('/admin/solution-templates', methods=['GET', 'POST'])
+@src_required
+def admin_solution_templates():
+    """Admin-facing CRUD for SolutionTemplate overrides.
+
+    Any active template here takes precedence over the built-in
+    templates in solution_recommender.py for its category, so admins
+    can tailor recommendations to their institution without a code
+    change.
+    """
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'create':
+            category = request.form.get('category', '').strip()
+            keywords = request.form.get('keywords', '').strip()
+            short_term = request.form.get('short_term_solution', '').strip()
+            long_term = request.form.get('long_term_solution', '').strip()
+            department = request.form.get('responsible_department', '').strip()
+            estimated_time = request.form.get('estimated_time', '').strip()
+
+            if category and keywords and short_term and long_term and department and estimated_time:
+                tmpl = SolutionTemplate(
+                    category=category, keywords=keywords,
+                    short_term_solution=short_term, long_term_solution=long_term,
+                    responsible_department=department, estimated_time=estimated_time,
+                    created_by=session.get('admin_name'),
+                )
+                db.session.add(tmpl)
+                db.session.commit()
+                log_admin_action(session['admin_name'], 'Solution Template Created', f'Category: {category}')
+
+        elif action == 'toggle':
+            tmpl_id = request.form.get('template_id', type=int)
+            tmpl = SolutionTemplate.query.get(tmpl_id) if tmpl_id else None
+            if tmpl:
+                tmpl.is_active = not tmpl.is_active
+                db.session.commit()
+                log_admin_action(session['admin_name'], 'Solution Template Toggled',
+                                  f'ID: {tmpl_id}, Active: {tmpl.is_active}')
+
+        elif action == 'delete':
+            tmpl_id = request.form.get('template_id', type=int)
+            tmpl = SolutionTemplate.query.get(tmpl_id) if tmpl_id else None
+            if tmpl:
+                db.session.delete(tmpl)
+                db.session.commit()
+                log_admin_action(session['admin_name'], 'Solution Template Deleted', f'ID: {tmpl_id}')
+
+        return redirect(url_for('admin_solution_templates'))
+
+    templates = SolutionTemplate.query.order_by(SolutionTemplate.category, SolutionTemplate.created_at.desc()).all()
+    categories = ['Accommodation', 'ICT/Wi-Fi', 'Academics', 'Catering', 'Facilities', 'Safety',
+                  'Transport', 'Mental Health', 'Financial', 'Administration', 'Cleanliness', 'Other']
+
+    return render_template('admin_solution_templates.html', templates=templates, categories=categories)
+
 @app.route('/admin/templates', methods=['GET', 'POST'])
 @src_required
 def admin_templates():
@@ -1591,6 +1802,31 @@ def admin_delete_feedback(feedback_id):
 def admin_students():
     students = Student.query.order_by(Student.created_at.desc()).all()
     return render_template('admin_students.html', students=students)
+
+@app.route('/admin/lexicon-gaps')
+@src_required
+def admin_lexicon_gaps():
+    from sentiment.unknown_detector import UnknownWordDetector
+
+    # Cap the scan to the most recent 1000 items -- comfortably enough
+    # to spot real patterns without straining the free-tier DB/instance
+    # on every page load.
+    recent_feedback = (
+        Feedback.query
+        .order_by(Feedback.id.desc())
+        .limit(1000)
+        .all()
+    )
+    feedback_items = [(f.feedback_text, f.sentiment) for f in recent_feedback]
+
+    detector = UnknownWordDetector()
+    report = detector.scan_feedback_for_gaps(feedback_items, top_n=40)
+
+    return render_template('admin_lexicon_gaps.html',
+                           scanned_count=report['scanned_count'],
+                           total_feedback=len(recent_feedback),
+                           neutral_gap_words=report['neutral_gap_words'],
+                           all_gap_words=report['all_gap_words'])
 
 @app.route('/admin/logs')
 @src_required
@@ -1806,6 +2042,11 @@ def admin_analytics():
         })
     dept_performance.sort(key=lambda x: x['total'], reverse=True)
     
+    # ==================== Recommendation Insights ====================
+    learner = RecommendationLearner()
+    solution_templates = SolutionTemplate.query.all()
+    learning_report = learner.generate_report(all_feedback, solution_templates)
+    
     # ==================== Overall Metrics ====================
     total = len(all_feedback)
     resolved_count = sum(1 for f in all_feedback if f.status == 'Resolved')
@@ -1835,7 +2076,8 @@ def admin_analytics():
                          pending_count=pending_count,
                          in_progress_count=in_progress_count,
                          urgent_count=urgent_count,
-                         avg_resolution_time=avg_resolution_time)
+                         avg_resolution_time=avg_resolution_time,
+                         learning_report=learning_report)
 
 @app.route('/admin/chat/rooms')
 @src_required

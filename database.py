@@ -56,6 +56,9 @@ class Feedback(db.Model):
     long_term_solution = db.Column(db.Text)
     responsible_department = db.Column(db.String(200))
     estimated_time = db.Column(db.String(100))
+    recommendation_confidence = db.Column(db.Float)       # 0-1 match confidence for the recommendation
+    secondary_categories = db.Column(db.Text)             # JSON list of other plausible categories
+    used_template_id = db.Column(db.Integer, db.ForeignKey('solution_templates.id'), nullable=True)
 
     # === Confidence & Emotion Analysis (from HybridSentimentEngine) ===
     confidence_score = db.Column(db.Float)                # 0-100 agreement confidence
@@ -96,6 +99,8 @@ class Feedback(db.Model):
             'responsible_department': self.responsible_department,
             'estimated_time': self.estimated_time,
             'recommended_keywords': self.recommended_keywords,
+            'recommendation_confidence': self.recommendation_confidence,
+            'secondary_categories': self.secondary_categories,
             'confidence_score': self.confidence_score,
             'dominant_emotion': self.dominant_emotion,
             'compound_mood': self.compound_mood,

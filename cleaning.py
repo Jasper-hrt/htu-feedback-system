@@ -1,5 +1,10 @@
 import re
 
+# Reuse the same negation-contraction expansion used by the feedback
+# preprocessing pipeline so "isn't stable" doesn't collapse into the bare,
+# non-negated token "isn stable" once apostrophes are stripped below.
+from sentiment.preprocessing import _expand_contractions
+
 
 # Curated profanity list. Replace with NEUTRAL alternatives.
 # Keep lowercase keys; matching is case-insensitive.
@@ -315,6 +320,11 @@ def clean_text(text: str) -> str:
 
     # lowercase
     t = t.lower()
+
+    # expand negation contractions (isn't -> is not) BEFORE punctuation is
+    # stripped below, so the negation word survives instead of degrading
+    # into a meaningless orphan token ("isn t" -> single-char "t" removed).
+    t = _expand_contractions(t)
 
     # replace profanity with neutral alternatives
     for token, neutral in sorted(PROFANITY.items(), key=lambda kv: len(kv[0]), reverse=True):

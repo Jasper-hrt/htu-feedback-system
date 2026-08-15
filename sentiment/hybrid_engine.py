@@ -30,7 +30,7 @@ from sentiment.confidence import ConfidenceCalculator
 from sentiment.preprocessing import TextPreprocessor
 from sentiment.custom_lexicon import CustomLexiconManager
 from sentiment.unknown_detector import UnknownWordDetector
-from sentiment.safety_vocabulary import has_critical_safety, has_safety_concern
+from sentiment.safety_vocabulary import has_critical_safety, has_safety_concern, is_discussion_context
 
 
 # ================================================================
@@ -314,6 +314,37 @@ class HybridSentimentEngine:
             else:
                 final_score = max(final_score, 0.05)
                 sentiment = "Positive"
+
+        # STEP 15.8: Discussion-context dampener.
+        # VADER/TextBlob/AFINN/SentiWordNet have no awareness of discussion
+        # context -- a word like "kidnapping" carries negative polarity in
+        # their own dictionaries regardless of whether it's an incident or
+        # a workshop topic. STEP 15.5/15.6 already stop such text from being
+        # force-escalated, but the base ensemble can still land on Negative
+        # on its own, and how negative depends on those third-party
+        # dictionaries' exact scores, which we don't control. Rather than
+        # gate this on final_score's magnitude (making the guarantee depend
+        # on those unpredictable exact values), this dampener fires
+        # whenever the text is discussion-context AND our own domain
+        # lexicon gives no independent support for negativity (a positive
+        # custom_score, e.g. from an unrelated word, must not block this
+        # either -- only a custom_score that is itself meaningfully
+        # negative counts as independent support): a missed
+        # "the workshop was disorganised" (falls back to Neutral instead of
+        # Negative) is a far cheaper mistake than a false safety-incident
+        # escalation from routine discussion of the topic, which wastes SRC
+        # staff attention and risks desensitising them to real alerts.
+        # A genuinely negative discussion IS still caught when its own
+        # wording matches the custom lexicon (e.g. "waste of time" is a
+        # lexicon phrase) -- see the assertion in
+        # tests/test_sentiment_regression.py.
+        elif (
+            sentiment == "Negative"
+            and is_discussion_context(cleaned_text)
+            and custom_score > -0.15
+        ):
+            final_score = 0.0
+            sentiment = "Neutral"
 
         # STEP 16: Unknown words
         unknown_words = self.unknown.detect(cleaned_text)

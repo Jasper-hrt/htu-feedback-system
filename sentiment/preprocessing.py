@@ -256,6 +256,43 @@ def _correct_spelling(text: str) -> str:
     return " ".join(corrected)
 
 
+# ==================== CONTRACTION EXPANSION ====================
+# Must run BEFORE special-character stripping in clean(). If left to the
+# later punctuation-removal step, "isn't" degrades to the bare token "isn"
+# once the apostrophe is stripped, which silently deletes the negation and
+# can flip the sentiment of the whole sentence -- e.g. "the wifi isn't
+# stable" was scoring Positive because "stable" alone is a positive
+# lexicon word once its negation ("isn't" -> "isn") was destroyed.
+
+_CONTRACTIONS = {
+    "isn't": "is not", "aren't": "are not", "wasn't": "was not",
+    "weren't": "were not", "don't": "do not", "doesn't": "does not",
+    "didn't": "did not", "won't": "will not", "wouldn't": "would not",
+    "shouldn't": "should not", "couldn't": "could not", "can't": "cannot",
+    "mustn't": "must not", "needn't": "need not", "haven't": "have not",
+    "hasn't": "has not", "hadn't": "had not", "ain't": "is not",
+    "shan't": "shall not", "daren't": "dare not",
+    "mightn't": "might not", "oughtn't": "ought not",
+}
+
+
+def _expand_contractions(text: str) -> str:
+    """Expand negation contractions while the apostrophe is still intact."""
+    normalized = text.replace("\u2019", "'")  # curly apostrophe -> straight
+
+    def _replacer(match):
+        word = match.group(0)
+        lower = word.lower()
+        if lower in _CONTRACTIONS:
+            replacement = _CONTRACTIONS[lower]
+            if word[0].isupper():
+                replacement = replacement[0].upper() + replacement[1:]
+            return replacement
+        return word
+
+    return re.sub(r"[A-Za-z]+'[A-Za-z]+", _replacer, normalized)
+
+
 # ==================== NEGATION HANDLING ====================
 
 # Negation words and their contracted forms
@@ -450,6 +487,10 @@ class TextPreprocessor:
 
         # Step 5: Remove @mentions
         t = re.sub(r"@\w+", " ", t)
+
+        # Step 5.5: Expand negation contractions (isn't -> is not) BEFORE
+        # punctuation is stripped below, so negation is never lost.
+        t = _expand_contractions(t)
 
         # Step 6: Expand slang/acronyms
         from cleaning import expand_slang

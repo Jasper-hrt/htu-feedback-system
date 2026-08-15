@@ -66,6 +66,8 @@ _DISCUSSION_CONTEXT = [
     "lecture", "lectured", "lesson", "prevention", "prevent",
     "awareness", "seminar", "talked", "talk", "training", "taught",
     "preventive", "guidelines", "explained", "explain", "about",
+    "policy", "policies", "regulation", "regulations", "rule", "rules",
+    "code of conduct", "prohibits", "prohibited", "banned", "bans",
 ]
 
 # Token based matching: match whole words (case-insensitive) so that
@@ -123,10 +125,27 @@ def has_safety_concern(text: str) -> bool:
     Return True if the text contains an ordinary safety concern (not a
     critical incident). Used to bump category/urgency without forcing the
     critical override.
+
+    Like has_critical_safety, this respects discussion/prevention context
+    so that e.g. "the seminar covered dangerous road-crossing habits" is
+    not flagged as a real concern.
     """
     if not text:
         return False
+    if _is_discussion_context(str(text)):
+        return False
     return bool(_CONCERN_TOKEN_RE.search(str(text)))
+
+
+def is_discussion_context(text: str) -> bool:
+    """
+    Public wrapper: True if the text is discussing/learning about a safety
+    topic rather than reporting a real experience (e.g. "the workshop
+    discussed kidnapping"). Other modules (sentiment_analyzer, hybrid_engine)
+    use this to avoid duplicating the same heuristic with different keyword
+    lists that can drift out of sync.
+    """
+    return _is_discussion_context(text)
 
 
 def _is_discussion_context(text: str) -> bool:

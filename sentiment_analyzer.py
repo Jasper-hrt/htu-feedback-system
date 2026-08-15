@@ -9,6 +9,7 @@ from sentiment.safety_vocabulary import (
     has_safety_concern,
     get_critical_terms,
     get_safety_concern_terms,
+    is_discussion_context,
 )
 
 analyzer = SentimentIntensityAnalyzer()
@@ -148,6 +149,13 @@ def calculate_urgency(text, sentiment):
     if has_critical_safety(text):
         return 5
 
+    # Terms shared with the safety vocabulary (violence, danger, threat,
+    # etc.) must not push urgency to 5 when the text is merely discussing
+    # or learning about the topic rather than reporting it (e.g. "the
+    # workshop discussed emergency response and dangerous situations").
+    discussion = is_discussion_context(text)
+    safety_vocab_terms = set(get_critical_terms()) | set(get_safety_concern_terms())
+
     urgency_keywords = {
         5: ['emergency', 'danger', 'injured', 'unsafe', 'hazard', 'assault', 'harassment', 'urgent', 'critical',
             'gunshots', 'gunshot', 'shooting', 'weapon', 'violence', 'hostage', 'threat', 'armed', 'attack',
@@ -160,6 +168,8 @@ def calculate_urgency(text, sentiment):
 
     for score, keywords in urgency_keywords.items():
         for keyword in keywords:
+            if discussion and keyword in safety_vocab_terms:
+                continue
             if keyword in text_lower:
                 urgency = max(urgency, score)
 
@@ -206,11 +216,16 @@ def get_urgency_explanation(text, sentiment):
         1: ['suggestion', 'maybe', 'could improve', 'consider']
     }
 
+    discussion = is_discussion_context(str(text))
+    safety_vocab_terms = set(get_critical_terms()) | set(get_safety_concern_terms())
+
     detected = []
     base_urgency = 1
 
     for score, keywords in urgency_keywords.items():
         for keyword in keywords:
+            if discussion and keyword in safety_vocab_terms:
+                continue
             if keyword in text_lower:
                 detected.append(keyword)
                 base_urgency = max(base_urgency, score)
@@ -249,6 +264,9 @@ def detect_category(text):
     if has_critical_safety(str(text)):
         return 'Safety'
 
+    discussion = is_discussion_context(str(text))
+    safety_vocab_terms = set(get_critical_terms()) | set(get_safety_concern_terms())
+
     category_keywords = {
         'Accommodation': ['hostel', 'dorm', 'room', 'bed', 'water', 'toilet', 'shower', 'accommodation', 'hall', 'bathroom', 'flood', 'leak'],
         'ICT/Wi-Fi': ['wifi', 'internet', 'network', 'connection', 'computer', 'lab', 'portal', 'slow', 'disconnect', 'server'],
@@ -266,6 +284,8 @@ def detect_category(text):
     scores = {cat: 0 for cat in category_keywords}
     for category, keywords in category_keywords.items():
         for keyword in keywords:
+            if category == 'Safety' and discussion and keyword in safety_vocab_terms:
+                continue
             if keyword in text_lower:
                 scores[category] += 1
     

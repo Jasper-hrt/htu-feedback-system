@@ -15,6 +15,7 @@ class Recommendation:
     estimated_time: str
     confidence: float = 0.0
     secondary_categories: List[dict] = field(default_factory=list)
+    source_template_id: Optional[int] = None
 
 
 # ==================== SYNONYM MAP ====================
@@ -370,4 +371,5 @@ def recommend_solutions(
         estimated_time=estimated,
         confidence=round(confidence, 3),
         secondary_categories=secondary_categories[:3],
+        source_template_id=best_template.get("_db_id"),
     )

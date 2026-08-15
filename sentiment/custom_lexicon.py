@@ -14,6 +14,17 @@ Expanded with 200+ domain-specific words for:
 
 import re
 
+from sentiment.safety_vocabulary import (
+    CRITICAL_SAFETY_TERMS,
+    SAFETY_CONCERN_TERMS,
+    is_discussion_context,
+)
+
+# Lexicon entries below that duplicate a safety_vocabulary.py term -- these
+# are the ones skipped when the text is discussing/learning about a safety
+# topic rather than reporting an incident (see calculate_score docstring).
+_SAFETY_VOCAB_OVERLAP = frozenset(CRITICAL_SAFETY_TERMS) | frozenset(SAFETY_CONCERN_TERMS)
+
 
 class CustomLexiconManager:
 
@@ -270,6 +281,7 @@ class CustomLexiconManager:
             "no_one_cares": -0.6,
             "no_one_is_listening": -0.55,
             "waste_of_money": -0.6,
+            "waste_of_time": -0.55,
             "not_worth_it": -0.5,
             "not_worth_the_money": -0.55,
 
@@ -533,6 +545,16 @@ class CustomLexiconManager:
         - Individual word matching
         - Multi-word phrase matching (e.g. "well_structured", "break_in", etc.)
         - Basic negation detection (modifies score of next sentiment word)
+
+        A number of entries in this lexicon (kidnap, assault, weapon, etc.)
+        overlap with sentiment.safety_vocabulary's authoritative safety term
+        lists. That module is context-aware (e.g. "the workshop discussed
+        kidnapping" is not an incident); this lexicon originally was not,
+        which let it independently re-trigger negativity on the same words
+        even when safety_vocabulary correctly stayed silent. When the text is
+        discussing/learning about a safety topic rather than reporting one,
+        those specific overlapping entries are skipped here too so the two
+        modules can't drift out of sync.
         """
 
         if not text or not text.strip():
@@ -540,6 +562,8 @@ class CustomLexiconManager:
 
         # Normalize text
         text_lower = text.lower().strip()
+
+        skip_terms = _SAFETY_VOCAB_OVERLAP if is_discussion_context(text_lower) else frozenset()
 
         # First, check for multi-word phrases (underscored keys in lexicon)
         words = text_lower.split()
@@ -549,6 +573,8 @@ class CustomLexiconManager:
         text_with_underscores = text_lower.replace(" ", "_")
         for phrase, score in self.lexicon.items():
             if "_" in phrase:
+                if phrase in skip_terms:
+                    continue
                 if phrase in text_with_underscores:
                     matched_scores.append(score)
 
@@ -579,7 +605,7 @@ class CustomLexiconManager:
                 continue
 
             # Check if word is in lexicon (skip negations themselves and phrases)
-            if clean_word in self.lexicon:
+            if clean_word in self.lexicon and clean_word not in skip_terms:
                 word_score = self.lexicon[clean_word]
 
                 # Apply negation: flip the score if within negation window

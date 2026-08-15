@@ -11,8 +11,10 @@
             <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
             <a href="/admin/analytics" class="admin-sidebar-link admin-sidebar-link-active">📈 Analytics</a>
             <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/solution-templates" class="admin-sidebar-link">🧩 Solution Templates</a>
             <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
             <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">🧠 Lexicon Gaps</a>
             <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
             <a href="/admin/chat/rooms" class="admin-sidebar-link">💬 Chat Rooms</a>
             <a href="/admin/chat/messages" class="admin-sidebar-link">📨 Chat Messages</a>
@@ -331,6 +333,87 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- Recommendation Insights -->
+        <div class="chart-card" style="margin-top: 1.5rem;">
+            <div class="chart-card-header">
+                <div class="chart-card-title">🧠 Recommendation Insights</div>
+                <span class="badge badge-neutral">{{ learning_report.total_feedback_analyzed }} items analyzed</span>
+            </div>
+            <p class="text-sm text-secondary mb-3" style="font-weight: 500;">
+                Learns from resolved feedback to surface which keywords and solution templates actually lead to fast resolutions. Manage overrides on the
+                <a href="/admin/solution-templates" style="color: var(--primary); font-weight: 700;">Solution Templates</a> page.
+            </p>
+
+            {% if learning_report.template_scores %}
+            <div class="mb-4">
+                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">🏆 Top-Performing Solution Templates</div>
+                <div class="table-modern-container">
+                    <table class="table-modern">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Keywords</th>
+                                <th>Used</th>
+                                <th>Resolution Rate</th>
+                                <th>Effectiveness</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in learning_report.template_scores %}
+                            <tr>
+                                <td data-label="Category"><span class="dept-badge" style="font-size: 0.78rem;">🏷️ {{ t.category }}</span></td>
+                                <td data-label="Keywords">{% for kw in t.keywords[:4] %}<span class="keyword-chip">{{ kw }}</span>{% endfor %}</td>
+                                <td data-label="Used"><span class="badge badge-neutral">{{ t.usage_count }}x</span></td>
+                                <td data-label="Resolution Rate">
+                                    <span class="badge {% if t.resolution_rate >= 0.7 %}badge-success{% elif t.resolution_rate >= 0.4 %}badge-warning{% else %}badge-danger{% endif %}">
+                                        {{ (t.resolution_rate * 100) | round | int }}%
+                                    </span>
+                                </td>
+                                <td data-label="Effectiveness">
+                                    <div class="progress-bar" style="min-width: 90px;">
+                                        <div class="progress-fill {% if t.effectiveness_score >= 0.6 %}progress-green{% else %}progress-red{% endif %}" style="width: {{ (t.effectiveness_score * 100) | round | int }}%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-2 gap-4">
+                {% if learning_report.keyword_effectiveness %}
+                <div>
+                    <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">🔑 Highest-Impact Keywords</div>
+                    <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem 1rem; display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                        {% for kw, score in learning_report.keyword_effectiveness.items() %}
+                        <span class="keyword-chip keyword-chip-impact" title="Effectiveness: {{ (score * 100)|round|int }}%">{{ kw }} · {{ (score * 100)|round|int }}%</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if learning_report.department_insights %}
+                <div>
+                    <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-primary);">🏢 Best-Fit Department by Category</div>
+                    <div style="background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem 1rem;">
+                        {% for cat, info in learning_report.department_insights.items() %}
+                        <div style="display:flex; justify-content: space-between; align-items: center; padding: 0.35rem 0; border-bottom: 1px solid var(--border-color); font-size: 0.82rem;">
+                            <span style="font-weight: 700;">{{ cat }}</span>
+                            <span style="color: var(--text-secondary);">{{ info.best_department }} · {{ info.resolution_rate }}% resolved</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if not learning_report.keyword_effectiveness and not learning_report.template_scores %}
+            <p class="text-sm text-secondary" style="font-weight: 500;">Not enough resolved feedback yet to generate insights. Insights improve automatically as more feedback gets marked Resolved.</p>
+            {% endif %}
+        </div>
 
         <!-- Charts Scripts -->
         <script>

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="student-layout">
+    <aside class="admin-sidebar" aria-label="Admin lexicon gaps sidebar">
+        <div class="admin-sidebar-title">
+            🧠 Lexicon Gaps
+            <span class="sub">Sentiment accuracy tuning</span>
+        </div>
+        <nav class="admin-sidebar-nav">
+            <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
+            <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
+            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/solution-templates" class="admin-sidebar-link">🧩 Solution Templates</a>
+            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+            <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
+            <a href="/admin/lexicon-gaps" class="admin-sidebar-link admin-sidebar-link-active">🧠 Lexicon Gaps</a>
+            <a href="/admin/chat/rooms" class="admin-sidebar-link">💬 Chat Rooms</a>
+            <a href="/admin/chat/messages" class="admin-sidebar-link">📨 Chat Messages</a>
+            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+            <a href="/admin/change-password" class="admin-sidebar-link">🔑 Change Password</a>
+        </nav>
+        <div style="margin-top: 1.25rem;">
+            <form method="POST" action="/admin/logout" style="margin:0;">
+                {{ csrf_field() }}
+                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
+                    <span class="btn-logout-icon">⏻</span>
+                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+                </button>
+            </form>
+        </div>
+    </aside>
+    <section class="student-content">
+
+        <!-- Hero -->
+        <div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;">
+            <div style="position: relative; z-index: 1;">
+                <div class="admin-hero-title" style="font-size: 1.5rem;">🧠 Sentiment Lexicon Gaps</div>
+                <div class="admin-hero-subtitle">Words that showed up in real feedback but aren't recognised by any sentiment engine yet — the evidence base for future lexicon tuning.</div>
+            </div>
+            <div class="admin-hero-actions" style="position: relative; z-index: 1;">
+                <a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
+            </div>
+        </div>
+
+        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--primary);"></div>
+                <div class="stat-card-icon stat-card-icon-blue">📄</div>
+                <div class="stat-card-value" style="color: var(--primary);">{{ scanned_count }}</div>
+                <div class="stat-card-label">Feedback Items Scanned</div>
+                <div class="stat-card-trend stat-card-trend-up">Most recent {{ total_feedback }} entries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--warning);"></div>
+                <div class="stat-card-icon stat-card-icon-amber">🔍</div>
+                <div class="stat-card-value" style="color: var(--warning);">{{ neutral_gap_words|length }}</div>
+                <div class="stat-card-label">Candidate Gap Words</div>
+                <div class="stat-card-trend stat-card-trend-up">From Neutral-labeled feedback</div>
+            </div>
+        </div>
+
+        <div class="alert alert-info" style="margin: 1rem 0;">
+            💡 <strong>How to read this:</strong> "Priority candidates" are words found in feedback that came out
+            <strong>Neutral</strong> — a Neutral result is often exactly what happens when no engine recognised the
+            text, so a word appearing here repeatedly is a real accuracy gap worth reviewing. Add words you agree
+            with to <code>sentiment/custom_lexicon.py</code> with an appropriate score (roughly -1.0 to +1.0),
+            then redeploy. This page doesn't edit the lexicon automatically — it's a report to guide manual review.
+        </div>
+
+        <!-- Priority: Neutral-feedback gap words -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title">⚠️ Priority Candidates (from Neutral feedback)</div>
+            </div>
+            {% if neutral_gap_words %}
+            <div style="overflow-x: auto;">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Word</th>
+                            <th>Occurrences</th>
+                            <th>Example Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in neutral_gap_words %}
+                        <tr>
+                            <td><strong>{{ item.word }}</strong></td>
+                            <td><span class="badge badge-warning">{{ item.count }}</span></td>
+                            <td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state-premium" style="padding: 2rem 1rem;">
+                <span class="empty-state-premium-icon" style="font-size: 2.5rem;">✅</span>
+                <div class="empty-state-premium-title" style="font-size: 1rem;">No priority gaps found</div>
+                <div class="empty-state-premium-desc" style="font-size: 0.85rem;">Nothing stood out in the current batch of Neutral-labeled feedback.</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Broader coverage: all feedback -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title">📚 Broader Vocabulary Gaps (all feedback)</div>
+            </div>
+            {% if all_gap_words %}
+            <div style="overflow-x: auto;">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th>Word</th>
+                            <th>Occurrences</th>
+                            <th>Example Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in all_gap_words %}
+                        <tr>
+                            <td>{{ item.word }}</td>
+                            <td><span class="badge badge-info">{{ item.count }}</span></td>
+                            <td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state-premium" style="padding: 2rem 1rem;">
+                <span class="empty-state-premium-icon" style="font-size: 2.5rem;">📭</span>
+                <div class="empty-state-premium-title" style="font-size: 1rem;">Nothing to show yet</div>
+                <div class="empty-state-premium-desc" style="font-size: 0.85rem;">Once feedback comes in, gaps will appear here.</div>
+            </div>
+            {% endif %}
+        </div>
+
+    </section>
+</div>
+{% endblock %}

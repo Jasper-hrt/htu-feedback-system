@@ -11,8 +11,10 @@
             <a href="/admin/dashboard" class="admin-sidebar-link admin-sidebar-link-active">📋 Dashboard</a>
             <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
             <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/solution-templates" class="admin-sidebar-link">🧩 Solution Templates</a>
             <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
             <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">🧠 Lexicon Gaps</a>
             <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
             <a href="/admin/chat/rooms" class="admin-sidebar-link">💬 Chat Rooms</a>
             <a href="/admin/chat/messages" class="admin-sidebar-link">📨 Chat Messages</a>
@@ -162,7 +164,46 @@
         {% endif %}
         <div id="responseModal" class="modal"><div class="modal-content"><div class="modal-header">💬 Add SRC Response</div><form method="POST" id="responseForm">{{ csrf_field() }}<textarea name="src_response" rows="4" class="form-textarea mb-3" placeholder="Write your official response here..."></textarea><div class="flex justify-end gap-2"><button type="button" onclick="closeResponseModal()" class="btn btn-secondary">Cancel</button><button type="submit" class="btn btn-primary">✉️ Submit Response</button></div></form></div></div>
 <div id="analyzeModal" class="modal"><div class="modal-content"><div class="modal-header">🔍 Feedback Analysis</div><div class="mb-3"><div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;"><span class="badge badge-info" id="analyzeSentimentBadge">Sentiment</span><span class="badge badge-warning" id="analyzeUrgencyBadge">Urgency</span></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎭 Emotion & Confidence</h4><div id="analyzeEmotion" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🧠 Sentiment Explanation</h4><div id="sentimentExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Urgency Explanation</h4><div id="urgencyExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeAnalyzeModal()" class="btn btn-secondary">Close</button></div></div></div>
-        <div id="solutionModal" class="modal"><div class="modal-content"><div class="modal-header">💡 Solution Recommendations</div><div class="mb-3"><div id="solutionDepartment" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; margin-bottom: 0.75rem; border: 1px solid var(--border-color);"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🏷️ Matched Keywords</h4><div id="solutionKeywords" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color); min-height: 50px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⏱️ Short-Term Solution</h4><div id="solutionShortTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Long-Term Solution</h4><div id="solutionLongTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeSolutionModal()" class="btn btn-secondary">Close</button></div></div></div>
+        <div id="solutionModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">💡 Solution Recommendations</div>
+                <div class="mb-3">
+                    <div id="solutionDepartment" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; margin-bottom: 0.75rem; border: 1px solid var(--border-color);"></div>
+                </div>
+                <div class="mb-3" id="solutionConfidenceWrap" style="display:none;">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎯 Match Confidence</h4>
+                    <div id="solutionConfidence" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🏷️ Matched Keywords</h4>
+                    <div id="solutionKeywords" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color); min-height: 50px;"></div>
+                </div>
+                <div class="mb-3" id="solutionSecondaryWrap" style="display:none;">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🔀 Might Also Involve</h4>
+                    <div id="solutionSecondary" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⏱️ Short-Term Solution</h4>
+                    <div id="solutionShortTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Long-Term Solution</h4>
+                    <div id="solutionLongTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🗳️ Was this recommendation helpful?</h4>
+                    <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" id="solutionHelpfulBtn" onclick="rateSolution(true)">👍 Helpful</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="solutionUnhelpfulBtn" onclick="rateSolution(false)">👎 Not Helpful</button>
+                        <span id="solutionHelpfulTally" style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;"></span>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="regenerateSolution()" class="btn btn-secondary" id="solutionRegenerateBtn">🔄 Regenerate</button>
+                    <button type="button" onclick="closeSolutionModal()" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
         <script>
         var explanationsById = {{ explanations_by_id | default({}) | tojson }};
         var recommendationsById = {{ recommendations_by_id | default({}) | tojson }};
@@ -341,30 +382,123 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
             modal.classList.add('active');
         }
         function closeAnalyzeModal() { document.getElementById('analyzeModal').classList.remove('active'); }
-        function showSolutionModal(id) {
-            var modal = document.getElementById('solutionModal');
+        var currentSolutionFeedbackId = null;
+
+        function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
+
+        function renderSolutionModal(id, rec) {
             var db = document.getElementById('solutionDepartment');
             var kb = document.getElementById('solutionKeywords');
             var stb = document.getElementById('solutionShortTerm');
             var ltb = document.getElementById('solutionLongTerm');
-            if (!modal || !db || !kb || !stb || !ltb) return;
-            var rec = recommendationsById && recommendationsById[id] ? recommendationsById[id] : null;
+            var confWrap = document.getElementById('solutionConfidenceWrap');
+            var confBox = document.getElementById('solutionConfidence');
+            var secWrap = document.getElementById('solutionSecondaryWrap');
+            var secBox = document.getElementById('solutionSecondary');
+            var tally = document.getElementById('solutionHelpfulTally');
+
             if (!rec) {
                 db.innerHTML = '<em style="color:var(--text-secondary);">No recommendations available.</em>';
                 kb.innerHTML = ''; stb.innerHTML = ''; ltb.innerHTML = '';
-            } else {
-                var dept = rec.responsible_department || 'N/A';
-                var eta = rec.estimated_time || 'N/A';
-                var st = rec.short_term_solution || '';
-                var lt = rec.long_term_solution || '';
-                var kws = (rec.recommended_keywords || '').split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
-                db.innerHTML = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;"><div><span class="dept-badge">🏢 ' + dept + '</span></div><div><span style="font-weight:600;font-size:0.85rem;">⏱️ Est:</span> <strong>' + eta + '</strong></div></div>';
-                kb.innerHTML = kws.length ? '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + kws.map(function(k) { return '<span class="keyword-chip">' + k + '</span>'; }).join('') + '</div>' : '<em style="color:var(--text-secondary);">None</em>';
-                stb.innerHTML = st ? '<div style="color:var(--text-secondary);line-height:1.6;">' + st + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
-                ltb.innerHTML = lt ? '<div style="color:var(--text-secondary);line-height:1.6;">' + lt + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+                confWrap.style.display = 'none';
+                secWrap.style.display = 'none';
+                tally.textContent = '';
+                return;
             }
+
+            var dept = rec.responsible_department || 'N/A';
+            var eta = rec.estimated_time || 'N/A';
+            var st = rec.short_term_solution || '';
+            var lt = rec.long_term_solution || '';
+            var kws = (rec.recommended_keywords || '').split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+
+            db.innerHTML = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;"><div><span class="dept-badge">🏢 ' + esc(dept) + '</span></div><div><span style="font-weight:600;font-size:0.85rem;">⏱️ Est:</span> <strong>' + esc(eta) + '</strong></div></div>';
+            kb.innerHTML = kws.length ? '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + kws.map(function(k) { return '<span class="keyword-chip">' + esc(k) + '</span>'; }).join('') + '</div>' : '<em style="color:var(--text-secondary);">None</em>';
+            stb.innerHTML = st ? '<div style="color:var(--text-secondary);line-height:1.6;">' + esc(st) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+            ltb.innerHTML = lt ? '<div style="color:var(--text-secondary);line-height:1.6;">' + esc(lt) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+
+            if (typeof rec.confidence === 'number') {
+                var pct = Math.round(rec.confidence * 100);
+                var level = pct >= 70 ? 'High' : (pct >= 40 ? 'Moderate' : 'Low');
+                var color = pct >= 70 ? 'var(--success)' : (pct >= 40 ? 'var(--warning)' : 'var(--danger)');
+                confWrap.style.display = 'block';
+                confBox.innerHTML = '<div style="display:flex;align-items:center;gap:0.6rem;">' +
+                    '<div style="flex:1;height:8px;border-radius:99px;background:var(--border-color);overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:' + color + ';"></div></div>' +
+                    '<strong style="font-size:0.82rem;color:' + color + ';">' + pct + '% (' + level + ')</strong></div>';
+            } else {
+                confWrap.style.display = 'none';
+            }
+
+            if (rec.secondary_categories && rec.secondary_categories.length) {
+                secWrap.style.display = 'block';
+                secBox.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + rec.secondary_categories.map(function(sc) {
+                    var label = typeof sc === 'string' ? sc : (sc.category || JSON.stringify(sc));
+                    return '<span class="keyword-chip">' + esc(label) + '</span>';
+                }).join('') + '</div>';
+            } else {
+                secWrap.style.display = 'none';
+            }
+
+            var helpfulCount = rec.helpful_count || 0;
+            var unhelpfulCount = rec.unhelpful_count || 0;
+            tally.textContent = (helpfulCount || unhelpfulCount) ? (helpfulCount + ' found this helpful · ' + unhelpfulCount + ' did not') : 'No feedback yet on this recommendation';
+        }
+
+        function showSolutionModal(id) {
+            var modal = document.getElementById('solutionModal');
+            if (!modal) return;
+            currentSolutionFeedbackId = id;
+            var rec = recommendationsById && recommendationsById[id] ? recommendationsById[id] : null;
+            renderSolutionModal(id, rec);
             modal.classList.add('active');
         }
+
+        function regenerateSolution() {
+            if (!currentSolutionFeedbackId) return;
+            var btn = document.getElementById('solutionRegenerateBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Regenerating…';
+            fetch('/admin/feedback/' + currentSolutionFeedbackId + '/regenerate-recommendation', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': getCsrfToken() }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                btn.disabled = false;
+                btn.textContent = '🔄 Regenerate';
+                if (!data.success) return;
+                var existing = recommendationsById[currentSolutionFeedbackId] || {};
+                var updated = Object.assign({}, existing, data);
+                recommendationsById[currentSolutionFeedbackId] = updated;
+                renderSolutionModal(currentSolutionFeedbackId, updated);
+                if (typeof showToast === 'function') showToast('✅ Recommendation refreshed', 'success');
+            })
+            .catch(function() {
+                btn.disabled = false;
+                btn.textContent = '🔄 Regenerate';
+            });
+        }
+
+        function rateSolution(wasHelpful) {
+            if (!currentSolutionFeedbackId) return;
+            fetch('/admin/feedback/' + currentSolutionFeedbackId + '/solution-feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+                body: JSON.stringify({ was_helpful: wasHelpful })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) return;
+                var existing = recommendationsById[currentSolutionFeedbackId] || {};
+                existing.helpful_count = data.helpful_count;
+                existing.unhelpful_count = data.unhelpful_count;
+                recommendationsById[currentSolutionFeedbackId] = existing;
+                var tally = document.getElementById('solutionHelpfulTally');
+                if (tally) tally.textContent = data.helpful_count + ' found this helpful · ' + data.unhelpful_count + ' did not';
+                if (typeof showToast === 'function') showToast(wasHelpful ? '👍 Thanks for the feedback!' : '👎 Noted, thanks!', 'success');
+            });
+        }
+
         function closeSolutionModal() { document.getElementById('solutionModal').classList.remove('active'); }
         function showResponseModal(id, response) {
             var modal = document.getElementById('responseModal');
