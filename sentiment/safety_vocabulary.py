@@ -36,11 +36,15 @@ CRITICAL_SAFETY_TERMS = [
     "cutlass",
     # Stabbing / assault / robbery
     "stabbing", "stabbed", "stab", "assault", "assaulted", "raped",
+    "harassed", "harassment",
     "sexual assault", "robbery", "robbed", "mugged", "mugging",
     # Explosives
     "bomb", "explosion", "explode", "exploded",
     # Threatening / attackers
     "threatened", "attacked", "ambushed", "intruder", "intruders",
+    # Active campus fire events are critical; discussion/prevention context
+    # is filtered by the context helper before this list is applied.
+    "fire outbreak", "building fire", "laboratory fire",
 ]
 
 # ======================================================================

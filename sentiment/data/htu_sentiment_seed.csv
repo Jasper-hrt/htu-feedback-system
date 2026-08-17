@@ -1,0 +1,21 @@
+text,sentiment,category,urgency,safety
+"Most computers are not working",Negative,ICT/Wi-Fi,4,No
+"Air conditioners are not working",Negative,Facilities,4,No
+"The WiFi is not working",Negative,ICT/Wi-Fi,4,No
+"The portal is working again",Positive,ICT/Wi-Fi,1,No
+"There are no more flood issues",Positive,Accommodation,1,No
+"The flood problem has been resolved",Positive,Accommodation,1,No
+"The computers are broken",Negative,ICT/Wi-Fi,4,No
+"The new computer lab is excellent",Positive,ICT/Wi-Fi,1,No
+"Frequent kidnapping of students",Negative,Safety,5,Yes
+"A student was kidnapped yesterday",Negative,Safety,5,Yes
+"The security workshop discussed kidnapping",Neutral,Safety,1,No
+"The fire safety seminar discussed emergency response",Neutral,Safety,1,No
+"There is a fire outbreak on campus",Negative,Safety,5,Yes
+"Security around campus has improved",Positive,Safety,1,No
+"The lecturer was very helpful",Positive,Academics,1,No
+"The lecturer is not helpful",Negative,Academics,3,No
+"The service is not bad",Positive,Administration,1,No
+"The service is not good",Negative,Administration,3,No
+"The network dey slow",Negative,ICT/Wi-Fi,3,No
+"Chale the WiFi no dey work",Negative,ICT/Wi-Fi,4,No

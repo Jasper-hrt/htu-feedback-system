@@ -30,7 +30,9 @@ from sentiment.confidence import ConfidenceCalculator
 from sentiment.preprocessing import TextPreprocessor
 from sentiment.custom_lexicon import CustomLexiconManager
 from sentiment.unknown_detector import UnknownWordDetector
-from sentiment.safety_vocabulary import has_critical_safety, has_safety_concern, is_discussion_context
+from sentiment.safety_vocabulary import (has_critical_safety, has_safety_concern, is_discussion_context,
+                                            get_critical_terms, get_safety_concern_terms)
+from sentiment import context_analyzer as context
 
 
 # ================================================================
@@ -189,185 +191,257 @@ class HybridSentimentEngine:
         self.confidence = ConfidenceCalculator()
         self.lexicon = CustomLexiconManager()
         self.unknown = UnknownWordDetector()
+        self.context = context
 
     def analyze(self, text: str) -> dict:
+        """Run the unified, context-aware sentiment pipeline.
+
+        The pipeline is deliberately fault tolerant: unavailable third-party
+        engines are represented as ``None`` and are excluded from fusion rather
+        than being converted to fake Neutral evidence.
         """
-        Analyze student feedback using multiple
-        sentiment-analysis methods with context-aware features.
-        """
-        if not text or not text.strip():
+        if not text or not str(text).strip():
             return self._empty_result(text)
 
-        # STEP 1: Clean
-        cleaned_text = self.preprocessor.clean(text)
+        raw_text = str(text)
+        cleaned_text = self.preprocessor.clean(raw_text)
 
-        # STEP 2-6: Run analyzers (each wrapped so a single-engine failure
-        # never crashes the whole feedback submission -- we fall back to 0.0).
+        # Domain/context layer runs first so generic models can be interpreted
+        # in light of negation, resolution, complaint phrases and local slang.
+        context = self.context.analyze_context(raw_text)
+        normalized_context_text, slang = self.context.normalize_domain_language(cleaned_text)
+        model_text = normalized_context_text or cleaned_text
+
+        scores = {}
+        engine_details = {}
+
         try:
-            vader_score = self.vader.analyze(cleaned_text)["compound"]
-        except Exception:
-            vader_score = 0.0
+            result = self.vader.analyze(model_text)
+            scores["vader"] = result["compound"] if result else None
+            engine_details["vader"] = result
+        except Exception as exc:
+            scores["vader"] = None
+            engine_details["vader_error"] = str(exc)
+
         try:
-            textblob_score = self.textblob.analyze(cleaned_text)["polarity"]
-        except Exception:
-            textblob_score = 0.0
+            result = self.textblob.analyze(model_text)
+            scores["textblob"] = result["polarity"] if result else None
+            engine_details["textblob"] = result
+        except Exception as exc:
+            scores["textblob"] = None
+            engine_details["textblob_error"] = str(exc)
+
         try:
-            afinn_score = self.afinn.analyze(cleaned_text)
-        except Exception:
-            afinn_score = 0.0
+            result = self.afinn.analyze(model_text)
+            scores["afinn"] = result
+            engine_details["afinn"] = result
+        except Exception as exc:
+            scores["afinn"] = None
+            engine_details["afinn_error"] = str(exc)
+
         try:
-            sentiwordnet_score = self.sentiwordnet.analyze(cleaned_text)
-        except Exception:
-            sentiwordnet_score = 0.0
+            result = self.sentiwordnet.analyze(model_text)
+            # SentiWordNet's old 0.0 fallback means "unavailable" in some
+            # deployments. Treat it as missing when the adapter says so.
+            scores["sentiwordnet"] = result if result is not None else None
+            engine_details["sentiwordnet"] = result
+        except Exception as exc:
+            scores["sentiwordnet"] = None
+            engine_details["sentiwordnet_error"] = str(exc)
+
         try:
-            custom_score = self.lexicon.calculate_score(cleaned_text)
+            scores["custom"] = self.lexicon.calculate_score(model_text)
+            engine_details["custom"] = scores["custom"]
+        except Exception as exc:
+            scores["custom"] = None
+            engine_details["custom_error"] = str(exc)
+
+        # Emotion detection is supplementary evidence, not the sentiment
+        # classifier itself.
+        try:
+            emotion_result = self.emotion.analyze(model_text)
         except Exception:
-            custom_score = 0.0
+            emotion_result = {
+                "dominant_emotion": "neutral",
+                "emotion_scores": {},
+                "emotion_intensities": {},
+                "secondary_emotions": [],
+                "compound_mood": "neutral",
+            }
 
-        # STEP 7: Emotions
-        emotion_result = self.emotion.analyze(cleaned_text)
+        # Sarcasm and intensity are kept, but are prevented from being applied
+        # blindly to every model. Context phrases remain authoritative.
+        vader_score = scores.get("vader") or 0.0
+        textblob_score = scores.get("textblob") or 0.0
+        sarcasm = self._detect_sarcasm(raw_text, vader_score, textblob_score)
+        intensity_mult = self._calculate_intensity(model_text)
 
-        # STEP 8: Sarcasm detection
-        sarcasm = self._detect_sarcasm(text, vader_score, textblob_score)
-        is_sarcastic = sarcasm["is_sarcastic"]
-        sarcasm_conf = sarcasm["confidence"]
+        for key in ("vader", "textblob", "afinn", "sentiwordnet", "custom"):
+            if scores.get(key) is not None:
+                scores[key] = max(-1.0, min(1.0, scores[key] * intensity_mult))
 
-        # STEP 9: Aspect extraction
-        aspects = self._extract_aspects(cleaned_text)
+        # Do not let weak sarcasm flip a clear domain phrase.
+        if sarcasm["is_sarcastic"] and sarcasm["confidence"] >= 0.65 and abs(context.get("score", 0.0)) < 0.45:
+            for key in ("vader", "textblob", "afinn", "sentiwordnet", "custom"):
+                if scores.get(key) is not None:
+                    scores[key] *= -1
 
-        # STEP 10: Intensity modifier
-        intensity_mult = self._calculate_intensity(cleaned_text)
-
-        # STEP 11: Apply sarcasm adjustment
-        if is_sarcastic and sarcasm_conf > 0.5:
-            vader_score = -vader_score * sarcasm_conf
-            textblob_score = -textblob_score * sarcasm_conf
-            afinn_score = -afinn_score * sarcasm_conf
-            sentiwordnet_score = -sentiwordnet_score * sarcasm_conf
-            custom_score = -custom_score * sarcasm_conf
-
-        # STEP 12: Apply intensity
-        vader_score *= intensity_mult
-        textblob_score *= intensity_mult
-        afinn_score *= intensity_mult
-        sentiwordnet_score *= intensity_mult
-        custom_score *= intensity_mult
-
-        # STEP 13: Combine with details
-        decision_details = self.decision.combine_with_details(
-            vader=vader_score, textblob=textblob_score,
-            afinn=afinn_score, sentiwordnet=sentiwordnet_score,
-            custom=custom_score
+        context_label = self.context.sentiment_from_context(context)
+        decision_details = self.decision.combine_named(
+            scores,
+            context_score=context.get("score", 0.0),
+            context_confidence=context.get("confidence", 0.0),
+            context_label=context_label,
         )
         final_score = decision_details["final_score"]
 
-        # STEP 14: Confidence
-        confidence = self.confidence.calculate([
-            vader_score, textblob_score, afinn_score,
-            sentiwordnet_score, custom_score
-        ])
-
-        # STEP 15: Sentiment label
-        if final_score >= 0.05:
-            sentiment = "Positive"
-        elif final_score <= -0.05:
-            sentiment = "Negative"
-        else:
-            sentiment = "Neutral"
-
-# STEP 15.5: Critical safety override.
-        # A genuine critical safety incident (kidnapping, assault, shooting,
-        # weapon, threat of violence, etc.) MUST never be downgraded to
-        # Neutral or Positive by the voting ensemble. When such language is
-        # detected we force a strong negative score so downstream urgency and
-        # category logic treat it as the emergency it is. This is an additive
-        # guard only -- it does not alter the normal voting thresholds.
-        critical_safety_hit = has_critical_safety(cleaned_text)
+        # Critical safety is a separate classifier. It cannot be diluted by a
+        # generic sentiment ensemble. Discussion/prevention context is handled
+        # inside the authoritative safety vocabulary module.
+        critical_safety_hit = has_critical_safety(model_text)
+        safety_concern_hit = has_safety_concern(model_text)
+        discussion_context = is_discussion_context(model_text)
         if critical_safety_hit:
-            final_score = min(final_score, -0.8)
+            final_score = -0.90
             sentiment = "Negative"
-
-        # STEP 15.6: Safety-concern override.
-        # Ordinary safety concerns (e.g. "someone was injured", "harassment")
-        # are negative even if the ensemble happens to vote Neutral because
-        # not every engine recognises the term. We only nudge these to a mild
-        # negative (they are NOT forced to -0.8 like a critical incident).
-        # This is a focused guard for safety language only and does not change
-        # normal (non-safety) sentiment behaviour.
-        elif has_safety_concern(cleaned_text) and sentiment == "Neutral":
-            final_score = min(final_score, -0.05)
+            safety_mode = "critical_incident"
+        elif safety_concern_hit:
+            final_score = min(final_score, -0.30)
             sentiment = "Negative"
+            safety_mode = "safety_concern"
+        elif context_label in {"Positive", "Negative"} and context.get("confidence", 0) >= 0.45:
+            sentiment = context_label if abs(context.get("score", 0)) >= 0.15 else self._label(final_score)
+            if context_label == "Negative":
+                final_score = min(final_score, -0.12)
+            elif context_label == "Positive":
+                final_score = max(final_score, 0.12)
+            safety_mode = "context"
+        else:
+            sentiment = self._label(final_score)
+            safety_mode = "none"
 
-        # STEP 15.7: Domain-lexicon override for otherwise-neutral results.
-        # The custom lexicon only carries ~10% of the ensemble vote, and the
-        # confidence calculator treats a clean 0.0 from an engine that simply
-        # didn't recognise any words as "high confidence neutral" -- so a
-        # clear signal from the custom lexicon (e.g. "high cost", "still not
-        # fixed") can get diluted below the +-0.05 threshold and wrongly
-        # read as Neutral even though it's the only engine that actually
-        # understood the text. When the ensemble lands on Neutral but the
-        # custom lexicon alone is clearly one-sided, trust it.
-        elif sentiment == "Neutral" and abs(custom_score) >= 0.15:
-            if custom_score < 0:
-                final_score = min(final_score, -0.05)
-                sentiment = "Negative"
-            else:
-                final_score = max(final_score, 0.05)
-                sentiment = "Positive"
-
-        # STEP 15.8: Discussion-context dampener.
-        # VADER/TextBlob/AFINN/SentiWordNet have no awareness of discussion
-        # context -- a word like "kidnapping" carries negative polarity in
-        # their own dictionaries regardless of whether it's an incident or
-        # a workshop topic. STEP 15.5/15.6 already stop such text from being
-        # force-escalated, but the base ensemble can still land on Negative
-        # on its own, and how negative depends on those third-party
-        # dictionaries' exact scores, which we don't control. Rather than
-        # gate this on final_score's magnitude (making the guarantee depend
-        # on those unpredictable exact values), this dampener fires
-        # whenever the text is discussion-context AND our own domain
-        # lexicon gives no independent support for negativity (a positive
-        # custom_score, e.g. from an unrelated word, must not block this
-        # either -- only a custom_score that is itself meaningfully
-        # negative counts as independent support): a missed
-        # "the workshop was disorganised" (falls back to Neutral instead of
-        # Negative) is a far cheaper mistake than a false safety-incident
-        # escalation from routine discussion of the topic, which wastes SRC
-        # staff attention and risks desensitising them to real alerts.
-        # A genuinely negative discussion IS still caught when its own
-        # wording matches the custom lexicon (e.g. "waste of time" is a
-        # lexicon phrase) -- see the assertion in
-        # tests/test_sentiment_regression.py.
-        elif (
-            sentiment == "Negative"
-            and is_discussion_context(cleaned_text)
-            and custom_score > -0.15
-        ):
+        # A weak positive custom-lexicon hit on its own (e.g. "opens",
+        # "fine", "safe") is not enough to call otherwise neutral factual
+        # feedback Positive. Strong positive wording or an independent model
+        # can still produce Positive.
+        custom_only_positive = (
+            sentiment == "Positive"
+            and context_label is None
+            and (scores.get("custom") or 0.0) < 0.45
+            and all((v is None or v <= 0.10) for k, v in scores.items() if k != "custom")
+        )
+        if custom_only_positive:
             final_score = 0.0
             sentiment = "Neutral"
 
-        # STEP 16: Unknown words
-        unknown_words = self.unknown.detect(cleaned_text)
+        if "context:qualified_neutral" in (context.get("reasons") or []):
+            final_score = 0.0
+            sentiment = "Neutral"
+
+        # Discussion language should not turn a safety topic into an incident.
+        # If the only positive signal came from generic words such as "workshop"
+        # or "safe", classify the safety topic itself as Neutral. Explicit
+        # negative wording (e.g. "waste of time") is preserved.
+        if discussion_context and not critical_safety_hit and not safety_concern_hit:
+            safety_mode = "discussion_only"
+            safety_terms = set(get_critical_terms()) | set(get_safety_concern_terms())
+            has_safety_topic = any(re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", model_text, re.I) for term in safety_terms)
+            generic_model_score = scores.get("textblob")
+            custom_score_now = scores.get("custom") or 0.0
+            # Positive custom scores can come from words such as "safe" or
+            # "security" themselves. They are not enough to call a discussion
+            # positive. Require independent positive model/context evidence.
+            if has_safety_topic and not context_label and generic_model_score is not None and generic_model_score <= 0.10 and -0.15 < custom_score_now < 0.45:
+                final_score = 0.0
+                sentiment = "Neutral"
+
+        # Confidence is based on actual evidence availability, context strength,
+        # model agreement and proximity to the decision boundary.
+        confidence = self._calculate_confidence(scores, context, final_score, sentiment, critical_safety_hit)
+        review_required = confidence < 55.0 and not critical_safety_hit
+        if discussion_context and not context_label and abs(final_score) < 0.15:
+            review_required = False
+            confidence = max(confidence, 62.0)
+
+        aspects = self._extract_aspects(model_text)
+        unknown_words = self.unknown.detect(model_text)
+
+        available = [k for k, v in scores.items() if v is not None]
+        unavailable = [k for k, v in scores.items() if v is None]
+        reasons = list(context.get("reasons") or [])
+        if critical_safety_hit:
+            reasons.append("safety:critical_incident_override")
+        elif safety_concern_hit:
+            reasons.append("safety:concern_override")
+        if unavailable:
+            reasons.append("system:unavailable_engines_excluded")
+        if review_required:
+            reasons.append("confidence:human_review_recommended")
 
         return {
-            "raw_text": text,
+            "raw_text": raw_text,
             "cleaned_text": cleaned_text,
+            "normalized_text": model_text,
             "sentiment": sentiment,
             "final_score": round(final_score, 4),
             "confidence": round(confidence, 2),
+            "review_required": review_required,
+            "model_version": "HTU-Sentiment-v3-context-fusion",
             "emotion": emotion_result,
-            "vader_score": round(vader_score, 4),
-            "textblob_score": round(textblob_score, 4),
-            "afinn_score": round(afinn_score, 4),
-            "sentiwordnet_score": round(sentiwordnet_score, 4),
-            "custom_score": round(custom_score, 4),
+            "vader_score": self._round_or_none(scores.get("vader")),
+            "textblob_score": self._round_or_none(scores.get("textblob")),
+            "afinn_score": self._round_or_none(scores.get("afinn")),
+            "sentiwordnet_score": self._round_or_none(scores.get("sentiwordnet")),
+            "custom_score": self._round_or_none(scores.get("custom")),
             "unknown_words": unknown_words,
             "aspects": aspects,
-            "is_sarcastic": is_sarcastic,
-            "sarcasm_confidence": round(sarcasm_conf, 3),
+            "is_sarcastic": sarcasm["is_sarcastic"],
+            "sarcasm_confidence": round(sarcasm["confidence"], 3),
             "intensity_multiplier": round(intensity_mult, 2),
-            "decision_details": decision_details
+            "context": context,
+            "engine_details": engine_details,
+            "available_engines": available,
+            "unavailable_engines": unavailable,
+            "safety_mode": safety_mode,
+            "discussion_context": discussion_context,
+            "decision_details": decision_details,
+            "decision_reasons": reasons,
+            "domain_normalizations": slang,
         }
+
+    @staticmethod
+    def _label(score: float) -> str:
+        if score >= 0.05:
+            return "Positive"
+        if score <= -0.05:
+            return "Negative"
+        return "Neutral"
+
+    @staticmethod
+    def _round_or_none(value):
+        return round(value, 4) if value is not None else None
+
+    def _calculate_confidence(self, scores, context, final_score, sentiment, critical=False):
+        if critical:
+            return 99.0
+        available = [v for v in scores.values() if v is not None]
+        if not available:
+            base = 35.0
+        else:
+            mean = sum(available) / len(available)
+            variance = sum((x - mean) ** 2 for x in available) / len(available)
+            agreement = max(0.0, 1.0 - min(1.0, variance ** 0.5))
+            availability = min(1.0, len(available) / 5.0)
+            base = 38.0 + agreement * 28.0 + availability * 18.0
+        context_conf = float(context.get("confidence", 0.0) or 0.0)
+        context_score = abs(float(context.get("score", 0.0) or 0.0))
+        if context_conf >= 0.45:
+            base += min(18.0, context_conf * 12.0 + context_score * 8.0)
+        if abs(final_score) < 0.08:
+            base -= 15.0
+        if sentiment == "Neutral" and context_score >= 0.15:
+            base -= 10.0
+        return round(max(0.0, min(99.0, base)), 2)
 
     def _empty_result(self, text):
         """Return empty result structure."""
@@ -400,7 +474,11 @@ class HybridSentimentEngine:
         aspects = []
 
         for category, keywords in ASPECT_KEYWORDS.items():
-            matched = [kw for kw in keywords if kw in text_lower]
+            matched = []
+            for kw in keywords:
+                pattern = r"(?<!\w)" + re.escape(kw) + r"(?!\w)"
+                if re.search(pattern, text_lower):
+                    matched.append(kw)
             if matched:
                 aspect_result = self._score_aspect(text_lower, matched)
                 aspects.append({
@@ -429,9 +507,11 @@ class HybridSentimentEngine:
 
         context_text = " ".join(context_words)
         custom_score = self.lexicon.calculate_score(context_text)
-        vader_score = self.vader.analyze(context_text)["compound"]
+        vader_result = self.vader.analyze(context_text)
+        vader_score = vader_result["compound"] if vader_result else 0.0
 
-        combined = custom_score * 0.6 + vader_score * 0.4
+        # If VADER is unavailable, custom/domain evidence remains valid.
+        combined = custom_score * 0.7 + vader_score * 0.3
 
         if combined >= 0.05:
             label = "Positive"
@@ -507,12 +587,10 @@ class HybridSentimentEngine:
         text_lower = text.lower()
         multiplier = 1.0
 
-        for modifier, factor in INTENSITY_MODIFIERS.items():
-            if modifier in text_lower:
-                if factor > 1.0:
-                    multiplier *= factor
-                else:
-                    multiplier *= factor
+        for modifier, factor in sorted(INTENSITY_MODIFIERS.items(), key=lambda x: len(x[0]), reverse=True):
+            pattern = r"(?<!\w)" + re.escape(modifier) + r"(?!\w)"
+            if re.search(pattern, text_lower):
+                multiplier *= factor
 
-        # Keep within reasonable bounds
-        return max(0.2, min(3.0, multiplier))
+        # Do not allow multiple generic boosters to explode the score.
+        return max(0.5, min(2.5, multiplier))

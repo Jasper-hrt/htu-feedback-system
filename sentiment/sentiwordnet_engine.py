@@ -69,15 +69,15 @@ class SentiWordNetEngine:
     def analyze(self, text):
         swn, wordnet, pos_tag, word_tokenize = self._load_nltk()
 
-        # Graceful neutral fallback when NLTK data is unavailable.
+        # Missing NLTK resources are an unavailable engine, not neutral evidence.
         if swn is None or wordnet is None or pos_tag is None or word_tokenize is None:
-            return 0.0
+            return None
 
         try:
             tokens = word_tokenize(str(text).lower())
             tagged = pos_tag(tokens)
         except Exception:
-            return 0.0
+            return None
 
         score = 0
         count = 0
@@ -103,6 +103,6 @@ class SentiWordNetEngine:
                 continue
 
         if count == 0:
-            return 0.0
+            return None
 
         return score / count
