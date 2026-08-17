@@ -8,7 +8,7 @@ import os
 from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken
 from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag, ForumReplyVote
 from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
-from database import SolutionTemplate, SolutionFeedback
+from database import SolutionTemplate, SolutionFeedback, CustomLexicon, UnknownWord, AIReviewLog
 from database import is_valid_htu_email, extract_student_id_from_email
 from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation, build_ai_explanation
 from solution_recommender import recommend_solutions
@@ -24,6 +24,7 @@ from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from markupsafe import Markup
+from sqlalchemy import or_
 
 # ==================== EMOTION EMOJI MAPPING ====================
 
@@ -1809,6 +1810,148 @@ def admin_delete_feedback(feedback_id):
 def admin_students():
     students = Student.query.order_by(Student.created_at.desc()).all()
     return render_template('admin_students.html', students=students)
+
+
+@app.route('/admin/ai-review')
+@src_required
+def admin_ai_review():
+    """Phase 2: queue feedback that needs administrator review."""
+    threshold = request.args.get('threshold', 70, type=float)
+    query = Feedback.query.filter(
+        or_(
+            Feedback.confidence_score < threshold,
+            Feedback.confidence_score.is_(None),
+        )
+    ).order_by(Feedback.urgency_score.desc(), Feedback.created_at.desc())
+    reviews = query.limit(200).all()
+    for f in reviews:
+        base_text = (f.cleaned_text or '').strip() or (f.feedback_text or '').strip()
+        f.phase2_ai_explanation = build_ai_explanation(
+            base_text,
+            category=f.category,
+            recommendation={'short_term_solution': f.short_term_solution}
+        )
+    return render_template(
+        'admin_ai_review.html',
+        reviews=reviews,
+        threshold=threshold,
+        review_count=query.count(),
+        categories=sorted({c for c in [f.category for f in reviews] if c}),
+    )
+
+
+@app.route('/admin/ai-review/<int:feedback_id>', methods=['POST'])
+@src_required
+def review_ai_feedback(feedback_id):
+    """Approve/correct an AI result and record the action."""
+    feedback = Feedback.query.get_or_404(feedback_id)
+    old = (feedback.sentiment, feedback.category, feedback.urgency_score)
+    new_sentiment = (request.form.get('sentiment') or feedback.sentiment or 'neutral').strip().lower()
+    new_category = (request.form.get('category') or feedback.category or 'general').strip()
+    new_urgency = max(1, min(5, request.form.get('urgency', feedback.urgency_score, type=int)))
+    notes = (request.form.get('notes') or '').strip()[:2000]
+
+    allowed = {'positive', 'negative', 'neutral'}
+    if new_sentiment not in allowed:
+        new_sentiment = feedback.sentiment or 'neutral'
+
+    feedback.sentiment = new_sentiment
+    feedback.category = new_category
+    feedback.urgency_score = new_urgency
+
+    action = 'approved' if old == (new_sentiment, new_category, new_urgency) else 'corrected'
+    db.session.add(AIReviewLog(
+        feedback_id=feedback.id, admin_name=session.get('admin_name', 'admin'),
+        action=action, old_sentiment=old[0], new_sentiment=new_sentiment,
+        old_category=old[1], new_category=new_category,
+        old_urgency=old[2], new_urgency=new_urgency, notes=notes
+    ))
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'AI Review', f'Feedback ID {feedback.id}: {action}')
+    return redirect(url_for('admin_ai_review'))
+
+
+@app.route('/admin/ai-review/<int:feedback_id>/add-to-lexicon', methods=['POST'])
+@src_required
+def review_add_to_lexicon(feedback_id):
+    """Add an admin-approved term from a reviewed feedback item."""
+    feedback = Feedback.query.get_or_404(feedback_id)
+    word = (request.form.get('word') or '').strip().lower()
+    score = request.form.get('score', type=float)
+    category = (request.form.get('lexicon_category') or 'general').strip()[:50]
+    if not word or score is None or not -1 <= score <= 1:
+        return redirect(url_for('admin_ai_review'))
+    row = CustomLexicon.query.filter_by(word=word).first()
+    if row:
+        row.sentiment_score, row.category, row.is_active = score, category, True
+        row.added_by = session.get('admin_name')
+    else:
+        db.session.add(CustomLexicon(word=word, sentiment_score=score,
+                                     category=category, added_by=session.get('admin_name')))
+    db.session.add(AIReviewLog(
+        feedback_id=feedback.id, admin_name=session.get('admin_name', 'admin'),
+        action='lexicon_add', notes=f'Added "{word}" with score {score:.2f}'
+    ))
+    db.session.commit()
+    return redirect(url_for('admin_ai_review'))
+
+
+@app.route('/admin/lexicon-manager', methods=['GET', 'POST'])
+@src_required
+def admin_lexicon_manager():
+    """Phase 2: manage the database-backed custom lexicon without editing code."""
+    if request.method == 'POST':
+        word = (request.form.get('word') or '').strip().lower()
+        score = request.form.get('sentiment_score', type=float)
+        category = (request.form.get('category') or 'general').strip()[:50]
+        if not word or score is None or not -1 <= score <= 1:
+            return redirect(url_for('admin_lexicon_manager', error='invalid'))
+        row = CustomLexicon.query.filter_by(word=word).first()
+        if row:
+            row.sentiment_score, row.category, row.is_active = score, category, True
+            row.added_by = session.get('admin_name')
+        else:
+            row = CustomLexicon(word=word, sentiment_score=score, category=category,
+                                added_by=session.get('admin_name'))
+            db.session.add(row)
+        db.session.commit()
+        log_admin_action(session['admin_name'], 'Lexicon Update', f'Word "{word}" score {score}')
+        return redirect(url_for('admin_lexicon_manager'))
+
+    entries = CustomLexicon.query.order_by(CustomLexicon.updated_at.desc()).all()
+    unknowns = UnknownWord.query.filter_by(is_reviewed=False).order_by(UnknownWord.created_at.desc()).limit(50).all()
+    return render_template('admin_lexicon_manager.html', entries=entries, unknowns=unknowns,
+                           error=request.args.get('error'))
+
+
+@app.route('/admin/lexicon-manager/<int:entry_id>/toggle', methods=['POST'])
+@src_required
+def admin_lexicon_toggle(entry_id):
+    entry = CustomLexicon.query.get_or_404(entry_id)
+    entry.is_active = not entry.is_active
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'Lexicon Toggle',
+                     f'Word "{entry.word}" active={entry.is_active}')
+    return redirect(url_for('admin_lexicon_manager'))
+
+
+@app.route('/admin/lexicon-manager/<int:entry_id>/delete', methods=['POST'])
+@src_required
+def admin_lexicon_delete(entry_id):
+    entry = CustomLexicon.query.get_or_404(entry_id)
+    word = entry.word
+    db.session.delete(entry)
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'Lexicon Delete', f'Word "{word}"')
+    return redirect(url_for('admin_lexicon_manager'))
+
+
+@app.route('/admin/ai-audit')
+@src_required
+def admin_ai_audit():
+    logs = AIReviewLog.query.order_by(AIReviewLog.created_at.desc()).limit(200).all()
+    return render_template('admin_ai_audit.html', logs=logs)
+
 
 @app.route('/admin/lexicon-gaps')
 @src_required

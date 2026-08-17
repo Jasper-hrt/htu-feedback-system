@@ -383,6 +383,35 @@ class SRCUser(db.Model):
 
 # ==================== HYBRID SENTIMENT ENGINE MODELS ====================
 
+class AIReviewLog(db.Model):
+    """Audit trail for administrator AI review/correction actions."""
+    __tablename__ = 'ai_review_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=False, index=True)
+    admin_name = db.Column(db.String(100), nullable=False)
+    action = db.Column(db.String(50), nullable=False)
+    old_sentiment = db.Column(db.String(20))
+    new_sentiment = db.Column(db.String(20))
+    old_category = db.Column(db.String(50))
+    new_category = db.Column(db.String(50))
+    old_urgency = db.Column(db.Integer)
+    new_urgency = db.Column(db.Integer)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id, 'feedback_id': self.feedback_id,
+            'admin_name': self.admin_name, 'action': self.action,
+            'old_sentiment': self.old_sentiment, 'new_sentiment': self.new_sentiment,
+            'old_category': self.old_category, 'new_category': self.new_category,
+            'old_urgency': self.old_urgency, 'new_urgency': self.new_urgency,
+            'notes': self.notes,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else ''
+        }
+
+
 class CustomLexicon(db.Model):
     """HTU-specific terms and Ghanaian slang with sentiment scores.
     

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="student-layout">
+<aside class="admin-sidebar">
+<div class="admin-sidebar-title">🔎 AI Review Queue<span class="sub">Phase 2 • Human-in-the-loop</span></div>
+<nav class="admin-sidebar-nav">
+<a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
+<a href="/admin/ai-review" class="admin-sidebar-link admin-sidebar-link-active">🔎 AI Review Queue</a>
+<a href="/admin/lexicon-manager" class="admin-sidebar-link">🧠 Lexicon Manager</a>
+<a href="/admin/ai-audit" class="admin-sidebar-link">🧾 AI Audit Trail</a>
+<a href="/admin/lexicon-gaps" class="admin-sidebar-link">📚 Lexicon Gaps</a>
+</nav>
+</aside>
+<section class="student-content">
+<div class="admin-hero">
+<div><div class="admin-hero-title">🔎 AI Review Queue</div>
+<div class="admin-hero-subtitle">Feedback with low AI confidence is held here for an administrator to verify before it is trusted.</div></div>
+<div class="admin-hero-actions"><span class="btn-hero">{{ review_count }} items need review</span></div>
+</div>
+{% if reviews %}
+{% for f in reviews %}
+<div class="chart-card" style="margin-bottom:1rem;">
+<div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+<div>
+<strong>#{{ f.id }} · {{ f.category or 'Uncategorized' }}</strong>
+<div style="color:var(--text-secondary);font-size:.85rem;margin-top:.25rem;">{{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}</div>
+</div>
+<div><span class="badge badge-warning">Confidence: {{ f.confidence_score if f.confidence_score is not none else 'Unknown' }}%</span>
+<span class="badge">Urgency {{ f.urgency_score }}/5</span></div>
+</div>
+<p style="margin:1rem 0;"><strong>Student feedback:</strong> {{ f.feedback_text }}</p>
+{% if f.phase2_ai_explanation %}
+<details style="margin-bottom:1rem;"><summary><strong>🤖 AI explanation</strong></summary>
+<div style="margin-top:.6rem;padding:.8rem;background:var(--surface-secondary,#f8fafc);border-radius:.6rem;">
+{% if f.phase2_ai_explanation is string %}{{ f.phase2_ai_explanation }}{% else %}{{ f.phase2_ai_explanation.get('summary', f.phase2_ai_explanation.get('explanation', 'The AI explanation is not available.')) }}{% endif %}
+</div></details>
+{% endif %}
+<form method="POST" action="/admin/ai-review/{{ f.id }}" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;">
+{{ csrf_field() }}
+<label>Sentiment<select name="sentiment"><option value="positive" {% if f.sentiment=='positive' %}selected{% endif %}>Positive</option><option value="neutral" {% if f.sentiment=='neutral' %}selected{% endif %}>Neutral</option><option value="negative" {% if f.sentiment=='negative' %}selected{% endif %}>Negative</option></select></label>
+<label>Category<input name="category" value="{{ f.category or 'general' }}"></label>
+<label>Urgency<select name="urgency">{% for n in range(1,6) %}<option value="{{n}}" {% if f.urgency_score==n %}selected{% endif %}>{{n}} / 5</option>{% endfor %}</select></label>
+<label style="grid-column:1/-1;">Review note<textarea name="notes" rows="2" placeholder="Optional reason for approving or correcting the AI result"></textarea></label>
+<div style="grid-column:1/-1;display:flex;gap:.5rem;flex-wrap:wrap;">
+<button class="btn-hero btn-hero-primary" type="submit">✓ Save AI Review</button>
+</div>
+</form>
+<details style="margin-top:.75rem;"><summary>Suggest a new lexicon term</summary>
+<form method="POST" action="/admin/ai-review/{{ f.id }}/add-to-lexicon" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;">
+{{ csrf_field() }}<input name="word" placeholder="word or phrase" required><input name="score" type="number" min="-1" max="1" step=".1" placeholder="score" required><input name="lexicon_category" placeholder="category" value="general"><button class="btn-hero" type="submit">Add term</button>
+</form></details>
+</div>
+{% endfor %}
+{% else %}
+<div class="chart-card"><div class="empty-state-premium"><div class="empty-state-premium-icon">✅</div><div class="empty-state-premium-title">No feedback waiting for review</div><div class="empty-state-premium-desc">The AI currently has no low-confidence cases in the queue.</div></div></div>
+{% endif %}
+</section></div>
+{% endblock %}

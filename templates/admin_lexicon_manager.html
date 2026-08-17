@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="student-layout"><aside class="admin-sidebar">
+<div class="admin-sidebar-title">🧠 Lexicon Manager<span class="sub">Phase 2 • No code editing</span></div>
+<nav class="admin-sidebar-nav"><a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a><a href="/admin/ai-review" class="admin-sidebar-link">🔎 AI Review Queue</a><a href="/admin/lexicon-manager" class="admin-sidebar-link admin-sidebar-link-active">🧠 Lexicon Manager</a><a href="/admin/ai-audit" class="admin-sidebar-link">🧾 AI Audit Trail</a></nav>
+</aside><section class="student-content">
+<div class="admin-hero"><div><div class="admin-hero-title">🧠 Custom Lexicon Manager</div><div class="admin-hero-subtitle">Add or disable campus terms and phrases from the admin dashboard instead of editing Python code.</div></div></div>
+<div class="chart-card" style="margin-bottom:1rem;"><div class="chart-card-header"><div class="chart-card-title">➕ Add or update a term</div></div>
+<form method="POST" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:.75rem;align-items:end;">{{ csrf_field() }}
+<label>Word / phrase<input name="word" required placeholder="e.g. yawa"></label><label>Sentiment score<input name="sentiment_score" type="number" min="-1" max="1" step=".1" required placeholder="-0.6"></label><label>Category<input name="category" value="general"></label><button class="btn-hero btn-hero-primary" type="submit">Save term</button></form>
+<p style="font-size:.8rem;color:var(--text-secondary);margin:.75rem 0 0;">Use -1 for strongly negative, 0 for neutral, and +1 for strongly positive. Review context before adding a term.</p></div>
+<div class="chart-card"><div class="chart-card-header"><div class="chart-card-title">📚 Managed terms ({{ entries|length }})</div></div>
+<div style="overflow-x:auto;"><table class="table-modern"><thead><tr><th>Term</th><th>Score</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody>
+{% for e in entries %}<tr><td><strong>{{e.word}}</strong></td><td>{{'%.2f'|format(e.sentiment_score)}}</td><td>{{e.category}}</td><td>{% if e.is_active %}Active{% else %}Disabled{% endif %}</td><td><form method="POST" action="/admin/lexicon-manager/{{e.id}}/toggle" style="display:inline;">{{csrf_field()}}<button class="btn-hero" type="submit">{% if e.is_active %}Disable{% else %}Enable{% endif %}</button></form> <form method="POST" action="/admin/lexicon-manager/{{e.id}}/delete" style="display:inline;">{{csrf_field()}}<button class="btn-hero" type="submit">Delete</button></form></td></tr>{% endfor %}
+</tbody></table></div></div>
+</section></div>{% endblock %}

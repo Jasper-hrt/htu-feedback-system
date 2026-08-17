@@ -560,6 +560,21 @@ class CustomLexiconManager:
         if not text or not text.strip():
             return 0.0
 
+        # Phase 2: merge active admin-managed terms from the database at runtime.
+        # This keeps the admin lexicon manager useful without requiring a code edit
+        # or application restart. Outside a Flask application context we simply
+        # fall back to the built-in lexicon.
+        runtime_lexicon = self.lexicon
+        try:
+            from flask import has_app_context
+            if has_app_context():
+                from database import CustomLexicon
+                runtime_lexicon = dict(self.lexicon)
+                for row in CustomLexicon.query.filter_by(is_active=True).all():
+                    runtime_lexicon[row.word.strip().lower()] = float(row.sentiment_score)
+        except Exception:
+            runtime_lexicon = self.lexicon
+
         # Normalize text
         text_lower = text.lower().strip()
 
@@ -571,7 +586,7 @@ class CustomLexiconManager:
 
         # Check bigrams/trigrams from the text against underscored lexicon keys
         text_with_underscores = text_lower.replace(" ", "_")
-        for phrase, score in self.lexicon.items():
+        for phrase, score in runtime_lexicon.items():
             if "_" in phrase:
                 if phrase in skip_terms:
                     continue
@@ -605,8 +620,8 @@ class CustomLexiconManager:
                 continue
 
             # Check if word is in lexicon (skip negations themselves and phrases)
-            if clean_word in self.lexicon and clean_word not in skip_terms:
-                word_score = self.lexicon[clean_word]
+            if clean_word in runtime_lexicon and clean_word not in skip_terms:
+                word_score = runtime_lexicon[clean_word]
 
                 # Apply negation: flip the score if within negation window
                 if negated and negation_countdown > 0 and abs(word_score) >= 0.3:
