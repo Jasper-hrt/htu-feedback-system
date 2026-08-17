@@ -209,60 +209,40 @@
                                 <button type="submit" class="feedback-card-premium-action feedback-card-premium-action-danger">🗑️ Delete</button>
                             </form>
                         </div>
-                        <!-- Analyze Section -->
-                        <div id="explain-{{ f.id }}" class="analysis-section-premium">
-                            <div class="mb-3">
-                                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.4rem;">🎭 Emotion & Confidence</div>
-                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
-                                    <span class="emotion-badge emotion-{{ (f.dominant_emotion or 'neutral')|lower }}">{{ f.emotion_emoji or '😐' }} {{ (f.dominant_emotion or 'Neutral')|capitalize }}</span>
-                                    {% if f.compound_mood %}<span class="emotion-badge emotion-neutral">🌗 {{ f.compound_mood|replace('_', ' ')|title }}</span>{% endif %}
-                                    {% if f.confidence_display is not none and f.confidence_display is defined %}
-                                    <span class="badge {% if f.confidence_display >= 75 %}badge-success{% elif f.confidence_display >= 50 %}badge-warning{% else %}badge-danger{% endif %}">🎯 {{ f.confidence_display|round }}% confidence</span>
-                                    {% endif %}
-                                </div>
-                                {% if f.confidence_display is not none and f.confidence_display is defined %}
-                                <div class="confidence-bar" style="margin-bottom: 0.5rem;">
-                                    <div class="confidence-bar-fill {% if f.confidence_display >= 75 %}confidence-high{% elif f.confidence_display >= 50 %}confidence-medium{% else %}confidence-low{% endif %}" style="width: {{ f.confidence_display }}%;"></div>
-                                </div>
-                                {% endif %}
-                                {% if f.emotion_intensities_list %}
+                        <!-- AI Explanation Section -->
+                        <div id="explain-{{ f.id }}" class="analysis-section-premium ai-explanation-card">
+                            {% set ai = f.ai_explanation %}
+                            <div class="ai-explanation-header">
                                 <div>
-                                    {% for emotion, intensity in f.emotion_intensities_list|dictsort(by='value', reverse=true) %}
-                                        {% if intensity > 0 %}
-                                        <div class="emotion-intensity-item">
-                                            <span class="emotion-intensity-label">{{ emotion|capitalize }}</span>
-                                            <div class="emotion-intensity-bar">
-                                                <div class="emotion-intensity-fill" style="width: {{ (intensity * 100)|round }}%; background: {{ '#ef4444' if emotion in ['anger','fear','sadness','disgust'] else ('#10b981' if emotion in ['joy','trust','love','gratitude','optimism'] else '#3b82f6') }};"></div>
-                                            </div>
-                                            <span class="emotion-intensity-value">{{ (intensity * 100)|round }}%</span>
-                                        </div>
-                                        {% endif %}
-                                    {% endfor %}
+                                    <div class="ai-explanation-title">🤖 AI Feedback Analysis</div>
+                                    <div class="ai-explanation-subtitle">A short explanation of what the AI understood</div>
                                 </div>
+                                {% if ai and ai.confidence %}
+                                <span class="ai-confidence-pill">{{ ai.confidence }}% confidence</span>
                                 {% endif %}
                             </div>
-                            <div class="mb-3">
-                                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.4rem;">🔑 Key Urgency Phrases</div>
-                                {% set ue = f.urgency_explanation %}
-                                {% if ue and ue.urgency_keywords_detected is defined and ue.urgency_keywords_detected|length > 0 %}
-                                <div class="flex flex-wrap gap-1">{% for kw in ue.urgency_keywords_detected %}<span class="keyword-chip">{{ kw }}</span>{% endfor %}</div>
-                                {% else %}<div style="font-size: 0.85rem; color: var(--text-secondary);">None detected.</div>{% endif %}
-                            </div>
-                            <div class="mb-3">
-                                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.4rem;">💡 Sentiment Influencers</div>
-                                {% if f.sentiment_explanation and f.sentiment_explanation|length > 0 %}
-                                <div class="flex flex-wrap gap-1">{% for item in f.sentiment_explanation %}<span class="keyword-chip">{{ item.word }} <span class="keyword-chip-impact">({{ item.impact }})</span></span>{% endfor %}</div>
-                                {% else %}<div style="font-size: 0.85rem; color: var(--text-secondary);">None detected.</div>{% endif %}
-                            </div>
-                            <div>
-                                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.4rem;">⚡ Urgency Analysis</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                                    {% if ue %}
-                                    {% if ue.sentiment_boost_applied %}<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);border-radius:0.5rem;padding:0.4rem 0.65rem;margin-bottom:0.4rem;font-weight:600;color:var(--danger);font-size:0.8rem;">⚠️ Sentiment boost applied</div>{% endif %}
-                                    <div>Base: {{ ue.base_urgency_from_keywords }}/5 → Final: {{ ue.final_urgency }}/5</div>
-                                    {% else %}System assigned score.{% endif %}
+
+                            <div class="ai-explanation-summary">
+                                <span class="ai-explanation-icon">💡</span>
+                                <div>
+                                    <div class="ai-explanation-label">What the AI understood</div>
+                                    <div class="ai-explanation-text">{{ ai.summary }}</div>
                                 </div>
                             </div>
+
+                            <div class="ai-explanation-why">
+                                <div class="ai-explanation-label">Why was it classified this way?</div>
+                                <div class="ai-explanation-text">{{ ai.why }}</div>
+                            </div>
+
+                            <div class="ai-explanation-recommendation">
+                                <div class="ai-explanation-label">What happens next?</div>
+                                <div class="ai-explanation-text">{{ ai.recommendation }}</div>
+                            </div>
+
+                            {% if ai.review_required %}
+                            <div class="ai-review-note">ℹ️ The AI is not fully certain about this feedback, so it may need an SRC review.</div>
+                            {% endif %}
                         </div>
                         <!-- Solutions Section -->
                         {% if f.short_term_solution or f.long_term_solution %}

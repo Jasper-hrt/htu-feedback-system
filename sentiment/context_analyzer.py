@@ -88,6 +88,27 @@ PHRASE_SCORES: Tuple[Tuple[str, float, str], ...] = (
     ("issue is solved", 0.60, "resolution:issue_solved"),
     ("nothing special", 0.0, "context:qualified_neutral"),
     ("nothing to complain about", 0.28, "context:mild_positive"),
+    # Prevention / successful intervention: the presence of a safety word
+    # should not automatically make a report negative when the sentence says
+    # the threat was stopped or prevented.
+    ("prevented violence", 0.55, "prevention:violence_prevented"),
+    ("prevent violence", 0.50, "prevention:violence_prevention"),
+    ("stopped the violence", 0.58, "prevention:violence_stopped"),
+    ("violence was stopped", 0.58, "prevention:violence_stopped"),
+    ("prevented a robbery", 0.62, "prevention:robbery_prevented"),
+    ("prevented robbery", 0.62, "prevention:robbery_prevented"),
+    ("stopped a robbery", 0.62, "prevention:robbery_stopped"),
+    ("stopped the robbery", 0.62, "prevention:robbery_stopped"),
+    ("robbery was prevented", 0.62, "prevention:robbery_prevented"),
+    ("security caught the robbers", 0.52, "prevention:robbers_caught"),
+    ("security caught the boys", 0.42, "prevention:suspects_caught"),
+    ("security stopped the attack", 0.62, "prevention:attack_stopped"),
+    ("attack was stopped", 0.62, "prevention:attack_stopped"),
+    ("threat was stopped", 0.55, "prevention:threat_stopped"),
+    ("threat was prevented", 0.55, "prevention:threat_prevented"),
+    ("decision to stop violence", 0.52, "prevention:decision_to_stop_violence"),
+    ("decision to prevent violence", 0.52, "prevention:decision_to_prevent_violence"),
+    ("measures to prevent violence", 0.50, "prevention:violence_prevention_measures"),
 )
 
 NEGATION_WORDS = {
@@ -199,6 +220,7 @@ def analyze_context(text: str) -> Dict:
     # Resolution language should dominate a raw negative noun such as "flood"
     # when the sentence explicitly says the problem has ended.
     resolution_hits = [p for p, s, r in phrase_hits if r.startswith("resolution:")]
+    prevention_hits = [p for p, s, r in phrase_hits if r.startswith("prevention:")]
     complaint_hits = [p for p, s, r in phrase_hits if r.startswith("complaint:")]
 
     scores = [s for _, s, _ in phrase_hits]
@@ -237,7 +259,7 @@ def analyze_context(text: str) -> Dict:
         confidence=round(confidence, 4),
         phrases=[p for p, _, _ in phrase_hits],
         negations=negations,
-        resolutions=resolution_hits,
+        resolutions=resolution_hits + prevention_hits,
         contrasts=contrast_hits,
         slang_normalized=slang,
         uncertainty_markers=uncertainty_hits,

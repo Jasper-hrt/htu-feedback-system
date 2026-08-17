@@ -10,7 +10,7 @@ from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag, Foru
 from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
 from database import SolutionTemplate, SolutionFeedback
 from database import is_valid_htu_email, extract_student_id_from_email
-from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation
+from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation, build_ai_explanation
 from solution_recommender import recommend_solutions
 from recommendation_learning import RecommendationLearner
 from logger import log_student_action, log_admin_action, log_feedback_action, log_system_action
@@ -799,6 +799,13 @@ def student_dashboard():
         f.emotion_emoji = get_emotion_emoji(f.dominant_emotion, f.compound_mood)
         f.emotion_intensities_list = _parse_json_field(f.emotion_intensities, {})
         f.secondary_emotions_list = _parse_json_field(f.secondary_emotions, [])
+        f.ai_explanation = build_ai_explanation(
+            base_text,
+            category=f.category,
+            recommendation={
+                'short_term_solution': f.short_term_solution,
+            }
+        )
 
     stats = {
 

@@ -168,3 +168,34 @@ def test_negation_flips_sentiment(hybrid):
     (see 'improve sentiment analysis' recommendations)."""
     result = analyze(hybrid, "The system is not bad.")
     assert result["sentiment"] == "Positive"
+
+
+# ============================================================
+# Context-aware prevention: safety words do not automatically
+# mean a negative incident when the sentence describes a
+# successful intervention or prevention.
+# ============================================================
+@pytest.mark.parametrize("text", [
+    "Security prevented a robbery near the hostel.",
+    "Security caught the boys that attempted to rob a student.",
+    "The school administration has made a decision to stop violence.",
+    "Security stopped the attack before anyone was hurt.",
+])
+def test_prevention_context_is_not_misclassified_as_active_incident(text):
+    result = process_feedback(text)
+    assert result["urgency_score"] < 5
+    assert result["sentiment"] in {"Positive", "Neutral"}
+
+
+def test_student_explanation_is_short_and_plain_language():
+    from sentiment_analyzer import build_ai_explanation
+    result = process_feedback("I was robbed at my hostel yesterday.")
+    explanation = build_ai_explanation(
+        "I was robbed at my hostel yesterday.",
+        category=result["detected_category"],
+    )
+    assert explanation["summary"]
+    assert explanation["why"]
+    assert explanation["recommendation"]
+    assert "keyword" not in explanation["why"].lower()
+    assert len(explanation["summary"]) <= 260

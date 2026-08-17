@@ -65,6 +65,12 @@ SAFETY_CONCERN_TERMS = [
 # Terms that indicate the safety keyword is being discussed/learned about
 # rather than reporting an actual incident. If any of these appear near a
 # safety keyword, we do NOT escalate to critical.
+_PREVENTION_CONTEXT = [
+    "prevented", "prevent", "prevention", "stopped", "stop", "caught",
+    "successfully handled", "successfully prevented", "successfully stopped",
+    "decision to stop", "decision to prevent", "measures to prevent",
+]
+
 _DISCUSSION_CONTEXT = [
     "discussed", "discussing", "workshop", "learned", "learning",
     "lecture", "lectured", "lesson", "prevention", "prevent",
@@ -87,6 +93,10 @@ _CONCERN_TOKEN_RE = re.compile(
 )
 _DISCUSSION_TOKEN_RE = re.compile(
     r"\b(?:%s)\b" % "|".join(re.escape(t) for t in _DISCUSSION_CONTEXT),
+    re.IGNORECASE,
+)
+_PREVENTION_TOKEN_RE = re.compile(
+    r"\b(?:%s)\b" % "|".join(re.escape(t) for t in _PREVENTION_CONTEXT),
     re.IGNORECASE,
 )
 
@@ -118,7 +128,7 @@ def has_critical_safety(text: str) -> bool:
 
     # Only search for critical tokens if there is no discussion context that
     # would neutralise every keyword in the sentence.
-    if _is_discussion_context(t):
+    if _is_discussion_context(t) or _is_prevention_context(t):
         return False
 
     return bool(_CRITICAL_TOKEN_RE.search(t))
@@ -136,9 +146,13 @@ def has_safety_concern(text: str) -> bool:
     """
     if not text:
         return False
-    if _is_discussion_context(str(text)):
+    if _is_discussion_context(str(text)) or _is_prevention_context(str(text)):
         return False
     return bool(_CONCERN_TOKEN_RE.search(str(text)))
+
+
+def is_prevention_context(text: str) -> bool:
+    return _is_prevention_context(text)
 
 
 def is_discussion_context(text: str) -> bool:
@@ -150,6 +164,11 @@ def is_discussion_context(text: str) -> bool:
     lists that can drift out of sync.
     """
     return _is_discussion_context(text)
+
+
+def _is_prevention_context(text: str) -> bool:
+    """Return True when safety language describes prevention or intervention."""
+    return bool(_PREVENTION_TOKEN_RE.search(str(text)))
 
 
 def _is_discussion_context(text: str) -> bool:

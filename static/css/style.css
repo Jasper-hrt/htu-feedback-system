@@ -8766,3 +8766,52 @@ html.theme-dark .student-side-menu-logout-icon {
     }
 }
 
+
+
+/* ==================== STUDENT AI EXPLANATION ==================== */
+.ai-explanation-card {
+    margin-top: 0.75rem;
+    padding: 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    background: var(--bg-color);
+}
+.ai-explanation-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.ai-explanation-title { font-weight: 800; font-size: 0.9rem; }
+.ai-explanation-subtitle { color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.15rem; }
+.ai-confidence-pill {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    background: rgba(30, 64, 175, 0.08);
+    color: var(--primary);
+}
+.ai-explanation-summary,
+.ai-explanation-why,
+.ai-explanation-recommendation {
+    border-radius: 0.6rem;
+    padding: 0.65rem 0.7rem;
+    margin-top: 0.55rem;
+    border: 1px solid var(--border-color);
+}
+.ai-explanation-summary { display: flex; gap: 0.6rem; align-items: flex-start; }
+.ai-explanation-icon { font-size: 1rem; line-height: 1.3; }
+.ai-explanation-label { font-size: 0.72rem; font-weight: 800; margin-bottom: 0.18rem; }
+.ai-explanation-text { font-size: 0.82rem; line-height: 1.45; color: var(--text-secondary); }
+.ai-review-note {
+    margin-top: 0.55rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 0.55rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    background: rgba(245, 158, 11, 0.08);
+    color: var(--text-secondary);
+}

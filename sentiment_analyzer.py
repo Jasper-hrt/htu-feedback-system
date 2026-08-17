@@ -92,6 +92,84 @@ def get_sentiment_explanation(text, top_n=6):
         "model_version": result.get("model_version"),
     }
 
+
+def build_ai_explanation(text, analysis=None, category=None, recommendation=None, max_chars=260):
+    """Create a short, student-friendly explanation from the AI analysis.
+
+    This is intentionally generated from the structured hybrid-analysis result
+    rather than hard-coded per feedback item. It keeps the mobile UI concise
+    while making the classification understandable in everyday English.
+    """
+    if analysis is None:
+        analysis = hybrid_engine.analyze(text or "")
+
+    sentiment = analysis.get("sentiment", "Neutral")
+    confidence = float(analysis.get("confidence", 0) or 0)
+    safety_mode = analysis.get("safety_mode", "none")
+    context_data = analysis.get("context", {}) or {}
+    reasons = analysis.get("decision_reasons", []) or []
+    phrases = context_data.get("phrases", []) or []
+    resolutions = context_data.get("resolutions", []) or []
+
+    # Prefer the strongest semantic evidence over raw model scores/keywords.
+    if safety_mode == "critical_incident":
+        summary = "A serious safety or security incident was reported."
+        why = "The feedback describes an event that could affect student safety."
+    elif safety_mode == "safety_concern":
+        summary = "A safety or security concern was reported."
+        why = "The feedback describes a situation that may affect safety."
+    elif resolutions:
+        summary = "The feedback describes an issue that has been resolved or improved."
+        why = "The wording indicates that the earlier problem has ended or is being successfully addressed."
+    elif any(str(r).startswith("prevention:") for r in reasons):
+        summary = "The feedback describes a safety issue being prevented or successfully handled."
+        why = "The AI considered the action taken, not just the word describing the incident."
+    elif sentiment == "Negative":
+        summary = "The feedback describes a problem or unsatisfactory experience."
+        why = "The wording indicates that something is not working well or has caused a concern."
+    elif sentiment == "Positive":
+        summary = "The feedback describes a positive experience or improvement."
+        why = "The wording shows satisfaction, appreciation, or a successful outcome."
+    else:
+        summary = "The feedback does not clearly express a positive or negative experience."
+        why = "The wording is mainly factual, balanced, or not strong enough for a confident sentiment decision."
+
+    if category:
+        category_label = str(category).replace("_", " ").replace("ict/wifi", "ICT/Wi-Fi")
+        summary = f"{summary} Category: {category_label}."
+
+    if confidence and confidence < 55:
+        why += " The AI is not fully confident, so an admin review may be needed."
+
+    recommendation_text = ""
+    if recommendation:
+        rec = recommendation.get("short_term_solution") if isinstance(recommendation, dict) else None
+        if rec:
+            recommendation_text = str(rec).strip()
+    if not recommendation_text:
+        if safety_mode == "critical_incident":
+            recommendation_text = "Recommended action: review this report promptly."
+        elif sentiment == "Negative":
+            recommendation_text = "Recommended action: review the issue and follow up."
+        elif sentiment == "Positive":
+            recommendation_text = "Recommended action: no urgent action is required."
+        else:
+            recommendation_text = "Recommended action: review the feedback if clarification is needed."
+
+    # Keep each field short enough for a phone without hiding the meaning.
+    def clip(value, limit):
+        value = re.sub(r"\s+", " ", str(value or "")).strip()
+        return value if len(value) <= limit else value[:limit - 1].rstrip(" ,;:") + "…"
+
+    return {
+        "summary": clip(summary, max_chars),
+        "why": clip(why, max_chars),
+        "recommendation": clip(recommendation_text, max_chars),
+        "confidence": round(confidence),
+        "model_version": analysis.get("model_version"),
+        "review_required": bool(analysis.get("review_required", False)),
+    }
+
 def calculate_urgency(text, sentiment):
     """Calculate urgency using context-aware phrases and separate safety logic."""
     text = str(text or "")
@@ -123,7 +201,10 @@ def calculate_urgency(text, sentiment):
                     continue
                 urgency = max(urgency, level)
 
-    if resolution and urgency <= 4:
+    if resolution:
+        # Explicit resolution/prevention language describes a problem that has
+        # ended or been successfully handled; do not leave incident-level
+        # urgency behind just because a severe noun appears in the sentence.
         urgency = min(urgency, 2)
 
     if sentiment == "Negative" and urgency < 3 and not resolution:
