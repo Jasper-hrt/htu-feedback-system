@@ -24,7 +24,7 @@ any change to sentiment/*.py to catch anything that verification missed.
 import pytest
 
 from sentiment.hybrid_engine import HybridSentimentEngine
-from sentiment_analyzer import process_feedback
+from sentiment_analyzer import process_feedback, build_ai_explanation
 
 
 @pytest.fixture(scope="module")
@@ -199,3 +199,44 @@ def test_student_explanation_is_short_and_plain_language():
     assert explanation["recommendation"]
     assert "keyword" not in explanation["why"].lower()
     assert len(explanation["summary"]) <= 260
+
+
+def test_consistent_flooding_in_classroom_is_negative_and_facilities():
+    result = process_feedback("consistent flooding in classroom")
+    assert result["sentiment"] == "Negative"
+    assert result["detected_category"] == "Facilities"
+    assert result["urgency_score"] >= 3
+
+
+def test_flooding_explanation_is_not_positive():
+    result = process_feedback("consistent flooding in classroom")
+    explanation = build_ai_explanation(
+        "consistent flooding in classroom",
+        analysis=None,
+        category=result["detected_category"],
+    )
+    assert "positive experience" not in explanation["summary"].lower()
+    assert "problem" in explanation["summary"].lower() or "concern" in explanation["summary"].lower()
+
+
+def test_security_intervention_is_not_negative_just_for_robbery_word():
+    result = process_feedback("Security caught the boys that attempted to rob a student")
+    assert result["sentiment"] == "Positive"
+    assert result["urgency_score"] <= 2
+
+
+def test_decision_to_stop_violence_is_not_an_active_incident():
+    result = process_feedback("The school administration has made a decision to stop violence")
+    assert result["sentiment"] == "Positive"
+    assert result["urgency_score"] <= 2
+
+
+def test_explanation_honors_persisted_final_sentiment():
+    explanation = build_ai_explanation(
+        "consistent flooding in classroom",
+        category="Facilities",
+        final_sentiment="Negative",
+        final_confidence=88.0,
+    )
+    assert "positive experience" not in explanation["summary"].lower()
+    assert "problem" in explanation["summary"].lower()

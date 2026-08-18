@@ -77,6 +77,16 @@ PHRASE_SCORES: Tuple[Tuple[str, float, str], ...] = (
     ("back to normal", 0.55, "resolution:back_to_normal"),
     ("no longer", 0.38, "resolution:no_longer"),
     ("no more", 0.34, "resolution:no_more"),
+    # Facility/environment complaints: the noun alone must not be treated as positive
+    # just because a generic model has seen "flood" in positive contexts.
+    ("consistent flooding", -0.82, "complaint:consistent_flooding"),
+    ("constant flooding", -0.82, "complaint:constant_flooding"),
+    ("classroom flooding", -0.80, "complaint:classroom_flooding"),
+    ("flooded classroom", -0.80, "complaint:flooded_classroom"),
+    ("flooding in the classroom", -0.82, "complaint:flooding_in_classroom"),
+    ("flooding in class", -0.78, "complaint:flooding_in_class"),
+    ("water flooding", -0.72, "complaint:water_flooding"),
+    ("flooding", -0.68, "complaint:flooding"),
     ("has stopped", 0.42, "resolution:has_stopped"),
     ("have stopped", 0.42, "resolution:have_stopped"),
     ("has improved", 0.50, "resolution:has_improved"),

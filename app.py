@@ -783,6 +783,38 @@ def student_change_password():
 
 # ==================== STUDENT DASHBOARD & FEEDBACK ====================
 
+
+def _dashboard_topic_summary(feedbacks, limit=5):
+    """Return the most common topics in a feedback collection."""
+    counts = {}
+    for f in feedbacks:
+        text = (getattr(f, 'cleaned_text', None) or getattr(f, 'feedback_text', None) or '').strip()
+        for topic in extract_topics(text):
+            counts[topic] = counts.get(topic, 0) + 1
+    return sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:limit]
+
+
+def _duplicate_feedback_ids(feedbacks, threshold=0.72):
+    """Find near-duplicate feedback without a new database dependency.
+
+    Uses token Jaccard similarity on recent text. This is an early-warning
+    signal for repeated reports, not a replacement for exact duplicate checks.
+    """
+    items = []
+    for f in feedbacks:
+        text = (getattr(f, 'cleaned_text', None) or getattr(f, 'feedback_text', None) or '').lower()
+        tokens = {t for t in re.findall(r"[a-z0-9']+", text) if len(t) > 2}
+        if tokens:
+            items.append((f.id, tokens))
+    duplicate_ids = set()
+    for i, (fid, a) in enumerate(items):
+        for gid, b in items[i+1:]:
+            score = len(a & b) / max(1, len(a | b))
+            if score >= threshold:
+                duplicate_ids.update((fid, gid))
+    return duplicate_ids
+
+
 @app.route('/student/dashboard')
 @student_required
 def student_dashboard():
@@ -800,12 +832,15 @@ def student_dashboard():
         f.emotion_emoji = get_emotion_emoji(f.dominant_emotion, f.compound_mood)
         f.emotion_intensities_list = _parse_json_field(f.emotion_intensities, {})
         f.secondary_emotions_list = _parse_json_field(f.secondary_emotions, [])
+        f.ai_topics = extract_topics(base_text)
         f.ai_explanation = build_ai_explanation(
             base_text,
             category=f.category,
             recommendation={
                 'short_term_solution': f.short_term_solution,
-            }
+            },
+            final_sentiment=f.sentiment,
+            final_confidence=f.confidence_score,
         )
 
     stats = {
@@ -816,7 +851,9 @@ def student_dashboard():
         'pending': sum(1 for f in my_feedback if f.status == 'Pending')
     }
 
-    return render_template('student_dashboard.html', feedbacks=my_feedback, stats=stats, student=student)
+    student_topics = _dashboard_topic_summary(my_feedback)
+    return render_template('student_dashboard.html', feedbacks=my_feedback, stats=stats,
+                           student=student, student_topics=student_topics)
 
 
 @app.route('/submit', methods=['GET', 'POST'])
@@ -1569,11 +1606,20 @@ def admin_dashboard():
     for f in Feedback.query.all():
         categories[f.category] = categories.get(f.category, 0) + 1
     
+    all_feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
+    duplicate_ids = _duplicate_feedback_ids(all_feedbacks[:200])
+    low_confidence = sum(1 for f in all_feedbacks if (f.confidence_score or 0) < 55)
+    open_negative = sum(1 for f in all_feedbacks
+                        if f.sentiment == 'Negative' and f.status not in ('Resolved',))
+    topic_summary = _dashboard_topic_summary(all_feedbacks)
+
     stats = {
         'total': total, 'urgent': urgent, 'resolved': resolved,
         'positive': positive, 'negative': negative, 'neutral': neutral,
         'resolution_rate': round((resolved / total * 100) if total > 0 else 0, 1),
-        'total_students': total_students, 'profanity_count': profanity_count
+        'total_students': total_students, 'profanity_count': profanity_count,
+        'low_confidence': low_confidence, 'open_negative': open_negative,
+        'duplicate_reports': len(duplicate_ids)
     }
     
     # Precompute explanations for Analyze modal.
@@ -1618,7 +1664,8 @@ def admin_dashboard():
                          admin_name=session.get('admin_name'), current_category=category_filter,
                          current_status=status_filter, current_urgency=urgency_filter, current_search=search_query,
                          explanations_by_id=explanations_by_id,
-                         recommendations_by_id=recommendations_by_id)
+                         recommendations_by_id=recommendations_by_id,
+                         topic_summary=topic_summary, duplicate_ids=duplicate_ids)
 
 
 
@@ -1829,7 +1876,9 @@ def admin_ai_review():
         f.phase2_ai_explanation = build_ai_explanation(
             base_text,
             category=f.category,
-            recommendation={'short_term_solution': f.short_term_solution}
+            recommendation={'short_term_solution': f.short_term_solution},
+            final_sentiment=f.sentiment,
+            final_confidence=f.confidence_score,
         )
     return render_template(
         'admin_ai_review.html',

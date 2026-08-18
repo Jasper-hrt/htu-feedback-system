@@ -55,6 +55,21 @@
         </div>
 
         <div class="phase3-mobile-summary"><strong>📱 Your feedback at a glance</strong><span>Track submitted feedback, current status and responses from a layout designed to stay easy to use on smaller screens.</span></div>
+        <div class="ai-insight-card" aria-label="AI dashboard insight">
+            <div class="ai-insight-icon">✨</div>
+            <div class="ai-insight-body">
+                <div class="ai-insight-title">AI insight</div>
+                {% if student_topics %}
+                <div class="ai-insight-text">Your recent feedback is mainly about
+                    {% for topic, count in student_topics %}<strong>{{ topic }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}.
+                    The system uses these themes to organize your concerns automatically.</div>
+                <div class="ai-topic-row">{% for topic, count in student_topics %}<span class="ai-topic-chip">{{ topic }} · {{ count }}</span>{% endfor %}</div>
+                {% else %}
+                <div class="ai-insight-text">Submit feedback and the AI will automatically identify the main topic, sentiment and priority for you.</div>
+                {% endif %}
+            </div>
+        </div>
+
 
         <!-- Premium Stats Grid -->
         <div class="stats-grid-premium">
@@ -170,6 +185,9 @@
                                 {% elif f.status == 'Acknowledged' %}<span class="badge badge-info">👀 Acknowledged</span>
                                 {% elif f.status == 'Escalated' %}<span class="badge badge-danger">🚨 Escalated</span>
                                 {% else %}<span class="badge badge-warning">⏳ Pending</span>{% endif %}
+                                {% if f.ai_topics %}
+                                    {% for topic in f.ai_topics[:2] %}<span class="ai-mini-topic">{{ topic }}</span>{% endfor %}
+                                {% endif %}
                                 {% if f.sentiment == 'Positive' %}<span class="badge badge-success">😊 Positive</span>
                                 {% elif f.sentiment == 'Negative' %}<span class="badge badge-danger">😟 Negative</span>
                                 {% else %}<span class="badge badge-neutral">😐 Neutral</span>{% endif %}

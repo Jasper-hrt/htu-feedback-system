@@ -93,7 +93,7 @@ def get_sentiment_explanation(text, top_n=6):
     }
 
 
-def build_ai_explanation(text, analysis=None, category=None, recommendation=None, max_chars=260):
+def build_ai_explanation(text, analysis=None, category=None, recommendation=None, max_chars=260, final_sentiment=None, final_confidence=None):
     """Create a short, student-friendly explanation from the AI analysis.
 
     This is intentionally generated from the structured hybrid-analysis result
@@ -103,8 +103,11 @@ def build_ai_explanation(text, analysis=None, category=None, recommendation=None
     if analysis is None:
         analysis = hybrid_engine.analyze(text or "")
 
-    sentiment = analysis.get("sentiment", "Neutral")
-    confidence = float(analysis.get("confidence", 0) or 0)
+    # When a feedback item already has a persisted final classification, that
+    # result is authoritative. The explanation must describe it, not silently
+    # re-classify the text a second time.
+    sentiment = final_sentiment or analysis.get("sentiment", "Neutral")
+    confidence = float(final_confidence if final_confidence is not None else analysis.get("confidence", 0) or 0)
     safety_mode = analysis.get("safety_mode", "none")
     context_data = analysis.get("context", {}) or {}
     reasons = analysis.get("decision_reasons", []) or []
@@ -112,16 +115,17 @@ def build_ai_explanation(text, analysis=None, category=None, recommendation=None
     resolutions = context_data.get("resolutions", []) or []
 
     # Prefer the strongest semantic evidence over raw model scores/keywords.
-    if safety_mode == "critical_incident":
+    # If a persisted final sentiment was supplied, it is authoritative.
+    if final_sentiment is None and safety_mode == "critical_incident":
         summary = "A serious safety or security incident was reported."
         why = "The feedback describes an event that could affect student safety."
-    elif safety_mode == "safety_concern":
+    elif final_sentiment is None and safety_mode == "safety_concern":
         summary = "A safety or security concern was reported."
         why = "The feedback describes a situation that may affect safety."
-    elif resolutions:
+    elif final_sentiment is None and resolutions:
         summary = "The feedback describes an issue that has been resolved or improved."
         why = "The wording indicates that the earlier problem has ended or is being successfully addressed."
-    elif any(str(r).startswith("prevention:") for r in reasons):
+    elif final_sentiment is None and any(str(r).startswith("prevention:") for r in reasons):
         summary = "The feedback describes a safety issue being prevented or successfully handled."
         why = "The AI considered the action taken, not just the word describing the incident."
     elif sentiment == "Negative":
@@ -147,7 +151,7 @@ def build_ai_explanation(text, analysis=None, category=None, recommendation=None
         if rec:
             recommendation_text = str(rec).strip()
     if not recommendation_text:
-        if safety_mode == "critical_incident":
+        if final_sentiment is None and safety_mode == "critical_incident":
             recommendation_text = "Recommended action: review this report promptly."
         elif sentiment == "Negative":
             recommendation_text = "Recommended action: review the issue and follow up."
@@ -252,7 +256,7 @@ def detect_category(text):
         'ICT/Wi-Fi': ['wifi', 'internet', 'network', 'connection', 'computer', 'lab', 'portal', 'slow', 'disconnect', 'server'],
         'Academics': ['lecturer', 'class', 'exam', 'course', 'assignment', 'timetable', 'curriculum', 'grade', 'result', 'lecture'],
         'Catering': ['food', 'canteen', 'cafeteria', 'meal', 'dining', 'hungry', 'price', 'restaurant', 'kitchen', 'cook'],
-        'Facilities': ['library', 'classroom', 'building', 'elevator', 'light', 'fan', 'ac', 'chair', 'desk', 'projector'],
+        'Facilities': ['library', 'classroom', 'building', 'elevator', 'light', 'fan', 'ac', 'chair', 'desk', 'projector', 'flood', 'flooding', 'leak', 'leaking'],
         'Safety': ['security', 'safe', 'theft', 'dark', 'lighting', 'patrol', 'gate', 'danger', 'unsafe', 'cctv',
                      'gunshots', 'gunshot', 'shooting', 'weapon', 'violence', 'assault', 'harassment', 'emergency',
                      'threat', 'threatened', 'hostage', 'armed', 'attack', 'fight', 'blood', 'injured', 'injury',
