@@ -16,14 +16,45 @@
 .form-card-sub { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500; }
 </style>
 
-<div class="mb-6">
-    <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
-        <div>
-            <h2 class="text-2xl font-bold" style="color: var(--primary);">🧩 Solution Templates</h2>
-            <p class="text-sm text-secondary">Override the built-in solution recommendations per category. Active templates here take priority over the defaults.</p>
+<div class="student-layout">
+    <aside class="admin-sidebar" aria-label="Admin solution templates sidebar">
+        <div class="admin-sidebar-title">
+            🛡️ SRC Admin
+            <span class="sub">Control & review</span>
         </div>
-        <a href="/admin/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
-    </div>
+        <nav class="admin-sidebar-nav">
+            <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
+            <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
+            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/solution-templates" class="admin-sidebar-link admin-sidebar-link-active">🧩 Solution Templates</a>
+            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+            <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/ai-review" class="admin-sidebar-link">🔎 AI Review Queue</a>
+            <a href="/admin/lexicon-manager" class="admin-sidebar-link">🧠 Lexicon Manager</a>
+            <a href="/admin/ai-audit" class="admin-sidebar-link">🛡️ AI Audit Trail</a>
+            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">🧠 Lexicon Gaps</a>
+            <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
+            <a href="/admin/chat" class="admin-sidebar-link">💬 Chat Rooms</a>
+            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+            <a href="/admin/change-password" class="admin-sidebar-link">🔑 Change Password</a>
+        </nav>
+        <div style="margin-top: 1.25rem;">
+            <form method="POST" action="/admin/logout" style="margin:0;">
+                {{ csrf_field() }}
+                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
+                    <span class="btn-logout-icon">⏻</span>
+                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+                </button>
+            </form>
+        </div>
+    </aside>
+    <section class="student-content">
+        <div class="admin-hero">
+            <div class="admin-hero-content">
+                <div class="admin-hero-title">🧩 Solution Templates</div>
+                <div class="admin-hero-subtitle">Override the built-in solution recommendations per category. Active templates here take priority over the defaults.</div>
+            </div>
+        </div>
 
     <div class="alert alert-info mb-6 flex items-center gap-2" style="padding: 0.85rem 1rem; border-radius: 0.75rem;">
         <span style="font-size: 1.2rem;">💡</span>
@@ -119,6 +150,7 @@
         <div style="font-size: 0.85rem; color: var(--text-secondary);">Feedback recommendations are currently using the built-in defaults for every category. Add a template above to override one.</div>
     </div>
     {% endif %}
+    </section>
 </div>
 
 <script>

@@ -45,9 +45,10 @@
             </div>
             <div class="urgency-meter">
                 <span style="font-size: 0.8rem; font-weight: 600;">Urgency:</span>
-                <div class="urgency-meter-bar"><div class="urgency-meter-fill" id="urgencyFill" style="width: {{ ((feedback.urgency_score - 1) / 4) * 100 }}%; background: var(--warning);"></div>
+                <div class="urgency-meter-bar"><div class="urgency-meter-fill" id="urgencyFill" style="width: {{ ((feedback.urgency_score - 1) / 4) * 100 }}%; background: var(--warning);"></div></div>
                 <span class="urgency-meter-label" id="urgencyValue">{{ feedback.urgency_score }}/5</span>
             </div>
+        </div>
         <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
             <a href="/student/dashboard" class="btn btn-secondary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem;">← Back</a>
             <button type="submit" class="btn btn-primary" style="flex: 2; display: flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem; font-weight: 800;">💾 Save Changes</button>

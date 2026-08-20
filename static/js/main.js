@@ -543,15 +543,27 @@ function initStudentDropdown() {
 // 🎯 Active Page Highlight for Dropdown & Side Menu Links
 // ============================================
 function initActivePageHighlight() {
-    const links = document.querySelectorAll('.student-dropdown-link[data-page], .student-side-menu-link[data-page]');
+    const links = document.querySelectorAll('.student-dropdown-link[data-page], .student-side-menu-link[data-page], .nav-profile-link[data-page]');
     if (links.length === 0) return;
 
     const path = window.location.pathname;
     let activePage = '';
 
     // Map URL path to a data-page value
-    if (path.startsWith('/student/dashboard')) {
+    // (Admin-prefixed routes are checked first since they are more specific
+    // than the shared '/dashboard' / '/change-password' style names.)
+    if (path.startsWith('/admin/dashboard')) {
         activePage = 'dashboard';
+    } else if (path.startsWith('/admin/analytics')) {
+        activePage = 'analytics';
+    } else if (path.startsWith('/admin/announcements')) {
+        activePage = 'announcements';
+    } else if (path.startsWith('/admin/change-password')) {
+        activePage = 'change-password';
+    } else if (path.startsWith('/student/dashboard')) {
+        activePage = 'dashboard';
+    } else if (path.startsWith('/student/change-password')) {
+        activePage = 'change-password';
     } else if (path.startsWith('/submit')) {
         activePage = 'submit';
     } else if (path.startsWith('/forum')) {
@@ -794,18 +806,28 @@ function initMobileAdminDrawerActive() {
         activePage = 'dashboard';
     } else if (path.startsWith('/admin/analytics')) {
         activePage = 'analytics';
+    } else if (path.startsWith('/admin/solution-templates')) {
+        activePage = 'solution-templates';
     } else if (path.startsWith('/admin/templates')) {
         activePage = 'templates';
     } else if (path.startsWith('/admin/students')) {
         activePage = 'students';
     } else if (path.startsWith('/admin/announcements')) {
         activePage = 'announcements';
+    } else if (path.startsWith('/admin/ai-review')) {
+        activePage = 'ai-review';
+    } else if (path.startsWith('/admin/lexicon-manager')) {
+        activePage = 'lexicon-manager';
+    } else if (path.startsWith('/admin/ai-audit')) {
+        activePage = 'ai-audit';
+    } else if (path.startsWith('/admin/lexicon-gaps')) {
+        activePage = 'lexicon-gaps';
     } else if (path.startsWith('/admin/logs')) {
         activePage = 'logs';
-    } else if (path.startsWith('/admin/chat/rooms')) {
-        activePage = 'chat-rooms';
     } else if (path.startsWith('/admin/chat/messages')) {
         activePage = 'chat-messages';
+    } else if (path.startsWith('/admin/chat')) {
+        activePage = 'chat-rooms';
     }
 
     if (!activePage) return;
