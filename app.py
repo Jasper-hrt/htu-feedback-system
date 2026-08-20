@@ -2278,62 +2278,60 @@ def admin_analytics():
                          avg_resolution_time=avg_resolution_time,
                          learning_report=learning_report)
 
+@app.route('/admin/chat')
 @app.route('/admin/chat/rooms')
 @src_required
 def admin_chat_rooms():
-    rooms = ChatRoom.query.order_by(ChatRoom.created_at.desc()).all()
-    room_stats = []
-    today = datetime.utcnow().date()
-    today_start = datetime(today.year, today.month, today.day)
-    total_today_messages = 0
-    total_today_flagged = 0
-    
+    """Unified admin chat center.
+
+    Rooms are the primary objects shown to admins. Messages are loaded per room
+    so the dashboard does not need a separate 'Chat Messages' page.
+    """
+    rooms = ChatRoom.query.options(
+        db.joinedload(ChatRoom.messages).joinedload(ChatMessage.student)
+    ).order_by(ChatRoom.last_activity.desc(), ChatRoom.created_at.desc()).all()
+
+    room_cards = []
+    total_messages = 0
+    total_flagged = 0
+    active_rooms = 0
+
     for room in rooms:
-        sentiment = get_room_sentiment_summary(room.messages)
-        room_today_msgs = ChatMessage.query.filter(
-            ChatMessage.room_id == room.id,
-            ChatMessage.created_at >= today_start
-        ).count()
-        room_today_flagged = ChatMessage.query.filter(
-            ChatMessage.room_id == room.id,
-            ChatMessage.is_flagged == True,
-            ChatMessage.created_at >= today_start
-        ).count()
-        total_today_messages += room_today_msgs
-        total_today_flagged += room_today_flagged
-        
-        # Build sentiment distribution for the mini bar
-        pos = sum(1 for m in room.messages if m.sentiment == 'Positive')
-        neg = sum(1 for m in room.messages if m.sentiment == 'Negative')
-        neu = len(room.messages) - pos - neg
-        total = len(room.messages) or 1
-        
-        room_stats.append({
+        messages = sorted(
+            list(room.messages),
+            key=lambda m: m.created_at or datetime.min
+        )
+        flagged = [m for m in messages if m.is_flagged]
+        sentiment_counts = {
+            'positive': sum(1 for m in messages if m.sentiment == 'Positive'),
+            'negative': sum(1 for m in messages if m.sentiment == 'Negative'),
+            'neutral': sum(1 for m in messages if m.sentiment not in ('Positive', 'Negative'))
+        }
+        last_message = messages[-1] if messages else None
+
+        room_cards.append({
             'room': room,
-            'sentiment': sentiment,
+            'messages': [m.to_dict() for m in messages],
+            'message_count': len(messages),
             'member_count': ChatRoomMember.query.filter_by(room_id=room.id).count(),
-            'message_count': len(room.messages),
-            'today_messages': room_today_msgs,
-            'today_flagged': room_today_flagged,
-            'pos_pct': round(pos / total * 100),
-            'neg_pct': round(neg / total * 100),
-            'neu_pct': round(neu / total * 100)
+            'flagged_count': len(flagged),
+            'sentiment_counts': sentiment_counts,
+            'last_message': last_message.to_dict() if last_message else None,
         })
-    
-    total_rooms = len(rooms)
-    total_messages_all = sum(rs['message_count'] for rs in room_stats)
-    # Fix: use list comprehension to count flagged messages (avoid .count() with kwargs which doesn't exist on lists)
-    total_flagged_all = 0
-    for rs in room_stats:
-        for msg in rs['room'].messages:
-            if msg.is_flagged:
-                total_flagged_all += 1
-    
-    return render_template('admin_chat_rooms.html', rooms=room_stats,
-                         total_rooms=total_rooms, total_messages_all=total_messages_all,
-                         total_today_messages=total_today_messages,
-                         total_today_flagged=total_today_flagged,
-                         total_flagged_all=total_flagged_all)
+        total_messages += len(messages)
+        total_flagged += len(flagged)
+        active_rooms += 1 if room.is_active else 0
+
+    return render_template(
+        'admin_chat_rooms.html',
+        rooms=room_cards,
+        total_rooms=len(rooms),
+        active_rooms=active_rooms,
+        total_messages_all=total_messages,
+        total_flagged_all=total_flagged,
+        unified_chat=True
+    )
+
 
 @app.route('/admin/chat/rooms/<int:room_id>/delete', methods=['POST'])
 @src_required
@@ -2347,21 +2345,17 @@ def admin_delete_chat_room(room_id):
     log_admin_action(session['admin_name'], 'Delete Chat Room', f'Deleted room ID: {room_id}')
     return redirect(url_for('admin_chat_rooms'))
 
+
 @app.route('/admin/chat/messages')
 @src_required
 def admin_chat_messages():
-    flagged_only = request.args.get('flagged', 'false') == 'true'
-    query = ChatMessage.query
-    if flagged_only:
-        query = query.filter_by(is_flagged=True)
-    # Eager-load student and room relationships to avoid N+1 queries
-    messages = query.options(
-        db.joinedload(ChatMessage.student),
-        db.joinedload(ChatMessage.room)
-    ).order_by(ChatMessage.created_at.desc()).limit(200).all()
-    # Convert to dicts for JSON serialization in the template
-    messages = [m.to_dict() for m in messages]
-    return render_template('admin_chat_messages.html', messages=messages, flagged_only=flagged_only)
+    """Legacy URL retained so old bookmarks do not break.
+
+    The admin now uses the unified chat center where messages are expanded
+    inside each room card.
+    """
+    return redirect(url_for('admin_chat_rooms'))
+
 
 @app.route('/admin/change-password', methods=['GET', 'POST'])
 @src_required

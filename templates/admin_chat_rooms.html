@@ -1,208 +1,252 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="student-layout admin-chat-center">
+    <aside class="admin-sidebar" aria-label="Admin dashboard sidebar">
+        <div class="admin-sidebar-title">
+            💬 SRC Chat Center
+            <span class="sub">Rooms & conversations</span>
+        </div>
+        <nav class="admin-sidebar-nav">
+            <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
+            <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
+            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/solution-templates" class="admin-sidebar-link">🧩 Solution Templates</a>
+            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+            <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/ai-review" class="admin-sidebar-link">🔎 AI Review Queue</a>
+            <a href="/admin/lexicon-manager" class="admin-sidebar-link">🧠 Lexicon Manager</a>
+            <a href="/admin/ai-audit" class="admin-sidebar-link">🛡️ AI Audit Trail</a>
+            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">🧠 Lexicon Gaps</a>
+            <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
+            <a href="/admin/chat" class="admin-sidebar-link admin-sidebar-link-active">💬 Chat Rooms</a>
+            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+            <a href="/admin/change-password" class="admin-sidebar-link">🔑 Change Password</a>
+        </nav>
+        <div style="margin-top:1.25rem;">
+            <form method="POST" action="/admin/logout" style="margin:0;">
+                {{ csrf_field() }}
+                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%;text-align:left;">
+                    <span class="btn-logout-icon">⏻</span>
+                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <section class="student-content">
+        <div class="admin-hero">
+            <div class="admin-hero-content">
+                <div class="admin-hero-title">💬 Chat Center</div>
+                <div class="admin-hero-subtitle">Every conversation is organized by room. Tap a room to expand its complete message history.</div>
+            </div>
+            <div class="admin-hero-actions">
+                <a href="/admin/dashboard" class="btn-hero">← Dashboard</a>
+            </div>
+        </div>
+
+        <div class="chat-center-stats" aria-label="Chat statistics">
+            <div class="chat-stat-card"><span>💬</span><strong>{{ total_rooms }}</strong><small>Total rooms</small></div>
+            <div class="chat-stat-card"><span>🟢</span><strong>{{ active_rooms }}</strong><small>Active rooms</small></div>
+            <div class="chat-stat-card"><span>📝</span><strong>{{ total_messages_all }}</strong><small>Total messages</small></div>
+            <div class="chat-stat-card chat-stat-alert"><span>⚠️</span><strong>{{ total_flagged_all }}</strong><small>Flagged messages</small></div>
+        </div>
+
+        <div class="chat-center-toolbar">
+            <div>
+                <h3>Conversation rooms</h3>
+                <p>One place for rooms and their messages — no separate message page.</p>
+            </div>
+            <input id="chatRoomSearch" class="chat-room-search" type="search" placeholder="Search rooms..." aria-label="Search chat rooms">
+        </div>
+
+        <div class="chat-room-grid" id="chatRoomGrid">
+        {% for item in rooms %}
+            {% set room = item.room %}
+            <article class="chat-room-card {% if not room.is_active %}chat-room-inactive{% endif %}"
+                     data-room-card data-room-name="{{ room.name|lower }}"
+                     aria-label="Chat room {{ room.name }}">
+                <button type="button" class="chat-room-card-header" data-room-toggle aria-expanded="false">
+                    <span class="chat-room-icon">💬</span>
+                    <span class="chat-room-heading">
+                        <span class="chat-room-name">{{ room.name }}</span>
+                        <span class="chat-room-description">{{ room.description or 'Campus conversation room' }}</span>
+                    </span>
+                    <span class="chat-room-chevron" aria-hidden="true">⌄</span>
+                </button>
+
+                <div class="chat-room-summary">
+                    <span>👥 {{ item.member_count }} members</span>
+                    <span>📝 {{ item.message_count }} messages</span>
+                    {% if item.flagged_count %}
+                    <span class="chat-room-flagged">⚠️ {{ item.flagged_count }} flagged</span>
+                    {% endif %}
+                    {% if item.last_message %}
+                    <span class="chat-room-last">Last: {{ item.last_message.timestamp }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="chat-room-preview">
+                    {% if item.last_message %}
+                        <strong>{{ item.last_message.username }}</strong>
+                        <span>{{ '🎤 Voice note' if item.last_message.message_type == 'voice' else item.last_message.message|truncate(110) }}</span>
+                    {% else %}
+                        <span>No messages yet.</span>
+                    {% endif %}
+                </div>
+
+                <div class="chat-room-messages" data-room-messages hidden>
+                    <div class="chat-room-messages-head">
+                        <div>
+                            <strong>Full conversation</strong>
+                            <span>{{ item.message_count }} message{{ '' if item.message_count == 1 else 's' }}</span>
+                        </div>
+                        <span class="chat-room-expand-hint">Tap the room header to collapse</span>
+                    </div>
+
+                    {% if item.messages %}
+                    <div class="chat-message-list">
+                        {% for msg in item.messages %}
+                        <div class="chat-message-card {% if msg.is_flagged %}chat-message-card-flagged{% endif %}">
+                            <div class="chat-message-avatar">{{ msg.username[:1]|upper }}</div>
+                            <div class="chat-message-body">
+                                <div class="chat-message-top">
+                                    <strong>{{ msg.full_name }}</strong>
+                                    <span>{{ msg.timestamp }}</span>
+                                    {% if msg.is_flagged %}<span class="chat-message-badge">⚠️ Flagged</span>{% endif %}
+                                </div>
+                                {% if msg.reply_to %}
+                                <div class="chat-message-reply">↳ Replying to {{ msg.reply_to.username }}: {{ msg.reply_to.preview }}</div>
+                                {% endif %}
+                                <div class="chat-message-text">
+                                    {% if msg.message_type == 'voice' %}
+                                        🎤 Voice note{% if msg.voice_duration %} · {{ msg.voice_duration }}s{% endif %}
+                                    {% else %}
+                                        {{ msg.message }}
+                                    {% endif %}
+                                </div>
+                                <div class="chat-message-meta">
+                                    {% if msg.sentiment %}<span class="chat-pill">{{ msg.sentiment }}</span>{% endif %}
+                                    <span class="chat-pill">Priority {{ msg.urgency_score or 1 }}/5</span>
+                                    {% if msg.sentiment_score is not none %}<span class="chat-pill">Score {{ '%.2f'|format(msg.sentiment_score) }}</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="chat-empty-state">No messages have been posted in this room yet.</div>
+                    {% endif %}
+
+                    <div class="chat-room-actions">
+                        <form method="POST" action="/admin/chat/rooms/{{ room.id }}/delete"
+                              onsubmit="return confirm('Delete this chat room and all its messages?');">
+                            {{ csrf_field() }}
+                            <button class="btn btn-danger btn-sm" type="submit">🗑 Delete Room</button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        {% else %}
+            <div class="chat-empty-state chat-empty-state-large">
+                <div>💬</div>
+                <h3>No chat rooms yet</h3>
+                <p>Create a room to start organizing campus conversations.</p>
+            </div>
+        {% endfor %}
+        </div>
+    </section>
+</div>
+
 <style>
-.room-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 1.25rem 1.35rem; transition: all var(--transition-normal); position: relative; overflow: hidden; }
-.room-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: rgba(59,130,246,0.2); }
-.room-card-accent { position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 0 0 2px 2px; }
-.room-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.65rem; flex-wrap: wrap; }
-.room-card-name { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; }
-.room-card-stats { display: flex; gap: 1rem; font-size: 0.78rem; color: var(--text-secondary); font-weight: 500; flex-wrap: wrap; margin-bottom: 0.65rem; }
-.room-card-stats span { display: flex; align-items: center; gap: 0.25rem; }
-.room-card-sentiment { margin-bottom: 0.65rem; }
-.sentiment-bar { height: 0.4rem; border-radius: var(--radius-full); background: var(--border-color); overflow: hidden; display: flex; }
-.sentiment-bar .bar-positive { height: 100%; background: linear-gradient(90deg, var(--success), #34d399); transition: width 0.3s ease; }
-.sentiment-bar .bar-negative { height: 100%; background: linear-gradient(90deg, var(--danger), #f87171); transition: width 0.3s ease; }
-.sentiment-bar .bar-neutral { height: 100%; background: linear-gradient(90deg, var(--secondary), #9ca3af); transition: width 0.3s ease; }
-.sentiment-labels { display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted); font-weight: 600; margin-top: 0.25rem; }
-.room-card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
-.room-card-time { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; flex-shrink: 0; }
-/* Stats Cards */
-.stat-card-room { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 0.85rem 1rem; text-align: center; }
-.stat-card-room .stat-val { font-size: 1.5rem; font-weight: 800; line-height: 1.2; }
-.stat-card-room .stat-lbl { font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
-/* No results */
-.no-results { display: none; text-align: center; padding: 2.5rem 2rem; background: var(--card-bg); border: 1px dashed var(--border-color); border-radius: var(--radius-xl); }
-.no-results.visible { display: block; }
+.admin-chat-center .student-content { min-width: 0; }
+.chat-center-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; margin:1.25rem 0; }
+.chat-stat-card { background:var(--card-bg); border:1px solid var(--border-color); border-radius:1rem; padding:1rem; display:grid; grid-template-columns:auto 1fr; column-gap:.65rem; align-items:center; box-shadow:var(--shadow-sm); }
+.chat-stat-card span { grid-row:span 2; font-size:1.4rem; }
+.chat-stat-card strong { font-size:1.35rem; color:var(--text-primary); }
+.chat-stat-card small { color:var(--text-secondary); font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.chat-stat-alert strong { color:var(--danger); }
+.chat-center-toolbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin:1.5rem 0 .9rem; }
+.chat-center-toolbar h3 { margin:0; color:var(--text-primary); font-size:1.1rem; }
+.chat-center-toolbar p { margin:.2rem 0 0; color:var(--text-secondary); font-size:.82rem; }
+.chat-room-search { width:min(300px,100%); padding:.7rem .9rem; border:1px solid var(--border-color); border-radius:.75rem; background:var(--card-bg); color:var(--text-primary); }
+.chat-room-grid { display:grid; gap:.9rem; }
+.chat-room-card { background:var(--card-bg); border:1px solid var(--border-color); border-radius:1rem; overflow:hidden; box-shadow:var(--shadow-sm); transition:box-shadow .2s,border-color .2s; }
+.chat-room-card:hover { box-shadow:var(--shadow-md); border-color:rgba(59,130,246,.25); }
+.chat-room-inactive { opacity:.72; }
+.chat-room-card-header { width:100%; border:0; background:transparent; color:inherit; padding:1rem 1.1rem .75rem; display:flex; align-items:center; gap:.8rem; text-align:left; cursor:pointer; }
+.chat-room-icon { width:2.5rem; height:2.5rem; border-radius:.8rem; display:grid; place-items:center; background:rgba(59,130,246,.1); font-size:1.1rem; flex-shrink:0; }
+.chat-room-heading { min-width:0; flex:1; display:grid; gap:.15rem; }
+.chat-room-name { font-weight:800; color:var(--text-primary); }
+.chat-room-description { font-size:.78rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-room-chevron { font-size:1.25rem; transition:transform .2s; }
+.chat-room-card.is-open .chat-room-chevron { transform:rotate(180deg); }
+.chat-room-summary { padding:0 1.1rem .75rem; display:flex; flex-wrap:wrap; gap:.45rem .8rem; color:var(--text-secondary); font-size:.72rem; }
+.chat-room-flagged { color:var(--danger); font-weight:800; }
+.chat-room-last { margin-left:auto; }
+.chat-room-preview { margin:0 1.1rem .9rem; padding:.75rem .85rem; border-radius:.75rem; background:rgba(148,163,184,.08); color:var(--text-secondary); font-size:.8rem; display:flex; gap:.45rem; flex-wrap:wrap; }
+.chat-room-preview strong { color:var(--text-primary); }
+.chat-room-messages { border-top:1px solid var(--border-color); padding:1rem; background:rgba(148,163,184,.035); }
+.chat-room-messages-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.8rem; }
+.chat-room-messages-head > div { display:grid; gap:.15rem; }
+.chat-room-messages-head span { color:var(--text-secondary); font-size:.72rem; }
+.chat-room-expand-hint { font-size:.68rem !important; }
+.chat-message-list { display:grid; gap:.6rem; max-height:620px; overflow:auto; padding-right:.15rem; }
+.chat-message-card { display:flex; gap:.7rem; padding:.8rem; border:1px solid var(--border-color); border-radius:.85rem; background:var(--card-bg); }
+.chat-message-card-flagged { border-left:4px solid var(--danger); }
+.chat-message-avatar { width:2rem; height:2rem; border-radius:50%; display:grid; place-items:center; background:var(--primary); color:#fff; font-size:.72rem; font-weight:800; flex-shrink:0; }
+.chat-message-body { min-width:0; flex:1; }
+.chat-message-top { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; font-size:.75rem; }
+.chat-message-top strong { color:var(--text-primary); }
+.chat-message-top > span:not(.chat-message-badge) { margin-left:auto; color:var(--text-muted); }
+.chat-message-badge { color:var(--danger); font-size:.65rem; font-weight:800; }
+.chat-message-reply { margin:.4rem 0; padding:.35rem .55rem; border-left:3px solid var(--primary); color:var(--text-secondary); font-size:.72rem; }
+.chat-message-text { margin-top:.35rem; color:var(--text-primary); font-size:.84rem; line-height:1.5; overflow-wrap:anywhere; }
+.chat-message-meta { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.55rem; }
+.chat-pill { padding:.18rem .5rem; border-radius:999px; background:rgba(59,130,246,.08); color:var(--text-secondary); font-size:.64rem; font-weight:700; }
+.chat-room-actions { display:flex; justify-content:flex-end; margin-top:.9rem; padding-top:.75rem; border-top:1px solid var(--border-color); }
+.chat-empty-state { padding:1.5rem; text-align:center; color:var(--text-secondary); border:1px dashed var(--border-color); border-radius:.85rem; }
+.chat-empty-state-large { padding:3rem; }
+.chat-empty-state-large div { font-size:2rem; }
+@media (max-width:800px) {
+  .chat-center-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .chat-center-toolbar { align-items:stretch; flex-direction:column; }
+  .chat-room-search { width:100%; }
+  .chat-room-last { margin-left:0; }
+}
+@media (max-width:520px) {
+  .chat-center-stats { grid-template-columns:1fr 1fr; gap:.6rem; }
+  .chat-stat-card { padding:.75rem; }
+  .chat-room-card-header { padding:.85rem; }
+  .chat-room-messages { padding:.7rem; }
+  .chat-message-card { padding:.65rem; }
+  .chat-message-top > span:not(.chat-message-badge) { margin-left:0; width:100%; }
+}
 </style>
 
-<div class="mb-6">
-    <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
-        <div>
-            <h2 class="text-2xl font-bold" style="color: var(--primary);">💬 Chat Room Management</h2>
-            <p class="text-sm text-secondary">Monitor and manage all chat rooms</p>
-        </div>
-        <a href="/admin/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
-    </div>
-
-    <div class="phase3-mobile-summary"><strong>💬 Chat management, simplified</strong><span>Room cards collapse cleanly on mobile so admins can scan activity, members and sentiment without horizontal scrolling.</span></div>
-
-    <!-- Stats Cards Row -->
-    <div class="grid grid-cols-4 gap-3 mb-4">
-        <div class="stat-card-room">
-            <div class="stat-val" style="color: var(--primary);">{{ rooms|length }}</div>
-            <div class="stat-lbl">Total Rooms</div>
-        </div>
-        <div class="stat-card-room">
-            <div class="stat-val" style="color: var(--success);">{{ total_messages_all }}</div>
-            <div class="stat-lbl">Total Messages</div>
-        </div>
-        <div class="stat-card-room">
-            <div class="stat-val" style="color: var(--secondary);">{{ rooms|sum(attribute='member_count') }}</div>
-            <div class="stat-lbl">Total Members</div>
-        </div>
-        <div class="stat-card-room">
-            <div class="stat-val" style="color: var(--warning);">{{ total_flagged_all }}</div>
-            <div class="stat-lbl">Flagged Msgs</div>
-        </div>
-    </div>
-
-    <!-- Filter Bar -->
-    <div class="filter-bar-enhanced mb-4">
-        <span class="filter-label">🔍</span>
-        <input type="text" id="searchRoom" placeholder="Search by name or category..." class="filter-input" style="min-width: 180px;">
-        <span class="filter-label ml-2">Sort:</span>
-        <select id="sortRooms" class="filter-select" style="min-width: 140px;">
-            <option value="activity">Last Activity</option>
-            <option value="messages">Most Messages</option>
-            <option value="members">Most Members</option>
-            <option value="name">Name A-Z</option>
-        </select>
-    </div>
-
-    <!-- Room Grid -->
-    <div class="grid grid-cols-2 gap-4" id="roomGrid">
-        {% for room_data in rooms %}
-        {% set s = room_data.sentiment %}
-        {% set pos_pct = (s.positive / s.total * 100) if s.total > 0 else 0 %}
-        {% set neg_pct = (s.negative / s.total * 100) if s.total > 0 else 0 %}
-        {% set neu_pct = (s.neutral / s.total * 100) if s.total > 0 else 0 %}
-        {% set accent_color = 'var(--success)' if s.sentiment_score >= 0.05 else ('var(--danger)' if s.sentiment_score <= -0.05 else 'var(--secondary)') %}
-        <div class="room-card" data-name="{{ room_data.room.name.lower() }}" data-category="{{ room_data.room.category.lower() }}" data-messages="{{ room_data.message_count }}" data-members="{{ room_data.member_count }}" data-activity="{{ room_data.room.last_activity.strftime('%Y%m%d%H%M%S') if room_data.room.last_activity else '00000000000000' }}" data-sortname="{{ room_data.room.name.lower() }}">
-            <div class="room-card-accent" style="background: {{ accent_color }};"></div>
-            <div class="room-card-top">
-                <div class="room-card-name">{{ room_data.room.name }}</div>
-                <span class="room-card-time">{{ room_data.room.last_activity.strftime('%Y-%m-%d %H:%M') if room_data.room.last_activity else 'Inactive' }}</span>
-            </div>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
-                <span class="badge badge-info">{{ room_data.room.category }}</span>
-                {% if s.sentiment_score >= 0.05 %}
-                <span class="badge badge-success">😊 Positive</span>
-                {% elif s.sentiment_score <= -0.05 %}
-                <span class="badge badge-danger">😞 Negative</span>
-                {% else %}
-                <span class="badge badge-neutral">😐 Neutral</span>
-                {% endif %}
-                {% if room_data.room.created_by %}<span class="badge badge-neutral">Created by: {{ room_data.room.created_by }}</span>{% endif %}
-            </div>
-            <div class="room-card-stats">
-                <span>💬 {{ room_data.message_count }} messages</span>
-                <span>👥 {{ room_data.member_count }} members</span>
-                <span>📅 {{ room_data.room.created_at.strftime('%b %d, %Y') }}</span>
-            </div>
-            <div class="room-card-sentiment">
-                <div class="sentiment-bar">
-                    <div class="bar-positive" style="width: {{ pos_pct }}%;"></div>
-                    <div class="bar-neutral" style="width: {{ neu_pct }}%;"></div>
-                    <div class="bar-negative" style="width: {{ neg_pct }}%;"></div>
-                </div>
-                <div class="sentiment-labels">
-                    <span style="color: var(--success);">😊 {{ '%.0f'|format(pos_pct) }}%</span>
-                    <span style="color: var(--secondary);">😐 {{ '%.0f'|format(neu_pct) }}%</span>
-                    <span style="color: var(--danger);">😞 {{ '%.0f'|format(neg_pct) }}%</span>
-                </div>
-            </div>
-            <div class="room-card-actions">
-                <form method="POST" action="/admin/chat/rooms/{{ room_data.room.id }}/delete" style="display: inline;" onsubmit="return confirmDelete(event, '{{ room_data.room.name }}')">
-                    {{ csrf_field() }}
-                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Delete Room</button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- No Results -->
-    <div id="noResults" class="no-results mt-4">
-        <span style="font-size: 3rem; display: block; margin-bottom: 0.75rem;">🔍</span>
-        <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No Rooms Found</div>
-        <div style="font-size: 0.85rem; color: var(--text-secondary);">Try adjusting your search or filters.</div>
-        <a href="/admin/chat/rooms" class="btn btn-primary btn-sm mt-3">Clear Filters</a>
-    </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal" id="deleteModal">
-    <div class="modal-content" style="max-width: 32rem;">
-        <div class="modal-header" style="color: var(--danger);">⚠️ Confirm Deletion</div>
-        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
-            Are you sure you want to delete <strong id="deleteRoomName" style="color: var(--text-primary);"></strong>?
-            <br>This will permanently remove the room and all its messages. <strong>This action cannot be undone.</strong>
-        </p>
-        <div class="flex gap-2 justify-end">
-            <button class="btn btn-danger" id="confirmDeleteBtn">🗑️ Yes, Delete</button>
-            <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-        </div>
-    </div>
-</div>
-
 <script>
-function confirmDelete(event, roomName) {
-    event.preventDefault();
-    document.getElementById('deleteRoomName').textContent = roomName;
-    document.getElementById('confirmDeleteBtn').onclick = function() {
-        event.target.submit();
-    };
-    document.getElementById('deleteModal').classList.add('active');
-    return false;
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('active');
-}
-
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-    if (e.target === this) closeDeleteModal();
-});
-
-// Search
-document.getElementById('searchRoom').addEventListener('keyup', function() {
-    var term = this.value.toLowerCase();
-    filterAndSort();
-});
-
-// Sort
-document.getElementById('sortRooms').addEventListener('change', function() {
-    filterAndSort();
-});
-
-function filterAndSort() {
-    var term = document.getElementById('searchRoom').value.toLowerCase();
-    var sort = document.getElementById('sortRooms').value;
-    var grid = document.getElementById('roomGrid');
-    var cards = Array.from(grid.querySelectorAll('.room-card'));
-    var visible = 0;
-
-    // Filter
-    cards.forEach(function(card) {
-        var match = card.getAttribute('data-name').includes(term) || card.getAttribute('data-category').includes(term);
-        card.style.display = match ? '' : 'none';
-        if (match) visible++;
+(function () {
+  const cards = document.querySelectorAll('[data-room-card]');
+  cards.forEach(card => {
+    const toggle = card.querySelector('[data-room-toggle]');
+    const panel = card.querySelector('[data-room-messages]');
+    if (!toggle || !panel) return;
+    toggle.addEventListener('click', function () {
+      const open = card.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', String(open));
+      panel.hidden = !open;
     });
+  });
 
-    // Sort
-    var visibleCards = cards.filter(function(c) { return c.style.display !== 'none'; });
-    visibleCards.sort(function(a, b) {
-        if (sort === 'messages') return parseInt(b.getAttribute('data-messages')) - parseInt(a.getAttribute('data-messages'));
-        if (sort === 'members') return parseInt(b.getAttribute('data-members')) - parseInt(a.getAttribute('data-members'));
-        if (sort === 'name') return a.getAttribute('data-sortname').localeCompare(b.getAttribute('data-sortname'));
-        // activity
-        return b.getAttribute('data-activity').localeCompare(a.getAttribute('data-activity'));
+  const search = document.getElementById('chatRoomSearch');
+  if (search) {
+    search.addEventListener('input', function () {
+      const query = search.value.trim().toLowerCase();
+      cards.forEach(card => {
+        card.hidden = query && !card.dataset.roomName.includes(query);
+      });
     });
-
-    visibleCards.forEach(function(card) { grid.appendChild(card); });
-
-    document.getElementById('noResults').classList.toggle('visible', visible === 0);
-}
+  }
+})();
 </script>
 {% endblock %}
