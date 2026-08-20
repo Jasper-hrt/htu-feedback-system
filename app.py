@@ -11,6 +11,7 @@ from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
 from database import SolutionTemplate, SolutionFeedback, CustomLexicon, UnknownWord, AIReviewLog
 from database import is_valid_htu_email, extract_student_id_from_email
 from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation, build_ai_explanation
+from sentiment.topic_extractor import extract_topics
 from solution_recommender import recommend_solutions
 from recommendation_learning import RecommendationLearner
 from logger import log_student_action, log_admin_action, log_feedback_action, log_system_action

@@ -30,10 +30,10 @@
 </div>
 </aside>
 <section class="student-content">
-<div class="admin-hero">
-<div><div class="admin-hero-title">🔎 AI Review Queue</div>
+<div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;">
+<div style="position: relative; z-index: 1;"><div class="admin-hero-title" style="font-size: 1.5rem;">🔎 AI Review Queue</div>
 <div class="admin-hero-subtitle">Feedback with low AI confidence is held here for an administrator to verify before it is trusted.</div></div>
-<div class="admin-hero-actions"><span class="btn-hero">{{ review_count }} items need review</span></div>
+<div class="admin-hero-actions" style="position: relative; z-index: 1;"><a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a><span class="btn-hero btn-hero-primary">{{ review_count }} items need review</span></div>
 </div>
 {% if reviews %}
 {% for f in reviews %}
