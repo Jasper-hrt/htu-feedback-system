@@ -410,6 +410,67 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// ==================== AUTO-SAVE DRAFT ====================
+function saveDraft() {
+    var draft = {
+        category: document.querySelector('input[name="category"]:checked')?.value || '',
+        feedback_text: document.getElementById('feedbackText').value,
+        location: document.getElementById('locationInput')?.value || '',
+        urgency: document.getElementById('urgencySlider')?.value || 3,
+        anonymous: document.getElementById('anonymousCheck')?.checked || false,
+        step: currentStep,
+        saved_at: new Date().toISOString()
+    };
+    localStorage.setItem('feedback_draft', JSON.stringify(draft));
+}
+
+function loadDraft() {
+    var saved = localStorage.getItem('feedback_draft');
+    if (!saved) return;
+    try {
+        var draft = JSON.parse(saved);
+        if (draft.category) {
+            var radio = document.querySelector('input[name="category"][value="' + draft.category + '"]');
+            if (radio) radio.checked = true;
+        }
+        if (draft.feedback_text) document.getElementById('feedbackText').value = draft.feedback_text;
+        if (draft.location && document.getElementById('locationInput')) document.getElementById('locationInput').value = draft.location;
+        if (draft.urgency) {
+            document.getElementById('urgencySlider').value = draft.urgency;
+            updateUrgency(parseInt(draft.urgency));
+        }
+        if (draft.anonymous && document.getElementById('anonymousCheck')) document.getElementById('anonymousCheck').checked = true;
+        if (draft.step && draft.step > 1) goToStep(draft.step);
+    } catch(e) {}
+}
+
+function clearDraft() {
+    localStorage.removeItem('feedback_draft');
+}
+
+// Auto-save on input changes
+document.getElementById('feedbackText').addEventListener('input', function() {
+    saveDraft();
+    // Update char count
+    var len = this.value.length;
+    document.getElementById('charCount').textContent = len + '/1000';
+    if (len >= 10) document.getElementById('textError').classList.remove('visible');
+});
+
+document.querySelectorAll('input[name="category"]').forEach(function(radio) {
+    radio.addEventListener('change', saveDraft);
+});
+
+// Load draft on page load
+loadDraft();
+
+// Clear draft on successful submit
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+    if (validateStep(1) && validateStep(2)) {
+        clearDraft();
+    }
+});
+
 // ==================== INIT ====================
 updateUrgency(3);
 </script>

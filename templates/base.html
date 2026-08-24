@@ -25,7 +25,7 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body data-student-id="{{ session.student_id if session.student_id else '' }}">
+<body data-student-id="{{ session.student_id if session.student_id else '' }}" class="{% if request.path.startswith('/admin') and not request.path.endswith('/admin/login') %}admin-page{% endif %}">
     <nav class="navbar">
         <div class="navbar-container">
             <a href="/" class="navbar-brand-with-logo">
@@ -168,33 +168,40 @@
 
         <!-- Mobile Navigation Menu -->
         <div class="navbar-mobile-menu" id="navbarMobileMenu">
-            <a href="/">🏠 Home</a>
-            <a href="/announcements">📢 Announcements</a>
-            <a href="/public">📊 Public Board</a>
-            {% if session.admin_id %}
-            <div class="mobile-menu-divider"></div>
-            <div class="mobile-menu-label">Admin Panel</div>
-            <a href="/admin/dashboard">📋 Dashboard</a>
-            <a href="/admin/analytics">📈 Analytics</a>
-            <a href="/admin/templates">📝 Templates</a>
-            <a href="/admin/solution-templates">🧩 Solution Templates</a>
-            <a href="/admin/students">👥 Students</a>
-            <a href="/admin/announcements">📢 Announcements</a>
-            <a href="/admin/ai-review">🔎 AI Review Queue</a>
-            <a href="/admin/lexicon-manager">🧠 Lexicon Manager</a>
-            <a href="/admin/ai-audit">🛡️ AI Audit Trail</a>
-            <a href="/admin/lexicon-gaps">🧠 Lexicon Gaps</a>
-            <a href="/admin/logs">📋 Logs</a>
-            <a href="/admin/chat">💬 Chat Rooms</a>
-            <a href="/admin/export/excel">📊 Export Excel</a>
-            <a href="/admin/change-password">🔑 Change Password</a>
-            <a href="/admin/logout" onclick="event.preventDefault(); document.getElementById('adminLogoutForm').submit();">⏻ Logout</a>
-            {% else %}
-            {% if not session.student_id %}
-            <a href="/student/login">🔑 Login</a>
-            {% endif %}
-            <a href="/admin/login">🔐 SRC Admin</a>
-            {% endif %}
+            <div class="mobile-menu-header">
+                <div class="mobile-menu-brand-icon">🛡️</div>
+                <div class="mobile-menu-brand-text">SRC Admin</div>
+            </div>
+            <div class="mobile-menu-links">
+                <a href="/"><span class="mobile-menu-link-icon">🏠</span> Home</a>
+                <a href="/announcements"><span class="mobile-menu-link-icon">📢</span> Announcements</a>
+                <a href="/public"><span class="mobile-menu-link-icon">📊</span> Public Board</a>
+                {% if session.admin_id %}
+                <div class="mobile-menu-divider"></div>
+                <div class="mobile-menu-label">Admin Panel</div>
+                <a href="/admin/dashboard"><span class="mobile-menu-link-icon">📋</span> Dashboard</a>
+                <a href="/admin/analytics"><span class="mobile-menu-link-icon">📈</span> Analytics</a>
+                <a href="/admin/templates"><span class="mobile-menu-link-icon">📝</span> Templates</a>
+                <a href="/admin/solution-templates"><span class="mobile-menu-link-icon">🧩</span> Solution Templates</a>
+                <a href="/admin/students"><span class="mobile-menu-link-icon">👥</span> Students</a>
+                <a href="/admin/announcements"><span class="mobile-menu-link-icon">📢</span> Announcements</a>
+                <a href="/admin/ai-review"><span class="mobile-menu-link-icon">🔎</span> AI Review Queue</a>
+                <a href="/admin/lexicon-manager"><span class="mobile-menu-link-icon">🧠</span> Lexicon Manager</a>
+                <a href="/admin/ai-audit"><span class="mobile-menu-link-icon">🛡️</span> AI Audit Trail</a>
+                <a href="/admin/lexicon-gaps"><span class="mobile-menu-link-icon">🧠</span> Lexicon Gaps</a>
+                <a href="/admin/logs"><span class="mobile-menu-link-icon">📋</span> Logs</a>
+                <a href="/admin/chat"><span class="mobile-menu-link-icon">💬</span> Chat Rooms</a>
+                <a href="/admin/export/excel"><span class="mobile-menu-link-icon">📊</span> Export Excel</a>
+                <a href="/admin/change-password"><span class="mobile-menu-link-icon">🔑</span> Change Password</a>
+                <div class="mobile-menu-divider"></div>
+                <a href="/admin/logout" class="mobile-menu-logout" onclick="event.preventDefault(); document.getElementById('adminLogoutForm').submit();"><span class="mobile-menu-link-icon">⏻</span> Logout</a>
+                {% else %}
+                {% if not session.student_id %}
+                <a href="/student/login"><span class="mobile-menu-link-icon">🔑</span> Login</a>
+                {% endif %}
+                <a href="/admin/login"><span class="mobile-menu-link-icon">🔐</span> SRC Admin</a>
+                {% endif %}
+            </div>
         </div>
     </nav>
     

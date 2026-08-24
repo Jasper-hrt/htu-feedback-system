@@ -44,7 +44,12 @@
 <div class="chart-card">
     <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
         <div><span class="badge badge-info" style="font-size: 0.9rem; padding: 0.35rem 0.75rem;">Total Students: {{ students|length }}</span></div>
-        <div><input type="text" id="searchStudent" placeholder="Search by name or ID..." class="filter-input" style="width: 100%; max-width: 280px;"></div>
+        <div class="flex gap-2 flex-wrap">
+            <button onclick="exportStudentLogs()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 0.6rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #fff; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+                📥 Export Student Logs
+            </button>
+            <input type="text" id="searchStudent" placeholder="Search by name or ID..." class="filter-input" style="width: 100%; max-width: 200px;">
+        </div>
     </div>
     <div class="table-modern-container">
         <table class="table-modern">

@@ -14,7 +14,22 @@ from database import is_valid_htu_email, extract_student_id_from_email
 from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation, build_ai_explanation
 from sentiment.topic_extractor import extract_topics
 from solution_recommender import recommend_solutions
+from enhanced_recommender import recommend_enhanced, get_trending_issues, get_department_workload, get_engine, record_assignment
+from security_manager import SecurityManager, require_2fa, get_client_ip, get_user_agent
 from recommendation_learning import RecommendationLearner
+import logging
+import sys
+
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('app.log', encoding='utf-8')
+    ]
+)
+logger = logging.getLogger('HTU_SRC')
 from logger import log_student_action, log_admin_action, log_feedback_action, log_system_action
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -219,23 +234,29 @@ def add_security_headers(response):
 
 @app.errorhandler(500)
 def internal_server_error(e):
-    """Log the full traceback and return a user-friendly error page.
-
-    Without this handler, Flask returns a bare 'Internal Server Error' page
-    and the real cause is hidden. This handler prints the full traceback to
-    the server logs (helpful on Render) and shows a clean message to the user.
-    """
+    """Log the full traceback and return a user-friendly error page."""
     import traceback
-    traceback.print_exc()
+    logger.error(f"500 Error: {e}\n{traceback.format_exc()}")
     log_system_action('Error', '500', f'Internal Server Error: {e}', 'ERROR')
     try:
-        return render_template('error.html', error='Sorry, something went wrong on our end. Please try again in a moment.'), 500
+        return render_template('error.html', error='Sorry, something went wrong on our end. Please try again in a moment.', error_code=500), 500
     except Exception:
         return 'Internal Server Error', 500
 
 @app.errorhandler(404)
 def not_found(e):
-    return render_template('error.html', error='The page you are looking for was not found.'), 404
+    logger.info(f"404 Not Found: {request.path}")
+    return render_template('error.html', error='The page you are looking for was not found.', error_code=404), 404
+
+@app.errorhandler(403)
+def forbidden(e):
+    logger.warning(f"403 Forbidden: {request.path} from {get_client_ip()}")
+    return render_template('error.html', error='You do not have permission to access this resource.', error_code=403), 403
+
+@app.errorhandler(429)
+def rate_limited(e):
+    logger.warning(f"429 Rate Limited: {request.path} from {get_client_ip()}")
+    return render_template('error.html', error='Too many requests. Please try again later.', error_code=429), 429
 
 # ==================== SESSION TIMEOUT ====================
 
@@ -1539,21 +1560,106 @@ def admin_login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        totp_token = request.form.get('totp_token', '')
         
         user = SRCUser.query.filter_by(username=username).first()
+        ip_address = get_client_ip()
+        user_agent = get_user_agent()
+        
         if user and check_password_hash(user.password_hash, password):
+            # Check for anomalies
+            anomaly = SecurityManager.detect_anomaly(user.id, ip_address, user_agent)
+            
+            # If 2FA is enabled, verify token
+            if user.is_2fa_enabled:
+                if not totp_token:
+                    session['pending_2fa_user_id'] = user.id
+                    return render_template('admin_2fa.html', username=username)
+                if not SecurityManager.verify_2fa_token(user.totp_secret, totp_token):
+                    SecurityManager.record_login(user.id, 'admin', ip_address, user_agent, False, 'Invalid 2FA token')
+                    return render_template('admin_2fa.html', username=username, error='Invalid 2FA code')
+            
+            # Login successful
             session['admin_id'] = user.id
             session['admin_name'] = user.full_name
             session['admin_role'] = user.role
+            session['2fa_verified'] = True
+            session.pop('pending_2fa_user_id', None)
             user.last_login = datetime.utcnow()
             db.session.commit()
             
-            log_admin_action(user.full_name, 'Login Success', 'Logged in')
+            SecurityManager.record_login(user.id, 'admin', ip_address, user_agent, True)
+            log_admin_action(user.full_name, 'Login Success', f'Logged in from {ip_address}')
+            
+            if anomaly['is_anomaly']:
+                flash(anomaly['message'], 'warning')
+            
             return redirect(url_for('admin_dashboard'))
         else:
+            if user:
+                SecurityManager.record_login(user.id, 'admin', ip_address, user_agent, False, 'Invalid password')
             return render_template('admin_login.html', error='Invalid credentials')
     
     return render_template('admin_login.html')
+
+@app.route('/admin/2fa/setup', methods=['GET', 'POST'])
+@src_required
+def admin_2fa_setup():
+    """Setup 2FA for admin account."""
+    user = SRCUser.query.get(session['admin_id'])
+    if request.method == 'POST':
+        token = request.form.get('token', '')
+        secret = session.get('2fa_setup_secret')
+        if secret and SecurityManager.verify_2fa_token(secret, token):
+            user.totp_secret = secret
+            user.is_2fa_enabled = True
+            db.session.commit()
+            session.pop('2fa_setup_secret', None)
+            flash('Two-factor authentication enabled successfully', 'success')
+            return redirect(url_for('admin_dashboard'))
+        return render_template('admin_2fa_setup.html', error='Invalid verification code', secret=secret)
+    
+    secret = SecurityManager.generate_2fa_secret()
+    session['2fa_setup_secret'] = secret
+    totp_uri = SecurityManager.get_totp_uri(secret, user.username)
+    return render_template('admin_2fa_setup.html', secret=secret, totp_uri=totp_uri)
+
+@app.route('/admin/2fa/verify', methods=['GET', 'POST'])
+def admin_2fa_verify():
+    """Verify 2FA token during login."""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        totp_token = request.form.get('totp_token', '')
+        user = SRCUser.query.filter_by(username=username).first()
+        ip_address = get_client_ip()
+        user_agent = get_user_agent()
+        
+        if user and user.is_2fa_enabled and SecurityManager.verify_2fa_token(user.totp_secret, totp_token):
+            session['admin_id'] = user.id
+            session['admin_name'] = user.full_name
+            session['admin_role'] = user.role
+            session['2fa_verified'] = True
+            session.pop('pending_2fa_user_id', None)
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            SecurityManager.record_login(user.id, 'admin', ip_address, user_agent, True)
+            return redirect(url_for('admin_dashboard'))
+        
+        SecurityManager.record_login(user.id if user else 0, 'admin', ip_address, user_agent, False, 'Invalid 2FA')
+        return render_template('admin_2fa.html', username=username, error='Invalid 2FA code')
+    
+    return render_template('admin_2fa.html')
+
+@app.route('/admin/2fa/disable', methods=['POST'])
+@src_required
+def admin_2fa_disable():
+    """Disable 2FA for admin account."""
+    user = SRCUser.query.get(session['admin_id'])
+    user.totp_secret = None
+    user.is_2fa_enabled = False
+    db.session.commit()
+    flash('Two-factor authentication disabled', 'info')
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/dashboard')
 @src_required
@@ -1622,6 +1728,20 @@ def admin_dashboard():
         'duplicate_reports': len(duplicate_ids)
     }
     
+    # SLA tracking - count issues approaching or past deadline
+    now = datetime.utcnow()
+    sla_warning = Feedback.query.filter(
+        Feedback.status.notin_(['Resolved', 'Closed']),
+        Feedback.created_at <= now - timedelta(hours=48),
+        Feedback.created_at > now - timedelta(hours=72)
+    ).count()
+    sla_breached = Feedback.query.filter(
+        Feedback.status.notin_(['Resolved', 'Closed']),
+        Feedback.created_at <= now - timedelta(hours=72)
+    ).count()
+    stats['sla_warning'] = sla_warning
+    stats['sla_breached'] = sla_breached
+    
     # Precompute explanations for Analyze modal.
     # We use cleaned_text when available, fallback to feedback_text.
     explanations_by_id = {}
@@ -1659,13 +1779,18 @@ def admin_dashboard():
             'unhelpful_count': unhelpful_count,
         }
 
+    # Enhanced recommendation data
+    trending_issues = get_trending_issues()
+    department_workload = get_department_workload()
+
     return render_template('admin_dashboard.html', feedbacks=paginated.items, pagination=paginated,
                          stats=stats, categories=categories, trend_data=trend_data,
                          admin_name=session.get('admin_name'), current_category=category_filter,
                          current_status=status_filter, current_urgency=urgency_filter, current_search=search_query,
                          explanations_by_id=explanations_by_id,
                          recommendations_by_id=recommendations_by_id,
-                         topic_summary=topic_summary, duplicate_ids=duplicate_ids)
+                         topic_summary=topic_summary, duplicate_ids=duplicate_ids,
+                         trending_issues=trending_issues, department_workload=department_workload)
 
 
 
@@ -1731,6 +1856,70 @@ def regenerate_recommendation(feedback_id):
         'confidence': feedback.recommendation_confidence,
         'secondary_categories': _parse_json_field(feedback.secondary_categories, []),
     })
+
+@app.route('/admin/feedback/bulk-action', methods=['POST'])
+@src_required
+def bulk_action():
+    """Perform bulk actions on multiple feedback items."""
+    data = request.get_json()
+    action = data.get('action', '')
+    ids = data.get('ids', [])
+    
+    if not ids:
+        return jsonify({'success': False, 'error': 'No items selected'})
+    
+    feedbacks = Feedback.query.filter(Feedback.id.in_(ids)).all()
+    count = 0
+    
+    for f in feedbacks:
+        if action == 'resolve':
+            f.status = 'Resolved'
+            if not f.resolved_at:
+                f.resolved_at = datetime.utcnow()
+        elif action == 'pending':
+            f.status = 'Pending'
+        elif action == 'in_progress':
+            f.status = 'In Progress'
+        elif action == 'delete':
+            db.session.delete(f)
+        elif action.startswith('assign_'):
+            f.assigned_to = action[7:]
+        elif action.startswith('category_'):
+            f.category = action[9:]
+        count += 1
+    
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'Bulk Action', f'{action} applied to {count} items')
+    
+    return jsonify({'success': True, 'count': count})
+
+@app.route('/admin/feedback/<int:feedback_id>/solution-feedback', methods=['POST'])
+@src_required
+def solution_feedback(feedback_id):
+    """Record whether a solution was helpful."""
+    data = request.get_json()
+    was_helpful = data.get('was_helpful', False)
+    
+    feedback = Feedback.query.get_or_404(feedback_id)
+    
+    # Record the feedback
+    sf = SolutionFeedback(
+        feedback_id=feedback_id,
+        template_category=feedback.category,
+        was_helpful=was_helpful,
+        created_by=session.get('admin_name')
+    )
+    db.session.add(sf)
+    db.session.commit()
+    
+    # Update recommendation engine
+    solution_key = (feedback.short_term_solution or '')[:50]
+    get_engine().record_solution_feedback(feedback.category, solution_key, was_helpful, feedback.status == 'Resolved')
+    
+    helpful = SolutionFeedback.query.filter_by(feedback_id=feedback_id, was_helpful=True).count()
+    unhelpful = SolutionFeedback.query.filter_by(feedback_id=feedback_id, was_helpful=False).count()
+    
+    return jsonify({'success': True, 'helpful_count': helpful, 'unhelpful_count': unhelpful})
 
 @app.route('/admin/feedback/<int:feedback_id>/solution-feedback', methods=['POST'])
 @src_required
@@ -2155,6 +2344,97 @@ def export_excel():
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         headers={'Content-Disposition': f'attachment; filename=feedback_export_{datetime.utcnow().strftime("%Y%m%d_%H%M%S")}.xlsx'}
     )
+
+@app.route('/api/admin/export/students')
+@src_required
+def api_export_students():
+    """Export student logs as JSON for CSV conversion"""
+    students = Student.query.order_by(Student.created_at.desc()).all()
+    return jsonify({
+        'success': True,
+        'students': [{
+            'student_id': s.student_id,
+            'full_name': s.full_name,
+            'email': s.email,
+            'department': s.department or '-',
+            'year': s.year_of_study or '-',
+            'registered_at': s.created_at.strftime('%Y-%m-%d %H:%M') if s.created_at else '-',
+            'last_login': s.last_login.strftime('%Y-%m-%d %H:%M') if s.last_login else '-',
+            'status': 'Active' if s.is_active else 'Inactive'
+        } for s in students]
+    })
+
+@app.route('/api/admin/export/analytics')
+@src_required
+def api_export_analytics():
+    """Export advanced analytics as JSON for CSV conversion"""
+    all_feedback = Feedback.query.all()
+    total = len(all_feedback)
+    resolved = sum(1 for f in all_feedback if f.status == 'resolved')
+    pending = sum(1 for f in all_feedback if f.status == 'pending')
+    in_progress = sum(1 for f in all_feedback if f.status == 'in_progress')
+    positive = sum(1 for f in all_feedback if f.sentiment == 'positive')
+    negative = sum(1 for f in all_feedback if f.sentiment == 'negative')
+    neutral = sum(1 for f in all_feedback if f.sentiment == 'neutral')
+    avg_urgency = sum(f.urgency_score for f in all_feedback) / total if total > 0 else 0
+    resolution_rate = (resolved / total * 100) if total > 0 else 0
+
+    metrics = [
+        {'name': 'Total Feedback', 'value': total, 'description': 'Total number of feedback submissions'},
+        {'name': 'Resolved', 'value': resolved, 'description': 'Feedback marked as resolved'},
+        {'name': 'Pending', 'value': pending, 'description': 'Feedback awaiting review'},
+        {'name': 'In Progress', 'value': in_progress, 'description': 'Feedback currently being processed'},
+        {'name': 'Positive Sentiment', 'value': positive, 'description': 'Feedback with positive sentiment'},
+        {'name': 'Negative Sentiment', 'value': negative, 'description': 'Feedback with negative sentiment'},
+        {'name': 'Neutral Sentiment', 'value': neutral, 'description': 'Feedback with neutral sentiment'},
+        {'name': 'Average Urgency', 'value': f'{avg_urgency:.1f}/5', 'description': 'Average urgency score across all feedback'},
+        {'name': 'Resolution Rate', 'value': f'{resolution_rate:.1f}%', 'description': 'Percentage of feedback resolved'},
+    ]
+
+    return jsonify({'success': True, 'metrics': metrics})
+
+@app.route('/api/admin/export/logs')
+@src_required
+def api_export_logs():
+    """Export system logs as JSON for CSV conversion"""
+    logs = SystemLog.query.order_by(SystemLog.timestamp.desc()).all()
+    return jsonify({
+        'success': True,
+        'logs': [{
+            'timestamp': l.timestamp.strftime('%Y-%m-%d %H:%M:%S') if l.timestamp else '-',
+            'level': l.level or 'INFO',
+            'user': l.user_id or l.user_type or 'System',
+            'action': l.action or l.log_type or '-',
+            'details': l.details or '-',
+            'ip_address': l.ip_address or '-'
+        } for l in logs]
+    })
+
+@app.route('/api/admin/trending')
+@src_required
+def api_trending_issues():
+    """Get trending issues for admin dashboard"""
+    trends = get_trending_issues()
+    workload = get_department_workload()
+    return jsonify({
+        'success': True,
+        'trends': trends,
+        'workload': workload,
+        'total_issues': sum(t['count'] for t in trends),
+    })
+
+@app.route('/api/admin/recommendation/feedback', methods=['POST'])
+@src_required
+def api_recommendation_feedback():
+    """Record feedback on recommendation effectiveness"""
+    data = request.get_json()
+    category = data.get('category', '')
+    solution_key = data.get('solution_key', '')
+    was_helpful = data.get('was_helpful', False)
+    resolved = data.get('resolved', False)
+    engine = get_engine()
+    engine.record_solution_feedback(category, solution_key, was_helpful, resolved)
+    return jsonify({'success': True})
 
 @app.route('/admin/analytics')
 @src_required

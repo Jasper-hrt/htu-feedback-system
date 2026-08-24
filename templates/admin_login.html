@@ -89,15 +89,6 @@
             </button>
         </form>
 
-        <div class="auth-demo" style="background: rgba(30, 64, 175, 0.06); border-color: rgba(30, 64, 175, 0.12);">
-            <span>🔑</span>
-            <span>Demo Credentials:</span>
-            <code id="demoUsername" style="cursor: pointer;" onclick="copyText('admin')" title="Click to copy">admin</code>
-            <span style="opacity: 0.5;">/</span>
-            <code id="demoPassword" style="cursor: pointer;" onclick="copyText('admin123')" title="Click to copy">admin123</code>
-            <span style="font-size: 0.65rem; opacity: 0.5; margin-left: 0.25rem;">(click to copy)</span>
-        </div>
-
         <div class="auth-trust" style="background: rgba(30, 64, 175, 0.04); border-color: rgba(30, 64, 175, 0.08);">
             <span class="auth-trust-icon">🛡️</span>
             <span>SSL Secured Connection</span>
@@ -152,33 +143,6 @@
 }
 .auth-btn.loading .auth-btn-pulse {
     display: none;
-}
-
-/* ---- Demo code copy tooltip ---- */
-.auth-demo code {
-    transition: all 0.15s ease;
-    position: relative;
-}
-.auth-demo code:hover {
-    background: rgba(30, 64, 175, 0.1);
-    color: var(--primary);
-}
-.auth-demo code:active {
-    transform: scale(0.95);
-}
-.auth-demo code::after {
-    content: '📋';
-    position: absolute;
-    top: -1.5rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.7rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-}
-.auth-demo code:hover::after {
-    opacity: 0.7;
 }
 
 /* ---- Trust badge ---- */
@@ -280,19 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
-function copyText(text) {
-    navigator.clipboard.writeText(text).then(function() {
-        // Briefly flash copied indicator
-        const el = event.target;
-        const original = el.textContent;
-        el.textContent = '✅ Copied!';
-        setTimeout(function() { el.textContent = original; }, 1200);
-    }).catch(function() {
-        // Fallback
-        alert('Copied: ' + text);
-    });
-}
 </script>
 {% endblock %}
 

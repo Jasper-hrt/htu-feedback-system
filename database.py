@@ -10,16 +10,21 @@ class Student(db.Model):
     __tablename__ = 'students'
     
     id = db.Column(db.Integer, primary_key=True)
-    student_id = db.Column(db.String(20), unique=True, nullable=False)
+    student_id = db.Column(db.String(20), unique=True, nullable=False, index=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    full_name = db.Column(db.String(100))
-    department = db.Column(db.String(100))
+    full_name = db.Column(db.String(100), index=True)
+    department = db.Column(db.String(100), index=True)
     year_of_study = db.Column(db.Integer)
-    is_active = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True, index=True)
     theme_preference = db.Column(db.String(10), default='light')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    last_login = db.Column(db.DateTime, index=True)
+    
+    __table_args__ = (
+        db.Index('idx_student_dept_year', 'department', 'year_of_study'),
+        db.Index('idx_student_active_created', 'is_active', 'created_at'),
+    )
     
     def to_dict(self):
         return {
@@ -380,6 +385,8 @@ class SRCUser(db.Model):
     email = db.Column(db.String(120))
     last_login = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    totp_secret = db.Column(db.String(32), nullable=True)
+    is_2fa_enabled = db.Column(db.Boolean, default=False)
 
 # ==================== HYBRID SENTIMENT ENGINE MODELS ====================
 

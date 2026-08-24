@@ -71,6 +71,25 @@
             <div class="ai-topic-row">{% for topic, count in topic_summary %}<span class="ai-topic-chip">{{ topic }} · {{ count }}</span>{% else %}<span class="muted">No topics detected yet.</span>{% endfor %}</div>
         </div>
 
+        <!-- Trending Issues Widget -->
+        {% if trending_issues %}
+        <div class="trending-issues-card">
+            <div class="trending-issues-header">
+                <strong>🔥 Trending Issues</strong>
+                <span class="trending-issues-count">{{ trending_issues|length }} active</span>
+            </div>
+            <div class="trending-issues-list">
+                {% for trend in trending_issues[:5] %}
+                <div class="trending-issue-item">
+                    <span class="trending-issue-category">{{ trend.category }}</span>
+                    <span class="trending-issue-count">{{ trend.count }} reports</span>
+                    <span class="trending-issue-rate">{{ trend.success_rate }}% resolved</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-card-accent" style="background: var(--primary);"></div>

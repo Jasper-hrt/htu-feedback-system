@@ -225,9 +225,12 @@ function initThemeToggle() {
 
 
 // ============================================
-// 🍔 Navbar Mobile Menu Toggle
+// 🍔 Navbar Mobile Menu Toggle (Admin pages only)
 // ============================================
 function initNavbarMobileMenu() {
+    // Only initialize on admin pages
+    if (!document.body.classList.contains('admin-page')) return;
+
     const hamburger = document.getElementById('navbarHamburger');
     const menu = document.getElementById('navbarMobileMenu');
     if (!hamburger || !menu) return;
@@ -314,6 +317,126 @@ function initScrollReveal() {
     });
     
     revealElements.forEach(el => observer.observe(el));
+}
+
+// ============================================
+// ⌨️ Keyboard Shortcuts
+// ============================================
+function initKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Don't trigger shortcuts when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        
+        // Ctrl/Cmd + K = Focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            const search = document.getElementById('searchInput') || document.querySelector('input[type="search"]');
+            if (search) search.focus();
+        }
+        
+        // Ctrl/Cmd + N = New feedback (student)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            if (window.location.pathname === '/submit') return;
+            window.location.href = '/submit';
+        }
+        
+        // Escape = Close modals
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(function(modal) {
+                modal.classList.remove('active');
+            });
+        }
+        
+        // Admin dashboard shortcuts
+        if (window.location.pathname.startsWith('/admin')) {
+            if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                location.reload();
+            }
+            if (e.key === 'a' && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                const checkboxes = document.querySelectorAll('.feedback-select-checkbox');
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                checkboxes.forEach(cb => cb.checked = !allChecked);
+            }
+        }
+    });
+}
+
+// ============================================
+// ♿ Accessibility Features
+// ============================================
+function initAccessibility() {
+    // High contrast mode toggle
+    var contrastToggle = document.getElementById('highContrastToggle');
+    if (contrastToggle) {
+        contrastToggle.addEventListener('change', function() {
+            document.body.classList.toggle('high-contrast', this.checked);
+            localStorage.setItem('highContrast', this.checked ? 'true' : 'false');
+        });
+        // Restore preference
+        if (localStorage.getItem('highContrast') === 'true') {
+            contrastToggle.checked = true;
+            document.body.classList.add('high-contrast');
+        }
+    }
+    
+    // Font size adjustment
+    var fontSizeBtns = document.querySelectorAll('.font-size-btn');
+    fontSizeBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var size = this.dataset.size;
+            document.body.classList.remove('font-small', 'font-medium', 'font-large');
+            if (size !== 'medium') {
+                document.body.classList.add('font-' + size);
+            }
+            localStorage.setItem('fontSize', size);
+            fontSizeBtns.forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+        });
+    });
+    // Restore preference
+    var savedSize = localStorage.getItem('fontSize');
+    if (savedSize && savedSize !== 'medium') {
+        document.body.classList.add('font-' + savedSize);
+    }
+    
+    // Skip to main content link
+    var skipLink = document.getElementById('skipToMain');
+    if (skipLink) {
+        skipLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            var main = document.querySelector('main') || document.querySelector('.student-content');
+            if (main) {
+                main.setAttribute('tabindex', '-1');
+                main.focus();
+            }
+        });
+    }
+}
+function initTooltips() {
+    var tooltipElements = document.querySelectorAll('[data-tooltip]');
+    tooltipElements.forEach(function(el) {
+        el.addEventListener('mouseenter', function(e) {
+            var tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = el.dataset.tooltip;
+            document.body.appendChild(tooltip);
+            
+            var rect = el.getBoundingClientRect();
+            tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + 'px';
+            tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+            tooltip.classList.add('visible');
+            el._tooltip = tooltip;
+        });
+        el.addEventListener('mouseleave', function() {
+            if (el._tooltip) {
+                el._tooltip.remove();
+                el._tooltip = null;
+            }
+        });
+    });
 }
 
 // ============================================
@@ -971,10 +1094,114 @@ document.addEventListener('DOMContentLoaded', function() {
     initMobileMoreMenu();
     initAdminMobileDrawer();
     initMobileAdminDrawerActive();
-initMobileBottomNav();
+    initMobileBottomNav();
     initMobileFab();
     initMobileBadges();
+    initKeyboardShortcuts();
+    initTooltips();
+    initAccessibility();
 });
+
+// ============================================
+// 📥 Admin Export Functions
+// ============================================
+
+/**
+ * Export data as CSV file
+ */
+function exportToCSV(filename, headers, rows) {
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => {
+            const cellStr = String(cell || '');
+            if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                return '"' + cellStr.replace(/"/g, '""') + '"';
+            }
+            return cellStr;
+        }).join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+/**
+ * Export Student Logs
+ */
+function exportStudentLogs() {
+    fetch('/api/admin/export/students', {
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const headers = ['Student ID', 'Full Name', 'Email', 'Department', 'Year', 'Registered', 'Last Login', 'Status'];
+            const rows = data.students.map(s => [
+                s.student_id, s.full_name, s.email, s.department, s.year,
+                s.registered_at, s.last_login, s.status
+            ]);
+            exportToCSV('student_logs', headers, rows);
+        } else {
+            alert('Error exporting student logs: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        console.error('Export error:', err);
+        alert('Failed to export student logs');
+    });
+}
+
+/**
+ * Export Advanced Analytics
+ */
+function exportAnalytics() {
+    fetch('/api/admin/export/analytics', {
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const headers = ['Metric', 'Value', 'Description'];
+            const rows = data.metrics.map(m => [m.name, m.value, m.description]);
+            exportToCSV('advanced_analytics', headers, rows);
+        } else {
+            alert('Error exporting analytics: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        console.error('Export error:', err);
+        alert('Failed to export analytics');
+    });
+}
+
+/**
+ * Export System Logs
+ */
+function exportLogs() {
+    fetch('/api/admin/export/logs', {
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const headers = ['Timestamp', 'Level', 'User', 'Action', 'Details', 'IP Address'];
+            const rows = data.logs.map(l => [
+                l.timestamp, l.level, l.user, l.action, l.details, l.ip_address
+            ]);
+            exportToCSV('system_logs', headers, rows);
+        } else {
+            alert('Error exporting logs: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        console.error('Export error:', err);
+        alert('Failed to export logs');
+    });
+}
 
 
 

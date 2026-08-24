@@ -9157,6 +9157,157 @@ html.theme-dark .student-side-menu-logout-icon {
     border-radius: var(--radius-full);
 }
 
+/* ---- Trending Issues Widget ---- */
+.trending-issues-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem 1.4rem;
+    margin-bottom: 1.75rem;
+    box-shadow: var(--shadow-sm);
+}
+.trending-issues-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.85rem;
+}
+.trending-issues-header strong {
+    font-weight: 800;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+.trending-issues-count {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: rgba(30, 64, 175, 0.08);
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-full);
+}
+.trending-issues-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.trending-issue-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+.trending-issue-item:hover {
+    background: rgba(30, 64, 175, 0.05);
+}
+.trending-issue-category {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    flex: 1;
+}
+.trending-issue-count {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: rgba(30, 64, 175, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+}
+.trending-issue-rate {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* ---- Tooltips ---- */
+.tooltip {
+    position: fixed;
+    background: #1e293b;
+    color: #fff;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ---- Keyboard Shortcut Hints ---- */
+.kbd-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+}
+
+/* ---- Accessibility: High Contrast Mode ---- */
+body.high-contrast {
+    --text-primary: #000000;
+    --text-secondary: #1a1a1a;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f0f0f0;
+    --card-bg: #ffffff;
+    --card-border: #000000;
+    --border-color: #000000;
+    --primary: #0033cc;
+}
+body.high-contrast .btn,
+body.high-contrast .nav-link,
+body.high-contrast .btn-hero {
+    border-width: 2px;
+}
+body.high-contrast .stat-card,
+body.high-contrast .chart-card {
+    border: 2px solid #000;
+}
+
+/* ---- Accessibility: Font Sizing ---- */
+body.font-small {
+    font-size: 14px;
+}
+body.font-large {
+    font-size: 18px;
+}
+body.font-large h1 { font-size: 1.8rem; }
+body.font-large h2 { font-size: 1.5rem; }
+body.font-large .stat-card-value { font-size: 1.8rem; }
+
+/* ---- Skip to Main Content ---- */
+.skip-to-main {
+    position: absolute;
+    top: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    z-index: 10000;
+    font-weight: 700;
+    transition: top 0.2s ease;
+}
+.skip-to-main:focus {
+    top: 0;
+}
+
 /* ---- Chart cards ---- */
 .chart-card {
     border-radius: var(--radius-xl);
