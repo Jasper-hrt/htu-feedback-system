@@ -79,8 +79,7 @@ class SentiWordNetEngine:
         except Exception:
             return None
 
-        score = 0
-        count = 0
+        word_scores = []
 
         for word, tag in tagged:
             wn_tag = self.penn_to_wn(tag, wordnet)
@@ -88,21 +87,36 @@ class SentiWordNetEngine:
                 continue
 
             try:
-                synsets = wordnet.synsets(word, pos=wn_tag)
+                # Prefer synsets whose POS matches the tagged token; fall back
+                # to every sense if no POS-matched sense exists. Averaging over
+                # senses (instead of trusting synsets[0]) smooths out wrong-sense
+                # noise that previously made this engine the noisiest voter.
+                synsets = wordnet.synsets(word, pos=wn_tag) or wordnet.synsets(word)
             except Exception:
                 continue
 
             if not synsets:
                 continue
 
-            try:
-                senti = swn.senti_synset(synsets[0].name())
-                score += senti.pos_score() - senti.neg_score()
-                count += 1
-            except Exception:
+            senses = []
+            for syn in synsets:
+                try:
+                    senti = swn.senti_synset(syn.name())
+                    senses.append(senti.pos_score() - senti.neg_score())
+                except Exception:
+                    continue
+
+            if not senses:
                 continue
 
-        if count == 0:
+            # Use the informative (non-zero) senses when present; they carry the
+            # actual polarity. Fall back to the raw average otherwise.
+            informative = [s for s in senses if s != 0.0]
+            word_scores.append(
+                sum(informative) / len(informative) if informative else sum(senses) / len(senses)
+            )
+
+        if not word_scores:
             return None
 
-        return score / count
+        return sum(word_scores) / len(word_scores)

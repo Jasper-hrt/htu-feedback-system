@@ -285,6 +285,19 @@ def _build_obfuscated_regex(token: str) -> re.Pattern:
     return re.compile(rf"(?i)(?<!\w){pattern}(?!\w)")
 
 
+# Profanity regexes are static, so compile them once and reuse. Building them
+# on every clean_text() call (once per token per submission/chat message) was a
+# measurable, avoidable cost on the hot path.
+_PROFANITY_REGEXES = None
+
+
+def _get_profanity_regexes() -> dict:
+    global _PROFANITY_REGEXES
+    if _PROFANITY_REGEXES is None:
+        _PROFANITY_REGEXES = {tok: _build_obfuscated_regex(tok) for tok in PROFANITY}
+    return _PROFANITY_REGEXES
+
+
 # Precompile detection regexes.
 # NOTE: previously this could be expensive/trigger pathological regex compilation
 # for leetspeak/obfuscation. Detection regexes are not required for the current
@@ -328,7 +341,7 @@ def clean_text(text: str) -> str:
 
     # replace profanity with neutral alternatives
     for token, neutral in sorted(PROFANITY.items(), key=lambda kv: len(kv[0]), reverse=True):
-        rx = _build_obfuscated_regex(token)
+        rx = _get_profanity_regexes()[token]
         t = rx.sub(neutral, t)
 
     # remove special characters/symbols (keep letters/numbers and whitespace)
@@ -361,7 +374,7 @@ def censor_text(text: str, mask_char: str = "*") -> str:
     # Replace with neutral alternatives as well.
     t = str(text)
     for token, neutral in sorted(PROFANITY.items(), key=lambda kv: len(kv[0]), reverse=True):
-        rx = _build_obfuscated_regex(token)
+        rx = _get_profanity_regexes()[token]
         t = rx.sub(neutral, t)
     return t.strip()
 

@@ -646,3 +646,79 @@ class CustomLexiconManager:
         )
 
         return round(final_score, 4)
+
+    def learn_from_correction(self, text, corrected_sentiment, admin_name=None, max_terms=4):
+        """Active-learning: seed the database-backed lexicon with words that the
+        generic engines did not recognise, scored by the human reviewer's label.
+
+        This closes the loop between the AI Review Queue and the custom lexicon:
+        every reviewed feedback item whose sentiment the admin confirms/corrects
+        to a clear polarity (Positive/Negative) teaches the system the domain
+        vocabulary it was missing, so future feedback on those words is scored
+        correctly. Neutral labels carry no polarity, so they are skipped.
+
+        Words already present in the built-in or database lexicon are ignored
+        (so we never overwrite a tuned term), and only alphabetic, lowercase,
+        multi-character tokens are considered to avoid injecting hall names or
+        leetspeak artifacts. Returns the number of terms seeded.
+
+        Note: rows are added to the current DB session but not committed here --
+        the caller is expected to commit (kept in the same transaction).
+        """
+        if not text or corrected_sentiment not in ("positive", "negative"):
+            return 0
+
+        # Lexicon writes require a Flask app context (database session). Called
+        # outside one (e.g. tests), bail out safely and do nothing.
+        try:
+            from flask import has_app_context
+            if not has_app_context():
+                return 0
+        except Exception:
+            return 0
+
+        target = 0.5 if corrected_sentiment == "positive" else -0.5
+
+        try:
+            from sentiment.unknown_detector import UnknownWordDetector
+            detector = UnknownWordDetector()
+            unknown = detector.detect(text)
+        except Exception:
+            return 0
+
+        if not unknown:
+            return 0
+
+        # Prioritise the most frequently used unknown words in this feedback.
+        freq = {}
+        for w in re.findall(r"\b[a-zA-Z]+\b", str(text).lower()):
+            if w in unknown:
+                freq[w] = freq.get(w, 0) + 1
+        candidates = sorted(unknown, key=lambda w: freq.get(w, 0), reverse=True)
+
+        try:
+            from database import db, CustomLexicon
+        except Exception:
+            return 0
+
+        added = 0
+        for word in candidates:
+            if added >= max_terms:
+                break
+            if len(word) < 4 or not word.isalpha() or word[0].isupper():
+                continue
+            if CustomLexicon.query.filter_by(word=word).first():
+                continue
+            try:
+                db.session.add(CustomLexicon(
+                    word=word,
+                    sentiment_score=target,
+                    category="auto",
+                    is_active=True,
+                    added_by=(admin_name or "auto-learn"),
+                ))
+                added += 1
+            except Exception:
+                continue
+
+        return added

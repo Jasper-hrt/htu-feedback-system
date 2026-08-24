@@ -1,0 +1,86 @@
+[2026-08-24 10:48:03,451] WARNING in app: Using an auto-generated SECRET_KEY. Set the SECRET_KEY environment variable in production to preserve sessions and protect cookies.
+C:\Users\afunb\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask_limiter\extension.py:336: UserWarning: Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use. See: https://flask-limiter.readthedocs.io#configuring-a-storage-backend for documentation about configuring the storage backend.
+  warnings.warn(
+2026-08-24 10:48:03 | INFO     | Component: Database | Action: Initialization | Details: Database tables created
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+127.0.0.1 - - [24/Aug/2026 10:48:05] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:48:05] "GET /student/login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:48:05] "GET /admin/login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:48:05] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /admin/chat HTTP/1.1" 302 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /admin/login HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:49:55] "GET /static/images/htu-pic.jpg HTTP/1.1" 304 -
+2026-08-24 10:50:06 | INFO     | Admin: SRC Administrator | Action: Login Success | Details: Logged in
+127.0.0.1 - - [24/Aug/2026 10:50:06] "POST /admin/login HTTP/1.1" 302 -
+127.0.0.1 - - [24/Aug/2026 10:50:06] "GET /admin/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:50:06] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:06] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:07] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:07] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:07] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:07] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:36] "GET /admin/chat HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:50:36] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:36] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:36] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:36] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:36] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:36] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:43] "GET /admin/announcements HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:50:43] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:43] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:43] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:43] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:43] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:43] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:50] "GET /admin/students HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:50:50] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:50] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:50] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:50] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:50] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:50] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:53] "GET /admin/analytics HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:50:53] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:53] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:53] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:53] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:50:53] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:50:53] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:04] "GET /admin/solution-templates HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:51:04] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:04] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:51:04] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:04] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:51:04] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:04] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:12] "GET /admin/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:51:12] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:12] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:51:12] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:12] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:51:12] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:12] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:20] "GET /admin/change-password HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:51:20] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:20] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:51:20] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:20] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:51:20] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:20] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:27] "GET /admin/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 10:51:27] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:27] "GET /static/css/forum.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:51:27] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:27] "GET /static/css/phase3.css?v=1787568483 HTTP/1.1" 404 -
+127.0.0.1 - - [24/Aug/2026 10:51:27] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 10:51:27] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 12:16:24] "GET / HTTP/1.1" 200 -

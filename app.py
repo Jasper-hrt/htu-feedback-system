@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import os
+import re
 from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken
 from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag, ForumReplyVote
 from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
@@ -497,10 +498,11 @@ def _ensure_nltk_data():
         return
     _ensure_nltk_data._checked = True
 
-    # Fail-fast: apply a short network timeout for any NLTK download attempt.
-    import socket
-    _previous_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(5)
+    # NOTE: Do NOT use socket.setdefaulttimeout() here. That mutates the process-
+    # wide default and races with eventlet's listening socket creation: the
+    # listener inherits the short timeout and crashes accept() with TimeoutError
+    # after a few idle seconds. Downloads run in a daemon thread and are already
+    # wrapped in try/except so a slow/unreachable NLTK host cannot take down the app.
 
     # NLTK places resources under different subdirectories depending on type:
     #   - corpora:  wordnet, sentiwordnet, omw-1.4, ...
@@ -537,18 +539,15 @@ def _ensure_nltk_data():
             except LookupError:
                 pass
 
-        # Resource is genuinely missing. Attempt a single download (with the
-        # short timeout). Never raise — a missing corpus should degrade the
-        # sentiment pipeline gracefully, not crash the app.
+        # Resource is genuinely missing. Attempt a single download.
+        # Never raise — a missing corpus should degrade the sentiment
+        # pipeline gracefully, not crash the app.
         try:
             nltk.download(resource, quiet=True)
             print(f"[NLTK] Downloaded missing resource: {resource}")
         except Exception as e:
             print(f"[NLTK] WARNING: Could not download {resource}: {e}")
 
-    # Restore the previous default socket timeout.
-    if _previous_timeout is not None:
-        socket.setdefaulttimeout(_previous_timeout)
 
 
 with app.app_context():
@@ -1916,6 +1915,23 @@ def review_ai_feedback(feedback_id):
         old_category=old[1], new_category=new_category,
         old_urgency=old[2], new_urgency=new_urgency, notes=notes
     ))
+    # Active-learning loop: teach the custom lexicon any domain words the
+    # generic engines missed, scored by the human reviewer's label. Words are
+    # added to the session and persisted by the commit below.
+    if new_sentiment in ('positive', 'negative'):
+        try:
+            from sentiment.custom_lexicon import CustomLexiconManager
+            learned = CustomLexiconManager().learn_from_correction(
+                (feedback.feedback_text or ''), new_sentiment,
+                session.get('admin_name', 'admin'),
+            )
+            if learned:
+                log_admin_action(
+                    session['admin_name'], 'AI Review',
+                    f'Feedback ID {feedback.id}: auto-learned {learned} lexicon term(s)',
+                )
+        except Exception:
+            pass
     db.session.commit()
     log_admin_action(session['admin_name'], 'AI Review', f'Feedback ID {feedback.id}: {action}')
     return redirect(url_for('admin_ai_review'))

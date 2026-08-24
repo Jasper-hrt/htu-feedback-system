@@ -75,16 +75,6 @@ function initUrgencySlider() {
     }
 }
 
-function initFollowupToggle() {
-    const checkbox = document.getElementById('followupCheckbox');
-    const div = document.getElementById('followupEmailDiv');
-    if (checkbox && div) {
-        checkbox.addEventListener('change', function() {
-            div.classList.toggle('hidden', !this.checked);
-        });
-    }
-}
-
 function initAdminFilters() {
     const searchInput = document.getElementById('searchInput');
     const categoryFilter = document.getElementById('categoryFilter');
@@ -487,63 +477,10 @@ function initImageHandling() {
 }
 
 // ============================================
-// 🎯 Student Dropdown Menu
-// ============================================
-function initStudentDropdown() {
-    const toggle = document.getElementById('studentDropdownToggle');
-    const menu = document.getElementById('studentDropdownMenu');
-    const backdrop = document.getElementById('studentDropdownBackdrop');
-    
-    if (!toggle || !menu) return;
-    
-    function openDropdown() {
-        menu.classList.add('active');
-        toggle.classList.add('active');
-        if (backdrop) backdrop.classList.add('active');
-    }
-    
-    function closeDropdown() {
-        menu.classList.remove('active');
-        toggle.classList.remove('active');
-        if (backdrop) backdrop.classList.remove('active');
-    }
-    
-    function toggleDropdown(e) {
-        e.stopPropagation();
-        if (menu.classList.contains('active')) {
-            closeDropdown();
-        } else {
-            openDropdown();
-        }
-    }
-    
-    toggle.addEventListener('click', toggleDropdown);
-    
-    // Close on backdrop click
-    if (backdrop) {
-        backdrop.addEventListener('click', closeDropdown);
-    }
-    
-    // Close on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && menu.classList.contains('active')) {
-            closeDropdown();
-        }
-    });
-    
-    // Close on window resize (if small screen and menu is fixed)
-    window.addEventListener('resize', function() {
-        if (menu.classList.contains('active') && window.innerWidth <= 480) {
-            // Keep open on mobile - it's fine
-        }
-    });
-}
-
-// ============================================
 // 🎯 Active Page Highlight for Dropdown & Side Menu Links
 // ============================================
 function initActivePageHighlight() {
-    const links = document.querySelectorAll('.student-dropdown-link[data-page], .student-side-menu-link[data-page], .nav-profile-link[data-page]');
+    const links = document.querySelectorAll('.student-side-menu-link[data-page], .nav-profile-link[data-page]');
     if (links.length === 0) return;
 
     const path = window.location.pathname;
@@ -1018,7 +955,6 @@ function initMobileBadges() {
 
 document.addEventListener('DOMContentLoaded', function() {
     initUrgencySlider();
-    initFollowupToggle();
     initAdminFilters();
     initThemeToggle();
     initNavProfileMenus();
@@ -1029,7 +965,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initAnnouncementFilters();
     initHeroParallax();
     initImageHandling();
-initStudentDropdown();
     initStudentSideMenu();
     initMobileStudentDropdown();
     initActivePageHighlight();
