@@ -37,7 +37,7 @@
                     <p>Your Voice, Our Commitment</p>
                 </div>
             </a>
-<div class="navbar-links">
+<div class="navbar-links{% if request.path.startswith('/admin') and not request.path.endswith('/admin/login') %} navbar-links-admin{% endif %}">
                 <a href="/" class="nav-link" data-navpage="home">
                     <span class="nav-link-icon">🏠</span>
                     <span class="nav-link-text">Home</span>
@@ -58,6 +58,7 @@
                 </a>
                 {% endif %}
 
+                {% if not request.path.startswith('/admin') %}
                 {% if session.student_id %}
                 <!-- Student Profile Menu -->
                 <div class="nav-profile" id="studentProfileMenu">
@@ -146,6 +147,7 @@
                     <span class="nav-link-text">SRC Admin</span>
                 </a>
                 {% endif %}
+                {% endif %}
 
                 <label class="theme-toggle" title="Toggle theme">
                     <input id="themeToggle" type="checkbox" />
@@ -153,18 +155,11 @@
                 </label>
             </div>
 
-{% if request.path.startswith('/admin') and not request.path.endswith('/login') %}
-            <button class="navbar-admin-btn" id="navbarAdminMenuBtn" type="button" aria-label="Toggle admin menu" aria-expanded="false" title="Admin menu">
-                <span class="navbar-admin-btn-icon">🛡️</span>
-                <span class="navbar-admin-btn-label">Menu</span>
-            </button>
-            {% else %}
             <button class="navbar-hamburger" id="navbarHamburger" type="button" aria-label="Toggle navigation" aria-expanded="false">
                 <span class="hamburger-bar"></span>
                 <span class="hamburger-bar"></span>
                 <span class="hamburger-bar"></span>
             </button>
-            {% endif %}
             <label class="theme-toggle mobile-theme-toggle" title="Toggle theme">
                 <input id="themeToggleMobile" type="checkbox" />
                 <span class="theme-toggle-ui">🌙 Dark</span>
@@ -176,10 +171,30 @@
             <a href="/">🏠 Home</a>
             <a href="/announcements">📢 Announcements</a>
             <a href="/public">📊 Public Board</a>
+            {% if session.admin_id %}
+            <div class="mobile-menu-divider"></div>
+            <div class="mobile-menu-label">Admin Panel</div>
+            <a href="/admin/dashboard">📋 Dashboard</a>
+            <a href="/admin/analytics">📈 Analytics</a>
+            <a href="/admin/templates">📝 Templates</a>
+            <a href="/admin/solution-templates">🧩 Solution Templates</a>
+            <a href="/admin/students">👥 Students</a>
+            <a href="/admin/announcements">📢 Announcements</a>
+            <a href="/admin/ai-review">🔎 AI Review Queue</a>
+            <a href="/admin/lexicon-manager">🧠 Lexicon Manager</a>
+            <a href="/admin/ai-audit">🛡️ AI Audit Trail</a>
+            <a href="/admin/lexicon-gaps">🧠 Lexicon Gaps</a>
+            <a href="/admin/logs">📋 Logs</a>
+            <a href="/admin/chat">💬 Chat Rooms</a>
+            <a href="/admin/export/excel">📊 Export Excel</a>
+            <a href="/admin/change-password">🔑 Change Password</a>
+            <a href="/admin/logout" onclick="event.preventDefault(); document.getElementById('adminLogoutForm').submit();">⏻ Logout</a>
+            {% else %}
             {% if not session.student_id %}
             <a href="/student/login">🔑 Login</a>
             {% endif %}
             <a href="/admin/login">🔐 SRC Admin</a>
+            {% endif %}
         </div>
     </nav>
     

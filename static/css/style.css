@@ -166,6 +166,10 @@ html.theme-dark .navbar {
     flex-wrap: wrap;
 }
 
+.navbar-links-admin {
+    margin-left: auto;
+}
+
 /* ---- Premium Nav Link ---- */
 .nav-link {
     color: rgba(255, 255, 255, 0.85);
@@ -5900,6 +5904,13 @@ html.theme-dark .htu-logo-watermark {
     box-shadow: 0 6px 30px rgba(30,64,175,0.35);
 }
 
+.step-content-v2 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
 .step-icon-v2 {
     font-size: 2rem;
     margin-bottom: 0.85rem;
@@ -8915,6 +8926,11 @@ html.theme-dark .student-side-menu-logout-icon {
 }
 .admin-hero-content { z-index: 2; }
 .admin-hero-actions { z-index: 2; }
+.admin-hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
 .admin-hero-title {
     font-size: 1.7rem;
     letter-spacing: -0.015em;

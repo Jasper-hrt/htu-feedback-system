@@ -498,6 +498,22 @@
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
     }
 
+    /* Mobile menu divider and label */
+    .mobile-menu-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.2);
+        margin: 0.5rem 0;
+    }
+
+    .mobile-menu-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(255, 255, 255, 0.6);
+        padding: 0.5rem 0 0.25rem;
+    }
+
 .navbar-container {
         height: 56px;
         padding: 0 0.75rem;
@@ -568,11 +584,21 @@
         color: #fff;
         font-size: 1rem;
         margin-left: auto;
+        flex-shrink: 0;
     }
 
     .navbar-links .theme-toggle .theme-toggle-ui {
         font-size: 1rem;
         line-height: 1;
+    }
+
+    /* Prevent theme toggle from overlapping hamburger menu */
+    .navbar-links {
+        gap: 0.5rem;
+    }
+
+    .navbar-hamburger {
+        flex-shrink: 0;
     }
 }
 
@@ -1759,11 +1785,13 @@
     .dashboard-hero-title,
     .admin-hero-title {
         font-size: 1.2rem;
+        line-height: 1.25;
     }
     .landing-hero-subtitle-v2,
     .landing-hero-subtitle,
     .dashboard-hero-subtitle {
         font-size: 0.82rem;
+        line-height: 1.5;
     }
     .landing-hero-actions-v2,
     .dashboard-hero-actions,
@@ -1776,6 +1804,28 @@
     .admin-hero-actions > * {
         flex: 1 1 auto;
         justify-content: center;
+    }
+
+    /* Fix landing page overlapping */
+    .landing-hero-badge-v2 {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.8rem;
+    }
+    .landing-stats-v2 {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    .landing-stat-v2 {
+        padding: 0.75rem 0.5rem;
+    }
+    .landing-stat-value-v2 {
+        font-size: 1.1rem;
+    }
+    .landing-stat-label-v2 {
+        font-size: 0.7rem;
+    }
+    .title-wave {
+        font-size: 1rem;
     }
 }
 
@@ -2035,29 +2085,38 @@
         box-shadow: 0 4px 14px rgba(30,64,175,0.28);
     }
 
-    /* Icon + text column */
+    /* Content wrapper */
+    .step-content-v2 {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Icon */
     .step-icon-v2 {
         font-size: 1.05rem;
-        margin-bottom: 0.15rem;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         width: 1.9rem;
         height: 1.9rem;
         border-radius: 0.6rem;
         background: rgba(59,130,246,0.1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         flex-shrink: 0;
     }
 
     .step-title-v2 {
         font-size: 0.95rem;
-        margin-bottom: 0.15rem;
+        margin: 0;
+        line-height: 1.3;
     }
 
     .step-desc-v2 {
         font-size: 0.8rem;
         line-height: 1.5;
+        margin: 0;
     }
 }
 
@@ -4715,6 +4774,15 @@
         gap: 0.85rem;
     }
 
+    /* Admin hero text column */
+    .admin-hero-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+        min-width: 0;
+    }
+
     /* Shield avatar chip */
     .admin-hero-content::before {
         content: '🛡️';
@@ -4731,11 +4799,15 @@
         flex-shrink: 0;
     }
 
+    .admin-hero-eyebrow {
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+    }
+
     .admin-hero-title {
         font-size: 1.3rem;
-        line-height: 1.15;
+        line-height: 1.2;
         letter-spacing: -0.02em;
-        margin-bottom: 0.15rem;
     }
 
     .admin-hero-subtitle {
@@ -7628,8 +7700,8 @@
    ============================================================ */
 @media (max-width: 768px) {
     .admin-hero { padding: 1.3rem 1.15rem; border-radius: var(--radius-lg); }
-    .admin-hero-title { font-size: 1.35rem; }
-    .admin-hero-subtitle { font-size: 0.82rem; }
+    .admin-hero-title { font-size: 1.35rem; line-height: 1.2; }
+    .admin-hero-subtitle { font-size: 0.82rem; line-height: 1.4; }
     .admin-hero-actions { width: 100%; }
     .admin-hero-actions .btn-hero { flex: 1; justify-content: center; }
 
@@ -7657,11 +7729,24 @@
     .filter-bar-enhanced .filter-select { flex: 1 1 100%; }
 
     .table-modern-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* Fix admin dashboard overlapping */
+    .admin-hero-content { gap: 0.5rem; }
+    .admin-hero-eyebrow { font-size: 0.75rem; }
+    .quick-actions-label { font-size: 0.85rem; margin-top: 1rem; }
+    .phase3-action-copy { gap: 0.25rem; }
+    .phase3-action-title { font-size: 0.9rem; }
+    .phase3-action-desc { font-size: 0.75rem; }
+    .admin-intelligence-title { font-size: 0.9rem; }
+    .admin-intelligence-subtitle { font-size: 0.75rem; }
 }
 
 @media (max-width: 480px) {
     .student-content .stats-grid { grid-template-columns: 1fr; }
     .admin-hero-actions { flex-direction: column; }
+    .admin-hero { padding: 1rem 0.9rem; }
+    .admin-hero-title { font-size: 1.15rem; }
+    .admin-hero-subtitle { font-size: 0.78rem; }
 }
 
 /* ============================================================
