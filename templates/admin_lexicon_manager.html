@@ -30,7 +30,7 @@
 </aside><section class="student-content">
 <div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;"><div style="position: relative; z-index: 1;"><div class="admin-hero-title" style="font-size: 1.5rem;">🧠 Custom Lexicon Manager</div><div class="admin-hero-subtitle">Add or disable campus terms and phrases from the admin dashboard instead of editing Python code.</div></div><div class="admin-hero-actions" style="position: relative; z-index: 1;"><a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a></div></div>
 <div class="chart-card" style="margin-bottom:1rem;"><div class="chart-card-header"><div class="chart-card-title">➕ Add or update a term</div></div>
-<form method="POST" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:.75rem;align-items:end;">{{ csrf_field() }}
+   <form method="POST" class="lexicon-form-grid">{{ csrf_field() }}
 <label>Word / phrase<input name="word" required placeholder="e.g. yawa"></label><label>Sentiment score<input name="sentiment_score" type="number" min="-1" max="1" step=".1" required placeholder="-0.6"></label><label>Category<input name="category" value="general"></label><button class="btn-hero btn-hero-primary" type="submit">Save term</button></form>
 <p style="font-size:.8rem;color:var(--text-secondary);margin:.75rem 0 0;">Use -1 for strongly negative, 0 for neutral, and +1 for strongly positive. Review context before adding a term.</p></div>
 <div class="chart-card"><div class="chart-card-header"><div class="chart-card-title">📚 Managed terms ({{ entries|length }})</div></div>

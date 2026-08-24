@@ -7804,8 +7804,8 @@
     .chat-room-last { margin-left: 0; }
 
     /* Lexicon / AI review raw forms: stack the inline grids */
-    .admin-lexicon-manager form[method="POST"],
-    .admin-ai-review form[method="POST"] { grid-template-columns: 1fr !important; }
+    .review-form-grid,
+    .lexicon-form-grid { grid-template-columns: 1fr !important; }
 }
 
 @media (max-width: 480px) {

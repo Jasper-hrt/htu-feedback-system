@@ -144,9 +144,9 @@
                         <div class="form-group-enhanced">
                             <label class="form-label">⏳ Expires After</label>
                             <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-                                <input type="number" name="expires_days" class="form-input-enhanced" 
-                                       placeholder="Days" min="1" max="365"
-                                       style="width: 100px;">
+                                 <input type="number" name="expires_days" class="form-input-enhanced" 
+                                        placeholder="Days" min="1" max="365"
+                                        style="max-width: 100px;">
                                 <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">days</span>
                                 <label class="checkbox-label" style="padding: 0.35rem 0.75rem; background: transparent; border: none;">
                                     <input type="checkbox" id="noExpiry" checked onchange="toggleExpiry(this)">
@@ -177,7 +177,7 @@
                         <span class="filter-label" style="font-size: 0.75rem;">🔍</span>
                         <input type="text" id="announcementSearch" class="filter-input" 
                                placeholder="Search announcements..." 
-                               style="min-width: 120px; padding: 0.4rem 0.65rem; font-size: 0.8rem;">
+                                style="width: 100%; padding: 0.4rem 0.65rem; font-size: 0.8rem;">
                         <div class="announcements-filter-pills" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
                             <span class="announcements-filter-pill active" data-filter="all" onclick="filterAnnouncements(this, 'all')" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;">All</span>
                             <span class="announcements-filter-pill" data-filter="General" onclick="filterAnnouncements(this, 'General')" style="font-size: 0.7rem; padding: 0.25rem 0.6rem;">📢 General</span>

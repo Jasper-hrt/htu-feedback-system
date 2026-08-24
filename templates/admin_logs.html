@@ -58,7 +58,7 @@
         </div>
 
         <!-- 📊 Stats Grid -->
-        <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
             <div class="stat-card">
                 <div class="stat-card-accent" style="background: var(--primary);"></div>
                 <div class="stat-card-icon stat-card-icon-blue">📋</div>
@@ -97,7 +97,7 @@
                     <div class="chart-card-title">🎯 Log Severity Distribution</div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 1.5rem;">
-                    <div style="position: relative; width: 140px; height: 140px; flex-shrink: 0;">
+                    <div style="position: relative; width: min(140px, 100%); aspect-ratio: 1; flex-shrink: 1;">
                         <canvas id="severityChart"></canvas>
                     </div>
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">

@@ -94,7 +94,7 @@
     </div>
     {% if total_feedback > 0 %}
     <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
-        <div style="position: relative; width: 180px; height: 180px; flex-shrink: 0; margin: 0 auto;">
+        <div style="position: relative; width: min(180px, 100%); height: auto; aspect-ratio: 1; flex-shrink: 1; margin: 0 auto;">
             <canvas id="sentimentDonutChart" width="180" height="180"></canvas>
         </div>
         <div style="flex: 1; min-width: 200px;">

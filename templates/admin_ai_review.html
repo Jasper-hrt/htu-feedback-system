@@ -53,7 +53,7 @@
 {% if f.phase2_ai_explanation is string %}{{ f.phase2_ai_explanation }}{% else %}{{ f.phase2_ai_explanation.get('summary', f.phase2_ai_explanation.get('explanation', 'The AI explanation is not available.')) }}{% endif %}
 </div></details>
 {% endif %}
-<form method="POST" action="/admin/ai-review/{{ f.id }}" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;">
+<form method="POST" action="/admin/ai-review/{{ f.id }}" class="review-form-grid">
 {{ csrf_field() }}
 <label>Sentiment<select name="sentiment"><option value="positive" {% if f.sentiment=='positive' %}selected{% endif %}>Positive</option><option value="neutral" {% if f.sentiment=='neutral' %}selected{% endif %}>Neutral</option><option value="negative" {% if f.sentiment=='negative' %}selected{% endif %}>Negative</option></select></label>
 <label>Category<input name="category" value="{{ f.category or 'general' }}"></label>
