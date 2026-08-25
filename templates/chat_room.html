@@ -120,19 +120,36 @@ var studentName = "{{ session.student_name.split()[0] }}";
 var studentInitial = "{{ session.student_name.split()[0][0] }}";
 socket.emit('join', { room_id: roomId, username: studentName });
 
-var currentReply = null; // { id, author, preview }
+var currentReply = null;
+var replyDebounce = null;
 
 function startReply(id, author, previewText) {
+    // Instant reply - no delay
     currentReply = { id: id, author: author, preview: previewText };
+    var preview = document.getElementById('replyPreview');
     document.getElementById('replyPreviewAuthor').textContent = 'Replying to ' + author;
     document.getElementById('replyPreviewText').textContent = previewText;
-    document.getElementById('replyPreview').classList.add('active');
-    document.getElementById('messageInput').focus();
+    preview.classList.add('active');
+    preview.style.animation = 'slideUp 0.15s ease';
+    
+    // Focus input immediately
+    var input = document.getElementById('messageInput');
+    input.focus();
+    input.placeholder = 'Reply to ' + author + '...';
+    
+    // Highlight the message being replied to
+    var msgEl = document.querySelector('[data-message-id="' + id + '"]');
+    if (msgEl) {
+        msgEl.style.transition = 'background-color 0.2s ease';
+        msgEl.style.backgroundColor = 'rgba(59,130,246,0.12)';
+        setTimeout(function() { msgEl.style.backgroundColor = ''; }, 1500);
+    }
 }
 
 function cancelReply() {
     currentReply = null;
     document.getElementById('replyPreview').classList.remove('active');
+    document.getElementById('messageInput').placeholder = 'Type your message...';
 }
 document.getElementById('replyPreviewCancel').onclick = cancelReply;
 

@@ -178,29 +178,71 @@
             <div class="section-title"><span class="section-title-icon">📋</span> All Feedback <span class="badge badge-neutral" style="margin-left: 0.5rem;">{{ pagination.total if pagination else feedbacks|length }} total</span></div>
             <div style="display: flex; gap: 0.5rem; align-items: center;"><span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Showing {{ feedbacks|length }} items</span></div>
         </div>
-        <div class="table-modern-container admin-table-wrapper">
-            <table class="table-modern">
-                <thead>
-                    <tr><th style="width: 40px;">🚨</th><th>Feedback</th><th>Cleaned Text</th><th>Category</th><th>Sentiment</th><th>Urgency</th><th>Status</th><th>Assigned To</th><th style="width: 140px;">Actions</th></tr>
-                </thead>
-                <tbody id="feedbackTableBody">
-                    {% for f in feedbacks %}
-                    <tr>
-<td data-label="Urgency">{% if f.urgency_score >= 4 %}<span style="font-size: 1.1rem;" title="High urgency">🚨</span>{% elif f.urgency_score >= 3 %}<span style="font-size: 1.1rem;" title="Medium urgency">⚠️</span>{% else %}<span style="font-size: 1.1rem; opacity: 0.3;">·</span>{% endif %}</td>
-                        <td data-label="Feedback"><div class="feedback-text-cell" title="{{ f.feedback_text }}">{{ f.feedback_text[:80] }}{% if f.feedback_text|length > 80 %}...{% endif %}{% if f.has_profanity %}<span class="badge badge-danger" style="margin-left:0.35rem;font-size:0.65rem;">🤬 Profanity</span>{% endif %}</div></td>
-                        <td data-label="Cleaned Text"><div class="feedback-text-cell" title="{{ f.cleaned_text or '' }}" style="max-width:180px;">{% if f.cleaned_text %}{{ f.cleaned_text[:80] }}{% if f.cleaned_text|length > 80 %}...{% endif %}{% else %}<em style="color:var(--text-muted);font-size:0.8rem;">N/A</em>{% endif %}</div></td>
-                        <td data-label="Category"><span class="badge badge-info">{{ f.category }}</span></td>
-                        <td data-label="Sentiment"><span class="sentiment-dot sentiment-dot-{{ f.sentiment.lower() }}">{{ f.sentiment }}</span></td>
-                        <td data-label="Urgency Score">{% set u = f.urgency_score %}{% if u >= 5 %}<span class="urgency-badge urgency-critical">🔴 {{ u }}/5</span>{% elif u >= 4 %}<span class="urgency-badge urgency-high">🟠 {{ u }}/5</span>{% elif u >= 3 %}<span class="urgency-badge urgency-medium">🟡 {{ u }}/5</span>{% else %}<span class="urgency-badge urgency-low">🟢 {{ u }}/5</span>{% endif %}</td>
-                        <td data-label="Status"><form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}<select name="status" onchange="this.form.submit()" class="status-select status-{{ f.status.lower().replace(' ', '-') }}">{% for s in ['Pending', 'Acknowledged', 'In Progress', 'Resolved', 'Escalated'] %}<option value="{{ s }}" {% if f.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></form></td>
-                         <td data-label="Assigned To"><form method="POST" action="/admin/update/{{ f.id }}" style="display: flex; gap: 0.25rem; align-items: center;">{{ csrf_field() }}<input type="text" name="assigned_to" value="{{ f.assigned_to or '' }}" placeholder="Assign" style="padding: 0.25rem 0.5rem; border: 1px solid var(--border-color); border-radius: 0.4rem; font-size: 0.8rem; min-width: 0; width: 100%; background: var(--card-bg); color: var(--text-primary);"><button type="submit" class="action-btn" title="Save assignment">💾</button></form></td>
-                        <td data-label="Actions"><div class="action-btn-group"><button onclick="showAnalyzeModal({{ f.id }})" class="action-btn" title="Analyze sentiment">🔍</button><button onclick="showSolutionModal({{ f.id }})" class="action-btn" title="View recommendations">💡</button><button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn" title="Add response">💬</button><form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Are you sure you want to permanently delete this feedback?')" style="display:inline; margin:0;">{{ csrf_field() }}<button type="submit" class="action-btn action-btn-danger" title="Delete feedback">🗑️</button></form></div></td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="9" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary);"><div style="font-size: 2rem; margin-bottom: 0.5rem;">📭</div><div style="font-weight: 700; font-size: 1rem;">No feedback found</div><div style="font-size: 0.85rem; margin-top: 0.25rem;">Feedback submissions will appear here.</div></td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="section-header">
+            <div class="section-title"><span class="section-title-icon">📋</span> All Feedback <span class="badge badge-neutral" style="margin-left: 0.5rem;">{{ pagination.total if pagination else feedbacks|length }} total</span></div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;"><span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Showing {{ feedbacks|length }} items</span></div>
+        </div>
+        <div class="feedback-cards-container">
+            {% for f in feedbacks %}
+            <div class="feedback-card" data-status="{{ f.status }}" data-urgency="{{ f.urgency_score }}" data-category="{{ f.category }}">
+                <div class="feedback-card-header">
+                    <div class="feedback-card-id">
+                        <span class="feedback-id-badge">#{{ f.id }}</span>
+                        <span class="feedback-category-badge">{{ f.category }}</span>
+                    </div>
+                    <div class="feedback-card-badges">
+                        {% if f.urgency_score >= 5 %}<span class="urgency-pill urgency-critical">🔴 Critical</span>
+                        {% elif f.urgency_score >= 4 %}<span class="urgency-pill urgency-high">🟠 High</span>
+                        {% elif f.urgency_score >= 3 %}<span class="urgency-pill urgency-medium">🟡 Medium</span>
+                        {% else %}<span class="urgency-pill urgency-low">🟢 Low</span>{% endif %}
+                    </div>
+                </div>
+                <div class="feedback-card-body">
+                    <p class="feedback-text">{{ f.feedback_text[:120] }}{% if f.feedback_text|length > 120 %}...{% endif %}</p>
+                    {% if f.has_profanity %}<span class="profanity-tag">🤬 Profanity detected</span>{% endif %}
+                </div>
+                <div class="feedback-card-meta">
+                    <div class="meta-item">
+                        <span class="meta-icon">😊</span>
+                        <span class="meta-value sentiment-{{ f.sentiment.lower() }}">{{ f.sentiment }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">📅</span>
+                        <span class="meta-value">{{ f.created_at.strftime('%b %d') if f.created_at else 'N/A' }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">👤</span>
+                        <span class="meta-value">{{ f.assigned_to or 'Unassigned' }}</span>
+                    </div>
+                </div>
+                <div class="feedback-card-status">
+                    <form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}
+                        <div class="status-tabs">
+                            {% for s in ['Pending', 'Acknowledged', 'In Progress', 'Resolved', 'Escalated'] %}
+                            <button type="submit" name="status" value="{{ s }}" class="status-tab {% if f.status == s %}status-tab-active{% endif %} status-tab-{{ s.lower().replace(' ', '-') }}">{{ s }}</button>
+                            {% endfor %}
+                        </div>
+                    </form>
+                </div>
+                <div class="feedback-card-actions">
+                    <button onclick="showAnalyzeModal({{ f.id }})" class="card-action-btn" title="Analyze">🔍</button>
+                    <button onclick="showSolutionModal({{ f.id }})" class="card-action-btn" title="Recommendations">💡</button>
+                    <button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="card-action-btn" title="Response">💬</button>
+                    <form method="POST" action="/admin/update/{{ f.id }}" style="display:inline;">{{ csrf_field() }}
+                        <input type="text" name="assigned_to" value="{{ f.assigned_to or '' }}" placeholder="Assign to..." class="assign-input">
+                    </form>
+                    <form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Delete this feedback?')" style="display:inline;">{{ csrf_field() }}
+                        <button type="submit" class="card-action-btn card-action-danger" title="Delete">🗑️</button>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state-premium" style="grid-column: 1/-1;">
+                <div class="empty-state-premium-icon">📭</div>
+                <div class="empty-state-premium-title">No feedback found</div>
+                <div class="empty-state-premium-desc">Feedback submissions will appear here.</div>
+            </div>
+            {% endfor %}
         </div>
         {% if pagination and pagination.pages > 1 %}
         <div class="pagination-modern">

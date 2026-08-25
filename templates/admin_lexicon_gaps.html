@@ -63,12 +63,10 @@
             </div>
         </div>
 
-        <div class="alert alert-info" style="margin: 1rem 0;">
-            💡 <strong>How to read this:</strong> "Priority candidates" are words found in feedback that came out
-            <strong>Neutral</strong> — a Neutral result is often exactly what happens when no engine recognised the
-            text, so a word appearing here repeatedly is a real accuracy gap worth reviewing. Add words you agree
-            with to <code>sentiment/custom_lexicon.py</code> with an appropriate score (roughly -1.0 to +1.0),
-            then redeploy. This page doesn't edit the lexicon automatically — it's a report to guide manual review.
+        <div class="alert alert-info" style="margin: 1rem 0; padding: 1rem 1.25rem; line-height: 1.6;">
+            <strong>💡 How to read this:</strong><br>
+            "Priority candidates" are words found in feedback that came out <strong>Neutral</strong> — a Neutral result is often exactly what happens when no engine recognised the text, so a word appearing here repeatedly is a real accuracy gap worth reviewing.<br><br>
+            <strong>Action:</strong> Click "➕ Add" to add words directly to the lexicon, or use "➕ Add All" to import all suggestions at once. Sentiment scores are auto-suggested based on context.
         </div>
 
         <!-- Priority: Neutral-feedback gap words -->

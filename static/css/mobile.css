@@ -4938,7 +4938,61 @@
      • Misc      → section header, pagination & modal polish
    Desktop (style.css) and all other pages are left untouched.   */
 
-/* ---- 1. Hide redundant inline admin sidebar (drawer owns nav) ---- */
+/* ---- Premium Feedback Cards Mobile ---- */
+    .feedback-cards-container {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .feedback-card {
+        padding: 0.9rem;
+        border-radius: 0.875rem;
+    }
+
+    .feedback-card-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .feedback-card-id {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .feedback-card-badges {
+        width: 100%;
+    }
+
+    .feedback-text {
+        font-size: 0.85rem;
+    }
+
+    .feedback-card-meta {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .status-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0.25rem;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .status-tab {
+        white-space: nowrap;
+        font-size: 0.65rem;
+        padding: 0.3rem 0.5rem;
+    }
+
+    .feedback-card-actions {
+        justify-content: space-between;
+    }
+
+    .assign-input {
+        flex: 1;
+        min-width: 80px;
+    }
 @media (max-width: 768px) {
     .admin-sidebar {
         display: none;
@@ -5006,6 +5060,7 @@
     .alert {
         padding: 0.75rem 1rem;
         font-size: 0.8rem;
+        line-height: 1.5;
     }
 }
 

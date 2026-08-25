@@ -38,18 +38,29 @@
                 </div>
             </a>
 <div class="navbar-links{% if request.path.startswith('/admin') and not request.path.endswith('/admin/login') %} navbar-links-admin{% endif %}">
-                <a href="/" class="nav-link" data-navpage="home">
+                {% if request.path == '/' %}
+                <!-- Landing page navigation -->
+                <a href="/" class="nav-link nav-link-active" data-navpage="home">
                     <span class="nav-link-icon">🏠</span>
                     <span class="nav-link-text">Home</span>
-                </a>
-                <a href="/announcements" class="nav-link" data-navpage="announcements">
-                    <span class="nav-link-icon">📢</span>
-                    <span class="nav-link-text">Announcements</span>
                 </a>
                 <a href="/public" class="nav-link" data-navpage="public">
                     <span class="nav-link-icon">📊</span>
                     <span class="nav-link-text">Public Board</span>
                 </a>
+                {% if not session.admin_id and not session.student_id %}
+                <a href="/admin/login" class="nav-link nav-link-admin" data-navpage="admin-login">
+                    <span class="nav-link-icon">🛡️</span>
+                    <span class="nav-link-text">Admin</span>
+                </a>
+                {% endif %}
+                {% else %}
+                <!-- Other pages navigation -->
+                <a href="/announcements" class="nav-link" data-navpage="announcements">
+                    <span class="nav-link-icon">📢</span>
+                    <span class="nav-link-text">Announcements</span>
+                </a>
+                {% endif %}
 
                 {% if session.student_id %}
                 <a href="/submit" class="nav-cta nav-link" data-navpage="submit">

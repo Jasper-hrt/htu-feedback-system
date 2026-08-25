@@ -72,6 +72,15 @@
     {% endif %}
 </div>
 
+<!-- Reply to Preview Bar -->
+<div class="forum-reply-preview" id="forumReplyPreview">
+    <div class="forum-reply-preview-info">
+        <span class="forum-reply-preview-author" id="forumReplyPreviewAuthor"></span>
+        <span class="forum-reply-preview-text" id="forumReplyPreviewText"></span>
+    </div>
+    <button class="forum-reply-preview-cancel" id="forumReplyPreviewCancel" title="Cancel reply">✕</button>
+</div>
+
 <div id="repliesContainer" class="flex flex-col gap-3">
     {% for reply in replies %}
     <div class="reply-card" id="reply-{{ reply.id }}" data-net-votes="{{ reply.vote_count }}" data-created="{{ loop.index }}">
@@ -87,6 +96,12 @@
             {% if reply.is_flagged %}<span class="badge badge-danger" style="font-size: 0.65rem;">⚠️ Flagged</span>{% endif %}
             {% if reply.is_edited %}<span style="font-size: 0.7rem; color: var(--text-secondary);">(edited)</span>{% endif %}
         </div>
+        {% if reply.reply_to %}
+        <div class="reply-quote" onclick="scrollToReply({{ reply.reply_to.id }})">
+            <span class="reply-quote-author">{{ reply.reply_to.student.full_name.split()[0] if reply.reply_to.student else 'Student' }}</span>
+            <span class="reply-quote-text">{{ reply.reply_to.content[:100] }}</span>
+        </div>
+        {% endif %}
         <div class="reply-content">{{ reply.content }}</div>
         <div class="reply-voting" id="reply-voting-{{ reply.id }}">
             <button class="reply-vote-btn {% if reply_user_votes.get(reply.id) == 'up' %}upvoted{% endif %}"
@@ -99,11 +114,14 @@
                 <span>👎</span><span class="reply-vote-count-down">{{ reply.downvotes }}</span>
             </button>
         </div>
-        {% if reply.student_id == session.student_id %}
         <div class="reply-actions">
+            {% if reply.student_id == session.student_id %}
             <button class="btn btn-secondary btn-sm" onclick="editReply({{ reply.id }})">✏️ Edit</button>
+            {% endif %}
+            {% if not topic.is_locked %}
+            <button class="btn btn-secondary btn-sm reply-btn" onclick="replyToMessage({{ reply.id }}, '{{ reply.student.full_name.split()[0] if reply.student else 'Student' }}', '{{ reply.content[:80] }}')">↩ Reply</button>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
     {% else %}
     <div class="empty-state-premium" style="padding: 2rem 1rem;">
@@ -116,10 +134,11 @@
 
 <!-- ==================== REPLY FORM ==================== -->
 {% if not topic.is_locked %}
-<div class="reply-form">
+<div class="reply-form" id="replyForm">
     <h4>💬 Post a Reply</h4>
-    <form method="POST">
+    <form method="POST" action="/forum/topic/{{ topic.id }}/reply">
         {{ csrf_field() }}
+        <input type="hidden" name="reply_to_id" id="replyToId" value="">
         <div class="form-group-enhanced" style="margin-bottom: 0.75rem;">
             <textarea name="content" rows="4" required class="form-textarea-enhanced" placeholder="Type your reply here..." style="min-height: 100px;"></textarea>
         </div>
@@ -246,6 +265,35 @@ function sortReplies(mode) {
         return parseInt(a.dataset.created, 10) - parseInt(b.dataset.created, 10);
     });
     cards.forEach(function(c) { container.appendChild(c); });
+}
+
+// Reply to specific message
+var forumReplyTo = null;
+function replyToMessage(replyId, author, previewText) {
+    forumReplyTo = { id: replyId, author: author };
+    document.getElementById('forumReplyPreviewAuthor').textContent = 'Replying to ' + author;
+    document.getElementById('forumReplyPreviewText').textContent = previewText;
+    document.getElementById('forumReplyPreview').classList.add('active');
+    document.getElementById('replyToId').value = replyId;
+    document.getElementById('replyForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelector('#replyForm textarea').focus();
+}
+
+function cancelForumReply() {
+    forumReplyTo = null;
+    document.getElementById('forumReplyPreview').classList.remove('active');
+    document.getElementById('replyToId').value = '';
+}
+document.getElementById('forumReplyPreviewCancel').onclick = cancelForumReply;
+
+function scrollToReply(replyId) {
+    var el = document.getElementById('reply-' + replyId);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.transition = 'background-color 0.3s ease';
+        el.style.backgroundColor = 'rgba(59,130,246,0.12)';
+        setTimeout(function() { el.style.backgroundColor = ''; }, 1200);
+    }
 }
 </script>
 {% endblock %}
