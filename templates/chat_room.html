@@ -35,9 +35,11 @@
     <div class="chat-enhanced-messages" id="chatMessages">
         {% for msg in messages %}
         {% set is_own = msg.student_id == session.student_id %}
-        <div class="chat-bubble-wrap {% if is_own %}own{% endif %}">
+        <div class="chat-bubble-wrap {% if is_own %}own{% endif %}" data-message-id="{{ msg.id }}"
+             data-author="{{ msg.student.full_name.split()[0] if msg.student else 'Student' }}"
+             data-preview="{{ '🎤 Voice note' if msg.message_type == 'voice' else msg.message }}">
             {% if is_own %}
-            <button class="chat-bubble-reply-action" title="Reply" onclick="startReply({{ msg.id }}, {{ (msg.student.full_name.split()[0] if msg.student else 'Student')|tojson }}, {{ ('🎤 Voice note' if msg.message_type == 'voice' else msg.message)|tojson }})">↩</button>
+            <button class="chat-bubble-reply-action" title="Reply" onclick="startReply({{ msg.id }}, '{{ msg.student.full_name.split()[0] if msg.student else 'Student' }}', '{{ ('🎤 Voice note' if msg.message_type == 'voice' else msg.message)[:80] }}')">↩</button>
             {% endif %}
             <div class="chat-bubble {% if is_own %}own{% endif %} {% if msg.is_flagged %}chat-bubble-flagged{% endif %}" data-message-id="{{ msg.id }}">
                 {% if not is_own %}
@@ -82,10 +84,16 @@
                 {% endif %}
             </div>
             {% if not is_own %}
-            <button class="chat-bubble-reply-action" title="Reply" onclick="startReply({{ msg.id }}, {{ (msg.student.full_name.split()[0] if msg.student else 'Student')|tojson }}, {{ ('🎤 Voice note' if msg.message_type == 'voice' else msg.message)|tojson }})">↩</button>
+            <button class="chat-bubble-reply-action" title="Reply" onclick="startReply({{ msg.id }}, '{{ msg.student.full_name.split()[0] if msg.student else 'Student' }}', '{{ ('🎤 Voice note' if msg.message_type == 'voice' else msg.message)[:80] }}')">↩</button>
             {% endif %}
         </div>
         {% endfor %}
+    </div>
+
+    <!-- Swipe to Reply Indicator -->
+    <div class="swipe-reply-indicator" id="swipeIndicator">
+        <span class="swipe-icon">↩</span>
+        <span class="swipe-text">Reply</span>
     </div>
 
     <!-- Reply Preview Bar -->
@@ -122,6 +130,119 @@ socket.emit('join', { room_id: roomId, username: studentName });
 
 var currentReply = null;
 var replyDebounce = null;
+
+// Swipe to Reply
+(function() {
+    var startX = 0;
+    var startY = 0;
+    var currentX = 0;
+    var isDragging = false;
+    var dragThreshold = 60; // px to trigger reply
+    var activeBubble = null;
+    var indicator = document.getElementById('swipeIndicator');
+    
+    document.getElementById('chatMessages').addEventListener('touchstart', function(e) {
+        var bubble = e.target.closest('.chat-bubble-wrap');
+        if (!bubble) return;
+        activeBubble = bubble;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        currentX = startX;
+        isDragging = true;
+        bubble.style.transition = 'none';
+    }, { passive: true });
+    
+    document.getElementById('chatMessages').addEventListener('touchmove', function(e) {
+        if (!isDragging || !activeBubble) return;
+        currentX = e.touches[0].clientX;
+        var deltaX = currentX - startX;
+        var deltaY = e.touches[0].clientY - startY;
+        
+        // Only trigger horizontal swipe
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            activeBubble.style.transform = 'translateX(' + deltaX + 'px)';
+            activeBubble.style.opacity = 1 - (Math.abs(deltaX) / 300);
+            
+            // Show indicator when threshold reached
+            if (Math.abs(deltaX) > dragThreshold) {
+                indicator.classList.add('active');
+                indicator.style.transform = deltaX > 0 ? 'translateX(0)' : 'translateX(0)';
+            } else {
+                indicator.classList.remove('active');
+            }
+        }
+    }, { passive: true });
+    
+    document.getElementById('chatMessages').addEventListener('touchend', function(e) {
+        if (!isDragging || !activeBubble) return;
+        var deltaX = currentX - startX;
+        activeBubble.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        activeBubble.style.transform = '';
+        activeBubble.style.opacity = '';
+        
+        if (Math.abs(deltaX) > dragThreshold) {
+            // Trigger reply
+            var msgId = activeBubble.dataset.messageId;
+            var author = activeBubble.dataset.author;
+            var preview = activeBubble.dataset.preview;
+            startReply(parseInt(msgId), author, preview);
+        }
+        
+        indicator.classList.remove('active');
+        isDragging = false;
+        activeBubble = null;
+    });
+    
+    // Mouse support for desktop
+    document.getElementById('chatMessages').addEventListener('mousedown', function(e) {
+        var bubble = e.target.closest('.chat-bubble-wrap');
+        if (!bubble) return;
+        activeBubble = bubble;
+        startX = e.clientX;
+        startY = e.clientY;
+        currentX = startX;
+        isDragging = true;
+        bubble.style.transition = 'none';
+        e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging || !activeBubble) return;
+        currentX = e.clientX;
+        var deltaX = currentX - startX;
+        var deltaY = e.clientY - startY;
+        
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            activeBubble.style.transform = 'translateX(' + deltaX + 'px)';
+            activeBubble.style.opacity = 1 - (Math.abs(deltaX) / 300);
+            
+            if (Math.abs(deltaX) > dragThreshold) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+        if (!isDragging || !activeBubble) return;
+        var deltaX = currentX - startX;
+        activeBubble.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+        activeBubble.style.transform = '';
+        activeBubble.style.opacity = '';
+        
+        if (Math.abs(deltaX) > dragThreshold) {
+            var msgId = activeBubble.dataset.messageId;
+            var author = activeBubble.dataset.author;
+            var preview = activeBubble.dataset.preview;
+            startReply(parseInt(msgId), author, preview);
+        }
+        
+        indicator.classList.remove('active');
+        isDragging = false;
+        activeBubble = null;
+    });
+})();
 
 function startReply(id, author, previewText) {
     // Instant reply - no delay

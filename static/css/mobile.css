@@ -4938,10 +4938,64 @@
      • Misc      → section header, pagination & modal polish
    Desktop (style.css) and all other pages are left untouched.   */
 
-/* ---- Premium Feedback Cards Mobile ---- */
-    .feedback-cards-container {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
+/* ---- Premium Table Mobile ---- */
+    .premium-table-container {
+        border-radius: 0.75rem;
+    }
+    
+    .premium-table {
+        font-size: 0.8rem;
+    }
+    
+    .premium-table thead th {
+        padding: 0.6rem 0.5rem;
+        font-size: 0.65rem;
+    }
+    
+    .premium-table td {
+        padding: 0.5rem;
+    }
+    
+    /* Hide less important columns on mobile */
+    .col-check,
+    .col-id,
+    .col-category,
+    .col-date {
+        display: none;
+    }
+    
+    .col-feedback { min-width: 150px; }
+    .col-sentiment { width: 90px; }
+    .col-urgency { width: 80px; }
+    .col-status { width: 110px; }
+    .col-actions { width: 100px; }
+    
+    .feedback-text-snippet {
+        font-size: 0.8rem;
+    }
+    
+    .action-btn {
+        width: 1.5rem;
+        height: 1.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .col-assign {
+        display: none;
+    }
+    
+    .urgency-meter {
+        gap: 0.15rem;
+    }
+    
+    .urgency-dot {
+        width: 0.4rem;
+        height: 0.4rem;
+    }
+    
+    .status-select {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.4rem;
     }
 
     .feedback-card {
