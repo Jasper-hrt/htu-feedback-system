@@ -2213,9 +2213,7 @@ def admin_ai_audit():
 def admin_lexicon_gaps():
     from sentiment.unknown_detector import UnknownWordDetector
 
-    # Cap the scan to the most recent 1000 items -- comfortably enough
-    # to spot real patterns without straining the free-tier DB/instance
-    # on every page load.
+    # Cap the scan to the most recent 1000 items
     recent_feedback = (
         Feedback.query
         .order_by(Feedback.id.desc())
@@ -2227,11 +2225,147 @@ def admin_lexicon_gaps():
     detector = UnknownWordDetector()
     report = detector.scan_feedback_for_gaps(feedback_items, top_n=40)
 
+    # Add sentiment suggestions to gap words
+    def suggest_score(word, example_text):
+        """Simple sentiment suggestion based on context words."""
+        negative_words = ['bad', 'terrible', 'worst', 'hate', 'awful', 'poor', 'broken', 'not', 'no', 'never', 'slow', 'problem', 'issue', 'fail', 'wrong', 'difficult', 'hard', 'lack', 'need', 'missing']
+        positive_words = ['good', 'great', 'best', 'love', 'excellent', 'amazing', 'wonderful', 'perfect', 'nice', 'happy', 'easy', 'fast', 'improve', 'better', 'awesome', 'helpful']
+        
+        text_lower = example_text.lower()
+        neg_count = sum(1 for w in negative_words if w in text_lower)
+        pos_count = sum(1 for w in positive_words if w in text_lower)
+        
+        if neg_count > pos_count:
+            return round(-0.3 * neg_count, 1)
+        elif pos_count > neg_count:
+            return round(0.3 * pos_count, 1)
+        return 0.0
+
+    # Enrich gap words with suggestions
+    for item in report.get('neutral_gap_words', []):
+        item['suggested_score'] = suggest_score(item['word'], item.get('example', ''))
+    
+    for item in report.get('all_gap_words', []):
+        item['suggested_score'] = suggest_score(item['word'], item.get('example', ''))
+
     return render_template('admin_lexicon_gaps.html',
                            scanned_count=report['scanned_count'],
                            total_feedback=len(recent_feedback),
                            neutral_gap_words=report['neutral_gap_words'],
                            all_gap_words=report['all_gap_words'])
+
+@app.route('/admin/api/lexicon/add-word', methods=['POST'])
+@src_required
+def api_lexicon_add_word():
+    """Add a single word to the custom lexicon."""
+    data = request.get_json()
+    word = data.get('word', '').strip().lower()
+    score = float(data.get('sentiment_score', 0))
+    category = data.get('category', 'general')
+    
+    if not word:
+        return jsonify({'success': False, 'error': 'Word is required'})
+    
+    # Check if word already exists
+    existing = CustomLexicon.query.filter_by(word=word).first()
+    if existing:
+        existing.sentiment_score = score
+        existing.category = category
+        existing.is_active = True
+    else:
+        entry = CustomLexicon(
+            word=word,
+            sentiment_score=score,
+            category=category,
+            is_active=True
+        )
+        db.session.add(entry)
+    
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'Lexicon Add', f'Word "{word}" score={score}')
+    return jsonify({'success': True})
+
+@app.route('/admin/api/lexicon/add-words-bulk', methods=['POST'])
+@src_required
+def api_lexicon_add_words_bulk():
+    """Add multiple words to the custom lexicon."""
+    data = request.get_json()
+    words = data.get('words', [])
+    
+    count = 0
+    for item in words:
+        word = item.get('word', '').strip().lower()
+        score = float(item.get('sentiment_score', 0))
+        if not word:
+            continue
+        
+        existing = CustomLexicon.query.filter_by(word=word).first()
+        if existing:
+            existing.sentiment_score = score
+            existing.is_active = True
+        else:
+            entry = CustomLexicon(word=word, sentiment_score=score, category='general', is_active=True)
+            db.session.add(entry)
+        count += 1
+    
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'Lexicon Bulk Add', f'{count} words added')
+    return jsonify({'success': True, 'count': count})
+
+@app.route('/admin/api/ai-review/<int:feedback_id>/quick-approve', methods=['POST'])
+@src_required
+def api_ai_review_quick_approve(feedback_id):
+    """Quick approve an AI classification."""
+    feedback = Feedback.query.get_or_404(feedback_id)
+    # Mark as reviewed by creating an audit log
+    log = AIReviewLog(
+        feedback_id=feedback_id,
+        action='approved',
+        admin_name=session.get('admin_name'),
+        notes='Quick approved via review queue'
+    )
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/admin/api/ai-review/<int:feedback_id>/quick-reject', methods=['POST'])
+@src_required
+def api_ai_review_quick_reject(feedback_id):
+    """Quick reject an AI classification."""
+    feedback = Feedback.query.get_or_404(feedback_id)
+    log = AIReviewLog(
+        feedback_id=feedback_id,
+        action='rejected',
+        admin_name=session.get('admin_name'),
+        notes='Quick rejected via review queue'
+    )
+    db.session.add(log)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/admin/api/ai-review/bulk-approve', methods=['POST'])
+@src_required
+def api_ai_review_bulk_approve():
+    """Bulk approve multiple AI classifications."""
+    data = request.get_json()
+    ids = data.get('ids', [])
+    
+    count = 0
+    for fid in ids:
+        feedback = Feedback.query.get(fid)
+        if feedback:
+            log = AIReviewLog(
+                feedback_id=fid,
+                action='approved',
+                admin_name=session.get('admin_name'),
+                notes='Bulk approved via review queue'
+            )
+            db.session.add(log)
+            count += 1
+    
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'AI Review Bulk Approve', f'{count} items approved')
+    return jsonify({'success': True, 'count': count})
 
 @app.route('/admin/logs')
 @src_required

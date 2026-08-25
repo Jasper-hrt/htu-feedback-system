@@ -75,6 +75,7 @@
         <div class="chart-card">
             <div class="chart-card-header">
                 <div class="chart-card-title">⚠️ Priority Candidates (from Neutral feedback)</div>
+                <button onclick="addAllGapWords()" class="btn-hero btn-hero-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">➕ Add All to Lexicon</button>
             </div>
             {% if neutral_gap_words %}
             <div style="overflow-x: auto;">
@@ -83,15 +84,21 @@
                         <tr>
                             <th>Word</th>
                             <th>Occurrences</th>
-                            <th>Example Feedback</th>
+                            <th>Suggested Score</th>
+                            <th>Context</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in neutral_gap_words %}
-                        <tr>
+                        <tr id="gap-row-{{ loop.index }}">
                             <td><strong>{{ item.word }}</strong></td>
                             <td><span class="badge badge-warning">{{ item.count }}</span></td>
+                            <td><span class="badge badge-info">{{ item.suggested_score }}</span></td>
                             <td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
+                            <td>
+                                <button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -118,15 +125,21 @@
                         <tr>
                             <th>Word</th>
                             <th>Occurrences</th>
-                            <th>Example Feedback</th>
+                            <th>Suggested Score</th>
+                            <th>Context</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in all_gap_words %}
-                        <tr>
+                        <tr id="gap-all-row-{{ loop.index }}">
                             <td>{{ item.word }}</td>
                             <td><span class="badge badge-info">{{ item.count }}</span></td>
+                            <td><span class="badge badge-info">{{ item.suggested_score }}</span></td>
                             <td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
+                            <td>
+                                <button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -143,4 +156,50 @@
 
     </section>
 </div>
+
+<script>
+function addToLexicon(word, score) {
+    fetch('/admin/api/lexicon/add-word', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ word: word, sentiment_score: parseFloat(score), category: 'general' })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Hide the row
+            document.querySelectorAll('#gap-row- td:first-child, #gap-all-row- td:first-child').forEach(td => {
+                if (td.textContent.trim() === word) {
+                    td.closest('tr').style.opacity = '0.5';
+                    td.closest('tr').querySelector('button').disabled = true;
+                    td.closest('tr').querySelector('button').textContent = '✓ Added';
+                }
+            });
+            if (typeof showToast === 'function') showToast('"' + word + '" added to lexicon', 'success');
+        }
+    });
+}
+
+function addAllGapWords() {
+    var words = [];
+    document.querySelectorAll('tbody tr').forEach(tr => {
+        var word = tr.querySelector('td:first-child')?.textContent.trim();
+        var score = tr.querySelector('td:nth-child(3) .badge')?.textContent.trim();
+        if (word && score) words.push({ word: word, sentiment_score: parseFloat(score) });
+    });
+    
+    fetch('/admin/api/lexicon/add-words-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ words: words })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showToast === 'function') showToast(data.count + ' words added to lexicon', 'success');
+            setTimeout(() => location.reload(), 1500);
+        }
+    });
+}
+</script>
 {% endblock %}

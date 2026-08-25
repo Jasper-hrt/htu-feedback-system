@@ -29,12 +29,121 @@
 </div>
 </aside><section class="student-content">
 <div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;"><div style="position: relative; z-index: 1;"><div class="admin-hero-title" style="font-size: 1.5rem;">🧠 Custom Lexicon Manager</div><div class="admin-hero-subtitle">Add or disable campus terms and phrases from the admin dashboard instead of editing Python code.</div></div><div class="admin-hero-actions" style="position: relative; z-index: 1;"><a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a></div></div>
-<div class="chart-card" style="margin-bottom:1rem;"><div class="chart-card-header"><div class="chart-card-title">➕ Add or update a term</div></div>
-   <form method="POST" class="lexicon-form-grid">{{ csrf_field() }}
-<label>Word / phrase<input name="word" required placeholder="e.g. yawa"></label><label>Sentiment score<input name="sentiment_score" type="number" min="-1" max="1" step=".1" required placeholder="-0.6"></label><label>Category<input name="category" value="general"></label><button class="btn-hero btn-hero-primary" type="submit">Save term</button></form>
-<p style="font-size:.8rem;color:var(--text-secondary);margin:.75rem 0 0;">Use -1 for strongly negative, 0 for neutral, and +1 for strongly positive. Review context before adding a term.</p></div>
-<div class="chart-card"><div class="chart-card-header"><div class="chart-card-title">📚 Managed terms ({{ entries|length }})</div></div>
-<div style="overflow-x:auto;"><table class="table-modern"><thead><tr><th>Term</th><th>Score</th><th>Category</th><th>Status</th><th>Action</th></tr></thead><tbody>
-{% for e in entries %}<tr><td><strong>{{e.word}}</strong></td><td>{{'%.2f'|format(e.sentiment_score)}}</td><td>{{e.category}}</td><td>{% if e.is_active %}Active{% else %}Disabled{% endif %}</td><td><form method="POST" action="/admin/lexicon-manager/{{e.id}}/toggle" style="display:inline;">{{csrf_field()}}<button class="btn-hero" type="submit">{% if e.is_active %}Disable{% else %}Enable{% endif %}</button></form> <form method="POST" action="/admin/lexicon-manager/{{e.id}}/delete" style="display:inline;">{{csrf_field()}}<button class="btn-hero" type="submit">Delete</button></form></td></tr>{% endfor %}
+
+<!-- Stats -->
+<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1rem;">
+    <div class="stat-card">
+        <div class="stat-card-accent" style="background: var(--primary);"></div>
+        <div class="stat-card-icon stat-card-icon-blue">📚</div>
+        <div class="stat-card-value" style="color: var(--primary);">{{ entries|length }}</div>
+        <div class="stat-card-label">Total Terms</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-accent" style="background: #10b981;"></div>
+        <div class="stat-card-icon" style="background: rgba(16,185,129,0.1); color: #10b981;">✓</div>
+        <div class="stat-card-value" style="color: #10b981;">{{ entries|selectattr('is_active')|list|length }}</div>
+        <div class="stat-card-label">Active Terms</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-accent" style="background: var(--warning);"></div>
+        <div class="stat-card-icon stat-card-icon-amber">⏸️</div>
+        <div class="stat-card-value" style="color: var(--warning);">{{ entries|rejectattr('is_active')|list|length }}</div>
+        <div class="stat-card-label">Disabled Terms</div>
+    </div>
+</div>
+
+<!-- Add/Import Section -->
+<div class="chart-card" style="margin-bottom:1rem;">
+    <div class="chart-card-header">
+        <div class="chart-card-title">➕ Add or import terms</div>
+    </div>
+    <form method="POST" class="lexicon-form-grid" style="margin-bottom: 1rem;">{{ csrf_field() }}
+        <label>Word / phrase<input name="word" required placeholder="e.g. yawa"></label>
+        <label>Sentiment score<input name="sentiment_score" type="number" min="-1" max="1" step=".1" required placeholder="-0.6"></label>
+        <label>Category<input name="category" value="general"></label>
+        <button class="btn-hero btn-hero-primary" type="submit">Save term</button>
+    </form>
+    <p style="font-size:.8rem;color:var(--text-secondary);margin:.75rem 0 0;">Use -1 for strongly negative, 0 for neutral, and +1 for strongly positive. Review context before adding a term.</p>
+    
+    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button onclick="exportLexicon()" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📥 Export CSV</button>
+            <button onclick="document.getElementById('importFile').click()" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📤 Import CSV</button>
+            <input type="file" id="importFile" accept=".csv" style="display: none;" onchange="importLexicon(this)">
+            <a href="/admin/lexicon-gaps" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">🔍 View Gaps</a>
+        </div>
+    </div>
+</div>
+
+<!-- Terms Table -->
+<div class="chart-card"><div class="chart-card-header">
+    <div class="chart-card-title">📚 Managed terms ({{ entries|length }})</div>
+    <div style="display: flex; gap: 0.5rem;">
+        <select id="categoryFilter" onchange="filterByCategory()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
+            <option value="">All Categories</option>
+            <option value="general">General</option>
+            <option value="academic">Academic</option>
+            <option value="facilities">Facilities</option>
+            <option value="ict">ICT</option>
+        </select>
+    </div>
+</div>
+<div style="overflow-x:auto;"><table class="table-modern"><thead><tr><th>Term</th><th>Score</th><th>Category</th><th>Status</th><th>Frequency</th><th>Action</th></tr></thead><tbody id="lexiconTableBody">
+{% for e in entries %}<tr data-category="{{ e.category }}"><td><strong>{{e.word}}</strong></td><td>{{'%.2f'|format(e.sentiment_score)}}</td><td>{{e.category}}</td><td>{% if e.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-secondary">Disabled</span>{% endif %}</td><td>{{ e.frequency or 0 }}</td><td><form method="POST" action="/admin/lexicon-manager/{{e.id}}/toggle" style="display:inline;">{{csrf_field()}}<button class="btn-hero" type="submit" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">{% if e.is_active %}Disable{% else %}Enable{% endif %}</button></form> <form method="POST" action="/admin/lexicon-manager/{{e.id}}/delete" style="display:inline;">{{csrf_field()}}<button class="btn-hero" type="submit" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Delete</button></form></td></tr>{% endfor %}
 </tbody></table></div></div>
-</section></div>{% endblock %}
+
+</section></div>
+
+<script>
+function exportLexicon() {
+    var rows = [['word', 'sentiment_score', 'category']];
+    document.querySelectorAll('#lexiconTableBody tr').forEach(function(tr) {
+        var cells = tr.querySelectorAll('td');
+        if (cells.length >= 3) {
+            rows.push([cells[0].textContent.trim(), cells[1].textContent.trim(), cells[2].textContent.trim()]);
+        }
+    });
+    var csv = rows.map(r => r.join(',')).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'lexicon_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
+}
+
+function importLexicon(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var lines = e.target.result.split('\n').slice(1);
+        var words = [];
+        lines.forEach(function(line) {
+            var parts = line.split(',');
+            if (parts.length >= 2 && parts[0].trim()) {
+                words.push({ word: parts[0].trim(), sentiment_score: parseFloat(parts[1]) || 0, category: parts[2]?.trim() || 'general' });
+            }
+        });
+        if (words.length === 0) return;
+        fetch('/admin/api/lexicon/add-words-bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+            body: JSON.stringify({ words: words })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && typeof showToast === 'function') showToast(data.count + ' words imported', 'success');
+            setTimeout(() => location.reload(), 1500);
+        });
+    };
+    reader.readAsText(file);
+}
+
+function filterByCategory() {
+    var cat = document.getElementById('categoryFilter').value;
+    document.querySelectorAll('#lexiconTableBody tr').forEach(function(tr) {
+        tr.style.display = (!cat || tr.dataset.category === cat) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

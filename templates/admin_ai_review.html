@@ -33,18 +33,50 @@
 <div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;">
 <div style="position: relative; z-index: 1;"><div class="admin-hero-title" style="font-size: 1.5rem;">🔎 AI Review Queue</div>
 <div class="admin-hero-subtitle">Feedback with low AI confidence is held here for an administrator to verify before it is trusted.</div></div>
-<div class="admin-hero-actions" style="position: relative; z-index: 1;"><a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a><span class="btn-hero btn-hero-primary">{{ review_count }} items need review</span></div>
+<div class="admin-hero-actions" style="position: relative; z-index: 1;">
+    <a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
+    <span class="btn-hero btn-hero-primary">{{ review_count }} items need review</span>
 </div>
+</div>
+
+<!-- Filters -->
+<div class="chart-card" style="margin-bottom: 1rem; padding: 1rem;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+        <label style="font-size: 0.8rem; font-weight: 600;">Filter:</label>
+        <select id="sentimentFilter" onchange="filterReviews()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
+            <option value="">All Sentiments</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+        </select>
+        <select id="urgencyFilter" onchange="filterReviews()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
+            <option value="">All Urgency</option>
+            <option value="5">Critical (5)</option>
+            <option value="4">High (4)</option>
+            <option value="3">Medium (3)</option>
+            <option value="1">Low (1-2)</option>
+        </select>
+        <button onclick="selectAllVisible()" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">Select All</button>
+        <button onclick="approveSelected()" class="btn-hero btn-hero-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">✓ Approve Selected</button>
+    </div>
+</div>
+
 {% if reviews %}
 {% for f in reviews %}
-<div class="chart-card" style="margin-bottom:1rem;">
-<div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
-<div>
-<strong>#{{ f.id }} · {{ f.category or 'Uncategorized' }}</strong>
-<div style="color:var(--text-secondary);font-size:.85rem;margin-top:.25rem;">{{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}</div>
-</div>
-<div><span class="badge badge-warning">Confidence: {{ f.confidence_score if f.confidence_score is not none else 'Unknown' }}%</span>
-<span class="badge">Urgency {{ f.urgency_score }}/5</span></div>
+<div class="chart-card review-card" style="margin-bottom:1rem;" data-sentiment="{{ f.sentiment }}" data-urgency="{{ f.urgency_score }}">
+<div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:start;">
+    <div style="display: flex; gap: 0.75rem; align-items: start;">
+        <input type="checkbox" class="review-select" value="{{ f.id }}" style="width: 1.2rem; height: 1.2rem; margin-top: 0.2rem;">
+        <div>
+            <strong>#{{ f.id }} · {{ f.category or 'Uncategorized' }}</strong>
+            <div style="color:var(--text-secondary);font-size:.85rem;margin-top:.25rem;">{{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}</div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <span class="badge badge-{% if f.confidence_score < 30 %}danger{% elif f.confidence_score < 55 %}warning{% else %}info{% endif %}">Confidence: {{ f.confidence_score if f.confidence_score is not none else 'Unknown' }}%</span>
+        <span class="badge badge-{% if f.urgency_score >= 4 %}danger{% elif f.urgency_score >= 3 %}warning{% else %}info{% endif %}">Urgency {{ f.urgency_score }}/5</span>
+        <span class="badge badge-{% if f.sentiment == 'positive' %}success{% elif f.sentiment == 'negative' %}danger{% else %}secondary{% endif %}">{{ f.sentiment }}</span>
+    </div>
 </div>
 <p style="margin:1rem 0;"><strong>Student feedback:</strong> {{ f.feedback_text }}</p>
 {% if f.phase2_ai_explanation %}
@@ -53,6 +85,10 @@
 {% if f.phase2_ai_explanation is string %}{{ f.phase2_ai_explanation }}{% else %}{{ f.phase2_ai_explanation.get('summary', f.phase2_ai_explanation.get('explanation', 'The AI explanation is not available.')) }}{% endif %}
 </div></details>
 {% endif %}
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+    <button onclick="quickApprove({{ f.id }})" class="btn-hero btn-hero-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">✓ Quick Approve</button>
+    <button onclick="quickReject({{ f.id }})" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">✗ Quick Reject</button>
+</div>
 <form method="POST" action="/admin/ai-review/{{ f.id }}" class="review-form-grid">
 {{ csrf_field() }}
 <label>Sentiment<select name="sentiment"><option value="positive" {% if f.sentiment=='positive' %}selected{% endif %}>Positive</option><option value="neutral" {% if f.sentiment=='neutral' %}selected{% endif %}>Neutral</option><option value="negative" {% if f.sentiment=='negative' %}selected{% endif %}>Negative</option></select></label>
@@ -73,4 +109,77 @@
 <div class="chart-card"><div class="empty-state-premium"><div class="empty-state-premium-icon">✅</div><div class="empty-state-premium-title">No feedback waiting for review</div><div class="empty-state-premium-desc">The AI currently has no low-confidence cases in the queue.</div></div></div>
 {% endif %}
 </section></div>
+
+<script>
+function filterReviews() {
+    var sentiment = document.getElementById('sentimentFilter').value;
+    var urgency = document.getElementById('urgencyFilter').value;
+    document.querySelectorAll('.review-card').forEach(function(card) {
+        var matchSentiment = !sentiment || card.dataset.sentiment === sentiment;
+        var matchUrgency = !urgency || (
+            urgency === '1' ? (card.dataset.urgency === '1' || card.dataset.urgency === '2') :
+            card.dataset.urgency === urgency
+        );
+        card.style.display = (matchSentiment && matchUrgency) ? '' : 'none';
+    });
+}
+
+function selectAllVisible() {
+    document.querySelectorAll('.review-card').forEach(function(card) {
+        if (card.style.display !== 'none') {
+            var cb = card.querySelector('.review-select');
+            if (cb) cb.checked = true;
+        }
+    });
+}
+
+function approveSelected() {
+    var ids = [];
+    document.querySelectorAll('.review-select:checked').forEach(function(cb) {
+        ids.push(cb.value);
+    });
+    if (ids.length === 0) return;
+    
+    fetch('/admin/api/ai-review/bulk-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ ids: ids })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && typeof showToast === 'function') showToast(data.count + ' items approved', 'success');
+        setTimeout(() => location.reload(), 1500);
+    });
+}
+
+function quickApprove(id) {
+    fetch('/admin/api/ai-review/' + id + '/quick-approve', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            var card = document.querySelector('.review-card:has(input[value="' + id + '"])');
+            if (card) { card.style.opacity = '0.5'; }
+            if (typeof showToast === 'function') showToast('Item #' + id + ' approved', 'success');
+            setTimeout(() => location.reload(), 1000);
+        }
+    });
+}
+
+function quickReject(id) {
+    fetch('/admin/api/ai-review/' + id + '/quick-reject', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showToast === 'function') showToast('Item #' + id + ' rejected', 'success');
+            setTimeout(() => location.reload(), 1000);
+        }
+    });
+}
+</script>
 {% endblock %}

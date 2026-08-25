@@ -764,12 +764,22 @@
     }
 
     /* Hide the desktop nav links (Home, Announcements, Public Board, Submit,
-       profile menus, SRC Admin, Login) inside the compact mobile header so
+       profile menus, Login) inside the compact mobile header so
        they no longer overlap the logo / each other / the hero below. */
-    .navbar-links .nav-link,
+    .navbar-links .nav-link:not(.nav-link-admin),
     .navbar-links .nav-cta,
     .navbar-links .nav-profile {
         display: none !important;
+    }
+
+    /* Keep admin link visible on mobile */
+    .navbar-links .nav-link-admin {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4rem 0.7rem;
+        font-size: 0.75rem;
+        border-radius: var(--radius-md);
     }
 
     .navbar-links .theme-toggle {
@@ -4941,6 +4951,61 @@
 
     .student-content {
         width: 100%;
+    }
+
+    /* Lexicon pages mobile alignment */
+    .admin-hero-title {
+        font-size: 1.2rem !important;
+        line-height: 1.3;
+    }
+    .admin-hero-subtitle {
+        font-size: 0.82rem;
+        line-height: 1.5;
+    }
+    .admin-hero-actions {
+        width: 100%;
+    }
+    .admin-hero-actions .btn-hero {
+        flex: 1;
+        justify-content: center;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem;
+    }
+    .stat-card {
+        padding: 1rem 0.75rem;
+    }
+    .stat-card-value {
+        font-size: 1.3rem;
+    }
+    .stat-card-label {
+        font-size: 0.7rem;
+    }
+    .stat-card-trend {
+        font-size: 0.65rem;
+    }
+    .chart-card {
+        padding: 1rem;
+    }
+    .chart-card-title {
+        font-size: 0.9rem;
+    }
+    .table-modern th,
+    .table-modern td {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    .lexicon-form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem;
+    }
+    .lexicon-form-grid label {
+        font-size: 0.8rem;
+    }
+    .alert {
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
     }
 }
 

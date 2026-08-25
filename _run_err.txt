@@ -555,3 +555,11 @@ Press CTRL+C to quit
 127.0.0.1 - - [24/Aug/2026 19:41:56] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
 127.0.0.1 - - [24/Aug/2026 19:41:56] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
 127.0.0.1 - - [24/Aug/2026 19:41:56] "GET /static/images/htu-pic.jpg HTTP/1.1" 304 -
+2026-08-24 21:09:00 | INFO     | Admin: SRC Administrator | Action: Logout | Details: Admin logged out
+127.0.0.1 - - [24/Aug/2026 21:09:00] "POST /admin/logout HTTP/1.1" 302 -
+127.0.0.1 - - [24/Aug/2026 21:09:00] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [24/Aug/2026 21:09:00] "GET /static/css/style.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 21:09:00] "GET /static/css/mobile.css?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 21:09:00] "GET /static/images/htu-logo.png HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 21:09:00] "GET /static/js/main.js?v=1787568483 HTTP/1.1" 304 -
+127.0.0.1 - - [24/Aug/2026 21:09:00] "GET /static/images/htu-pic.jpg HTTP/1.1" 304 -

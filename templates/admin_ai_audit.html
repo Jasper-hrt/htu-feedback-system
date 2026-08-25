@@ -28,7 +28,97 @@
 </form>
 </div>
 </aside>
-<section class="student-content"><div class="admin-hero"><div><div class="admin-hero-title">🧾 AI Review Audit Trail</div><div class="admin-hero-subtitle">A record of administrator approvals, corrections and lexicon changes.</div></div></div>
-<div class="chart-card"><div style="overflow-x:auto;"><table class="table-modern"><thead><tr><th>Date</th><th>Admin</th><th>Feedback</th><th>Action</th><th>Before → After</th><th>Notes</th></tr></thead><tbody>
-{% for log in logs %}<tr><td>{{log.created_at.strftime('%Y-%m-%d %H:%M') if log.created_at else ''}}</td><td>{{log.admin_name}}</td><td>#{{log.feedback_id}}</td><td>{{log.action}}</td><td>{{log.old_sentiment or '—'}} / {{log.old_category or '—'}} → {{log.new_sentiment or '—'}} / {{log.new_category or '—'}}</td><td>{{log.notes or '—'}}</td></tr>{% else %}<tr><td colspan="6">No AI review actions have been recorded yet.</td></tr>{% endfor %}
-</tbody></table></div></div></section></div>{% endblock %}
+<section class="student-content">
+<div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;">
+<div style="position: relative; z-index: 1;"><div class="admin-hero-title" style="font-size: 1.5rem;">🛡️ AI Audit Trail</div>
+<div class="admin-hero-subtitle">A record of administrator approvals, corrections and lexicon changes.</div></div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1rem;">
+    <div class="stat-card">
+        <div class="stat-card-accent" style="background: var(--primary);"></div>
+        <div class="stat-card-icon stat-card-icon-blue">📋</div>
+        <div class="stat-card-value" style="color: var(--primary);">{{ logs|length }}</div>
+        <div class="stat-card-label">Total Actions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-accent" style="background: #10b981;"></div>
+        <div class="stat-card-icon" style="background: rgba(16,185,129,0.1); color: #10b981;">✓</div>
+        <div class="stat-card-value" style="color: #10b981;">{{ logs|selectattr('action', 'equalto', 'approved')|list|length }}</div>
+        <div class="stat-card-label">Approved</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-accent" style="background: #ef4444;"></div>
+        <div class="stat-card-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;">✗</div>
+        <div class="stat-card-value" style="color: #ef4444;">{{ logs|selectattr('action', 'equalto', 'rejected')|list|length }}</div>
+        <div class="stat-card-label">Rejected</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-accent" style="background: var(--warning);"></div>
+        <div class="stat-card-icon stat-card-icon-amber">📝</div>
+        <div class="stat-card-value" style="color: var(--warning);">{{ logs|selectattr('action', 'equalto', 'corrected')|list|length }}</div>
+        <div class="stat-card-label">Corrected</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="chart-card" style="margin-bottom: 1rem; padding: 1rem;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+        <label style="font-size: 0.8rem; font-weight: 600;">Filter:</label>
+        <select id="actionFilter" onchange="filterLogs()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
+            <option value="">All Actions</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="corrected">Corrected</option>
+        </select>
+        <input type="text" id="searchInput" placeholder="Search notes..." oninput="filterLogs()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
+        <button onclick="exportAuditTrail()" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">📥 Export CSV</button>
+    </div>
+</div>
+
+<!-- Audit Log Table -->
+<div class="chart-card"><div style="overflow-x:auto;"><table class="table-modern"><thead><tr><th>Date</th><th>Admin</th><th>Feedback</th><th>Action</th><th>Before → After</th><th>Notes</th></tr></thead><tbody id="auditTableBody">
+{% for log in logs %}<tr data-action="{{ log.action }}"><td>{{log.created_at.strftime('%Y-%m-%d %H:%M') if log.created_at else ''}}</td><td>{{log.admin_name}}</td><td>#{{log.feedback_id}}</td>
+<td>
+{% if log.action == 'approved' %}<span class="badge badge-success">✓ Approved</span>
+{% elif log.action == 'rejected' %}<span class="badge badge-danger">✗ Rejected</span>
+{% elif log.action == 'corrected' %}<span class="badge badge-warning">📝 Corrected</span>
+{% else %}<span class="badge badge-info">{{ log.action }}</span>
+{% endif %}
+</td>
+<td>{{log.old_sentiment or '—'}} / {{log.old_category or '—'}} → {{log.new_sentiment or '—'}} / {{log.new_category or '—'}}</td>
+<td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{log.notes or '—'}}</td>
+</tr>{% else %}<tr><td colspan="6">No AI review actions have been recorded yet.</td></tr>{% endfor %}
+</tbody></table></div></div>
+
+</section></div>
+
+<script>
+function filterLogs() {
+    var action = document.getElementById('actionFilter').value;
+    var search = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('#auditTableBody tr').forEach(function(tr) {
+        var matchAction = !action || tr.dataset.action === action;
+        var matchSearch = !search || tr.textContent.toLowerCase().includes(search);
+        tr.style.display = (matchAction && matchSearch) ? '' : 'none';
+    });
+}
+
+function exportAuditTrail() {
+    var rows = [['date', 'admin', 'feedback_id', 'action', 'old_sentiment', 'old_category', 'new_sentiment', 'new_category', 'notes']];
+    document.querySelectorAll('#auditTableBody tr').forEach(function(tr) {
+        var cells = tr.querySelectorAll('td');
+        if (cells.length >= 6) {
+            rows.push(Array.from(cells).map(function(td) { return td.textContent.trim(); }));
+        }
+    });
+    var csv = rows.map(r => r.map(function(c) { return '"' + c.replace(/"/g, '""') + '"'; }).join(',')).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'audit_trail_' + new Date().toISOString().slice(0,10) + '.csv';
+    link.click();
+}
+</script>
+{% endblock %}
