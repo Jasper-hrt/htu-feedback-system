@@ -889,7 +889,7 @@ def submit_feedback():
     if request.method == 'POST':
         text = request.form.get('feedback_text')
         category = request.form.get('category')
-location = request.form.get('location')
+        location = request.form.get('location')
         anonymous = request.form.get('anonymous') == 'on'
         user_urgency = int(request.form.get('user_urgency', 3))
         
