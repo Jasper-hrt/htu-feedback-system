@@ -293,6 +293,29 @@ def recommend_solutions(
         Recommendation dataclass with solutions and metadata
     """
     cat = category or "Other"
+
+    # Handle positive feedback (appreciation/thanks)
+    if sentiment == "Positive":
+        return Recommendation(
+            category=cat, matched_keywords=[],
+            short_term_solution="Thank you for your positive feedback! We appreciate your kind words and will continue to maintain and improve our services.",
+            long_term_solution="",
+            responsible_department="SRC Secretariat",
+            estimated_time="N/A",
+            confidence=1.0,
+        )
+
+    # Handle neutral feedback (general comments/suggestions)
+    if sentiment == "Neutral":
+        return Recommendation(
+            category=cat, matched_keywords=[],
+            short_term_solution="Thank you for your feedback. We will review your comments and consider them for future improvements.",
+            long_term_solution="",
+            responsible_department="SRC Secretariat",
+            estimated_time="N/A",
+            confidence=1.0,
+        )
+
     templates = db_templates if db_templates else SOLUTION_TEMPLATES.get(cat, SOLUTION_TEMPLATES.get("Other", []))
 
     all_keywords: List[str] = []
@@ -317,14 +340,26 @@ def recommend_solutions(
     elif best_template is None:
         return Recommendation(
             category=cat, matched_keywords=matched,
-            short_term_solution="Your feedback has been received. An SRC representative will review and respond shortly.",
-            long_term_solution="The SRC will review this issue and develop an appropriate action plan with the relevant department.",
-            responsible_department="SRC Secretariat", estimated_time="3-10 days", confidence=0.0,
+            short_term_solution="Your feedback has been received and flagged for manual review. An SRC representative will assess your concern and provide a personalized response within 3-5 business days.",
+            long_term_solution="The SRC will investigate this matter, coordinate with the relevant department if needed, and follow up with you directly.",
+            responsible_department="SRC Secretariat",
+            estimated_time="3-10 days",
+            confidence=0.0,
         )
 
-    # Confidence calculation
+    # Handle low confidence matches (negative feedback with weak template match)
     max_possible = max(1, len(best_template.get("keywords", [])))
     confidence = min(1.0, best_count / max_possible)
+    
+    if confidence < 0.3 and sentiment == "Negative":
+        return Recommendation(
+            category=cat, matched_keywords=matched,
+            short_term_solution="Your concern has been received and requires specialized attention. The SRC will assign a dedicated representative to investigate and respond to you directly.",
+            long_term_solution="Given the unique nature of this issue, the SRC will conduct a thorough review, engage with the appropriate department, and provide you with a detailed action plan.",
+            responsible_department="SRC Secretariat",
+            estimated_time="5-14 days",
+            confidence=round(confidence, 3),
+        )
 
     # Sentiment/emotion adjustment
     sentiment_suffix, conf_mult = _get_sentiment_emotion_adjustment(sentiment, emotion)

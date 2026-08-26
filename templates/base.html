@@ -152,7 +152,7 @@
                         </a>
                     </div>
                 </div>
-                {% else %}
+                {% elif request.path != '/' and not session.admin_id and not session.student_id %}
                 <a href="/admin/login" class="nav-link nav-link-admin" data-navpage="admin-login">
                     <span class="nav-link-icon">🛡️</span>
                     <span class="nav-link-text">Admin</span>

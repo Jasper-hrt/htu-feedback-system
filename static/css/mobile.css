@@ -535,6 +535,13 @@
         transform: translateY(7.5px) rotate(45deg);
     }
 
+    /* Hide landing page tabs on mobile - show only on desktop */
+    .navbar-links .nav-link[data-navpage="home"],
+    .navbar-links .nav-link[data-navpage="public"],
+    .navbar-links .nav-link[data-navpage="admin-login"] {
+        display: none !important;
+    }
+
     .admin-page .navbar-hamburger.active .hamburger-bar:nth-child(2) {
         opacity: 0;
         transform: scaleX(0);

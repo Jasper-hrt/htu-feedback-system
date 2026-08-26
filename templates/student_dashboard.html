@@ -222,7 +222,7 @@
                         {% endif %}
                         <div class="feedback-card-premium-actions">
                             <button type="button" onclick="togglePremiumExplain('{{ f.id }}')" class="feedback-card-premium-action">🧠 Analyze</button>
-                            {% if f.short_term_solution or f.long_term_solution %}<button type="button" onclick="togglePremiumSolution('{{ f.id }}')" class="feedback-card-premium-action">💡 Recommendations</button>{% endif %}
+                            {% if f.short_term_solution %}<button type="button" onclick="togglePremiumSolution('{{ f.id }}')" class="feedback-card-premium-action">💡 Recommendations</button>{% endif %}
                             <a href="/edit-feedback/{{ f.id }}" class="feedback-card-premium-action">✏️ Edit</a>
                             <form method="POST" action="/delete-feedback/{{ f.id }}" onsubmit="return confirm('Delete this feedback permanently?')" style="display:inline;margin:0;">
                                 {{ csrf_field() }}
@@ -265,7 +265,7 @@
                             {% endif %}
                         </div>
                         <!-- Solutions Section -->
-                        {% if f.short_term_solution or f.long_term_solution %}
+                        {% if f.short_term_solution %}
                         <div id="solution-{{ f.id }}" class="analysis-section-premium">
                             <div class="flex items-center gap-2 mb-3 flex-wrap">
                                 <span class="dept-badge">🏢 {{ f.responsible_department or 'SRC Secretariat' }}</span>
@@ -288,15 +288,9 @@
                                 <div class="flex flex-wrap gap-1">{% for sc in secondary_cats %}<span class="keyword-chip">{{ sc if sc is string else sc.category }}</span>{% endfor %}</div>
                             </div>
                             {% endif %}
-                            <div class="grid grid-cols-2 gap-3">
-                                <div style="background: var(--bg-color); border-radius: 0.5rem; padding: 0.65rem; border: 1px solid var(--border-color);">
-                                    <div style="font-weight: 700; font-size: 0.8rem; margin-bottom: 0.25rem;">⏱️ Short-Term</div>
-                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ f.short_term_solution }}</div>
-                                </div>
-                                <div style="background: var(--bg-color); border-radius: 0.5rem; padding: 0.65rem; border: 1px solid var(--border-color);">
-                                    <div style="font-weight: 700; font-size: 0.8rem; margin-bottom: 0.25rem;">🛠️ Long-Term</div>
-                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">{{ f.long_term_solution }}</div>
-                                </div>
+                            <div style="background: var(--bg-color); border-radius: 0.5rem; padding: 0.75rem; border: 1px solid var(--border-color);">
+                                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">💡 Recommended Solution</div>
+                                <div style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.5;">{{ f.short_term_solution }}</div>
                             </div>
                         </div>
                         {% endif %}

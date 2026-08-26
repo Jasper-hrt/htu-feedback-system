@@ -889,15 +889,25 @@ def submit_feedback():
     if request.method == 'POST':
         text = request.form.get('feedback_text')
         category = request.form.get('category')
-        location = request.form.get('location')
+location = request.form.get('location')
         anonymous = request.form.get('anonymous') == 'on'
         user_urgency = int(request.form.get('user_urgency', 3))
         
         analysis = process_feedback(text, category)
+        
+        # Cap user-set urgency based on sentiment
+        sentiment = analysis.get('sentiment', 'Neutral')
+        max_allowed_urgency = 5
+        if sentiment == 'Positive':
+            max_allowed_urgency = 2
+        elif sentiment == 'Neutral':
+            max_allowed_urgency = 3
+        
+        user_urgency = min(user_urgency, max_allowed_urgency)
         final_urgency = max(user_urgency, analysis['urgency_score'])
+        final_urgency = min(final_urgency, max_allowed_urgency)
         
         detected_category = analysis['detected_category'] if category == 'Other' else category
-
         # Enhanced recommendation with sentiment, emotion, and confidence data
         emotion_data = analysis.get('emotion', None)
         sentiment_label = analysis.get('sentiment', None)
@@ -2555,6 +2565,28 @@ def api_trending_issues():
         'trends': trends,
         'workload': workload,
         'total_issues': sum(t['count'] for t in trends),
+    })
+
+@app.route('/api/chat/export/<int:room_id>')
+@login_required
+def api_chat_export(room_id):
+    """Export all messages in a chat room as JSON for CSV conversion"""
+    room = ChatRoom.query.get_or_404(room_id)
+    messages = ChatMessage.query.filter_by(room_id=room_id).order_by(ChatMessage.created_at.asc()).all()
+    return jsonify({
+        'success': True,
+        'room': {
+            'id': room.id,
+            'name': room.name,
+            'category': room.category or 'General',
+        },
+        'messages': [{
+            'timestamp': m.created_at.strftime('%Y-%m-%d %H:%M:%S') if m.created_at else '-',
+            'sender': m.student.full_name if m.student else 'Unknown',
+            'message': m.message or '',
+            'message_type': m.message_type or 'text',
+            'sentiment': m.sentiment or 'N/A',
+        } for m in messages]
     })
 
 @app.route('/api/admin/recommendation/feedback', methods=['POST'])

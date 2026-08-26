@@ -220,11 +220,7 @@
                                 </span>
                             </td>
                             <td class="col-urgency">
-                                <div class="urgency-meter">
-                                    {% for i in range(1, 6) %}
-                                    <span class="urgency-dot {% if i <= f.urgency_score %}active urgency-{{ f.urgency_score }}{% endif %}"></span>
-                                    {% endfor %}
-                                </div>
+                                <span class="urgency-text urgency-{{ f.urgency_score }}">{{ f.urgency_score }}/5</span>
                             </td>
                             <td class="col-status">
                                 <form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}
@@ -318,12 +314,16 @@
                     <div id="solutionSecondary" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
                 </div>
                 <div class="mb-3">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⏱️ Short-Term Solution</h4>
-                    <div id="solutionShortTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Immediate Action</h4>
+                    <div id="solutionShortTerm" style="background: rgba(59,130,246,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(59,130,246,0.2);"></div>
                 </div>
                 <div class="mb-3">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Long-Term Solution</h4>
-                    <div id="solutionLongTerm" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Resolution Steps</h4>
+                    <div id="solutionLongTerm" style="background: rgba(16,185,129,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(16,185,129,0.2);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">📋 SRC Follow-up Tasks</h4>
+                    <div id="solutionActions" style="background: rgba(245,158,11,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(245,158,11,0.2);"></div>
                 </div>
                 <div class="mb-3">
                     <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🗳️ Was this recommendation helpful?</h4>
@@ -549,8 +549,16 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
 
             db.innerHTML = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;"><div><span class="dept-badge">🏢 ' + esc(dept) + '</span></div><div><span style="font-weight:600;font-size:0.85rem;">⏱️ Est:</span> <strong>' + esc(eta) + '</strong></div></div>';
             kb.innerHTML = kws.length ? '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + kws.map(function(k) { return '<span class="keyword-chip">' + esc(k) + '</span>'; }).join('') + '</div>' : '<em style="color:var(--text-secondary);">None</em>';
-            stb.innerHTML = st ? '<div style="color:var(--text-secondary);line-height:1.6;">' + esc(st) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
-            ltb.innerHTML = lt ? '<div style="color:var(--text-secondary);line-height:1.6;">' + esc(lt) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+            stb.innerHTML = st ? '<div style="color:var(--text-primary);line-height:1.6;font-weight:500;">' + esc(st) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+            ltb.innerHTML = lt ? '<div style="color:var(--text-primary);line-height:1.6;font-weight:500;">' + esc(lt) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+            
+            // Generate SRC action tasks based on the solutions
+            var actions = [];
+            if (st) actions.push('✓ ' + st);
+            if (lt) actions.push('✓ ' + lt);
+            if (actions.length === 0) actions.push('No specific actions recommended');
+            var actionsHtml = '<div style="color:var(--text-primary);line-height:1.8;font-weight:500;"><ul style="margin:0;padding-left:1.2rem;">' + actions.map(function(a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></div>';
+            document.getElementById('solutionActions').innerHTML = actionsHtml;
 
             if (typeof rec.confidence === 'number') {
                 var pct = Math.round(rec.confidence * 100);

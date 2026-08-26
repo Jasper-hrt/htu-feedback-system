@@ -213,6 +213,12 @@ def calculate_urgency(text, sentiment):
 
     if sentiment == "Negative" and urgency < 3 and not resolution:
         urgency = 3
+    
+    # Cap urgency for positive and neutral feedback
+    if sentiment == "Positive":
+        urgency = min(urgency, 2)
+    elif sentiment == "Neutral":
+        urgency = min(urgency, 3)
 
     return min(urgency, 5)
 

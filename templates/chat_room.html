@@ -25,6 +25,7 @@
                 <span>📁 {{ room.category }}</span>
                 <span>👥 {{ room.members|length }}</span>
             </div>
+            <button onclick="exportChatMessages({{ room.id }})" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">📥 Export Chat</button>
             <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: var(--radius-full); background: {% if sentiment_summary.sentiment_score >= 0.05 %}rgba(16,185,129,0.1); color: var(--success);{% elif sentiment_summary.sentiment_score <= -0.05 %}rgba(239,68,68,0.1); color: var(--danger);{% else %}var(--light); color: var(--text-secondary);{% endif %}">
                 {% if sentiment_summary.sentiment_score >= 0.05 %}😊 Positive{% elif sentiment_summary.sentiment_score <= -0.05 %}😞 Negative{% else %}😐 Neutral{% endif %}
             </div>
@@ -509,5 +510,51 @@ socket.on('user_left', function(data) {
 
     cancelBtn.onclick = function() { stopRecording(true); };
 })();
+
+// Export chat messages
+function exportChatMessages(roomId) {
+    fetch('/api/chat/export/' + roomId, {
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.success) {
+            var headers = ['Timestamp', 'Sender', 'Message', 'Type', 'Sentiment'];
+            var rows = data.messages.map(function(m) {
+                return [
+                    m.timestamp,
+                    m.sender,
+                    m.message_type === 'voice' ? '[Voice Note]' : m.message,
+                    m.message_type,
+                    m.sentiment || 'N/A'
+                ];
+            });
+            // Build CSV
+            var csv = [headers.join(',')];
+            rows.forEach(function(row) {
+                csv.push(row.map(function(cell) {
+                    var cellStr = String(cell || '');
+                    if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                        return '"' + cellStr.replace(/"/g, '""') + '"';
+                    }
+                    return cellStr;
+                }).join(','));
+            });
+            var csvContent = csv.join('\n');
+            var blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'chat_room_' + roomId + '_' + new Date().toISOString().slice(0, 10) + '.csv';
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } else {
+            alert('Error exporting chat: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(function(err) {
+        console.error('Export error:', err);
+        alert('Failed to export chat messages');
+    });
+}
 </script>
 {% endblock %}
