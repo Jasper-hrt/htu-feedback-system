@@ -20,6 +20,17 @@ from recommendation_learning import RecommendationLearner
 import logging
 import sys
 
+# Custom login_required decorator (flask-login not installed)
+def login_required(f):
+    """Decorator to require login for a route."""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('student_id') and not session.get('admin_id'):
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Configure structured logging
 logging.basicConfig(
     level=logging.INFO,
