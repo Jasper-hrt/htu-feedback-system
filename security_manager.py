@@ -1,18 +1,41 @@
 """
 Security & Session Management Module
+- Two-Factor Authentication (2FA)
 - Session management
 - Login history
 - Anomaly detection
 - Enhanced audit logging
 """
 
+import pyotp
+import secrets
 from datetime import datetime, timedelta
-from flask import request
+from functools import wraps
+from flask import session, request, redirect, url_for, flash, jsonify
 from database import db, SystemLog
 
 
 class SecurityManager:
     """Manages security features for the application."""
+
+    @staticmethod
+    def generate_2fa_secret():
+        """Generate a new 2FA secret for a user."""
+        return pyotp.random_base32()
+
+    @staticmethod
+    def get_totp_uri(secret, username):
+        """Get the TOTP URI for QR code generation."""
+        totp = pyotp.TOTP(secret)
+        return totp.provisioning_uri(name=username, issuer_name="HTU SRC System")
+
+    @staticmethod
+    def verify_2fa_token(secret, token):
+        """Verify a 2FA token."""
+        if not secret or not token:
+            return False
+        totp = pyotp.TOTP(secret)
+        return totp.verify(token, valid_window=1)
 
     @staticmethod
     def record_login(user_id, user_type, ip_address, user_agent, success, details=""):
@@ -78,6 +101,16 @@ class SecurityManager:
     def get_active_sessions():
         """Get count of active sessions (placeholder for Redis implementation)."""
         return 0
+
+
+def require_2fa(f):
+    """Decorator to require 2FA verification for sensitive operations."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get('admin_id') and not session.get('2fa_verified'):
+            return redirect(url_for('admin_2fa_verify'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 def get_client_ip():

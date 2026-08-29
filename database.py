@@ -385,6 +385,8 @@ class SRCUser(db.Model):
     email = db.Column(db.String(120))
     last_login = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    totp_secret = db.Column(db.String(32), nullable=True)
+    is_2fa_enabled = db.Column(db.Boolean, default=False)
 
 # ==================== HYBRID SENTIMENT ENGINE MODELS ====================
 

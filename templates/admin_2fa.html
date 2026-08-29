@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">🔐</div>
+            <h1>Two-Factor Authentication</h1>
+            <p>Enter the 6-digit code from your authenticator app</p>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        
+        <form method="POST" action="/admin/2fa/verify">
+            {{ csrf_field() }}
+            <input type="hidden" name="username" value="{{ username }}">
+            
+            <div class="form-group">
+                <label for="totp_token">Authentication Code</label>
+                <input type="text" id="totp_token" name="totp_token" 
+                       class="form-input" placeholder="000000" 
+                       maxlength="6" pattern="[0-9]{6}" required
+                       autocomplete="one-time-code" inputmode="numeric">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">Verify</button>
+        </form>
+        
+        <div class="auth-footer">
+            <a href="/admin/login">← Back to login</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

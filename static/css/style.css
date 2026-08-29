@@ -8588,8 +8588,8 @@ html.theme-dark .auth-demo code {
 }
 
 /* ============================================ */
-/* 🧭 Student Side Menu — Premium Windows Design
-/* Clean, modern sidebar with smooth interactions
+/* 🧭 Student Side Menu — Fresh Light Minimal
+/* (Soft white/light, pastel icon tiles, clean & airy)
 /* ============================================ */
 
 .student-side-menu {
@@ -8597,242 +8597,46 @@ html.theme-dark .auth-demo code {
     flex: 0 0 240px;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 1rem;
+    border-radius: var(--radius-xl);
     overflow: hidden;
     position: sticky;
     top: calc(var(--nav-height) + 1.5rem);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-md);
+    transition: width var(--transition-normal), flex-basis var(--transition-normal);
     display: flex;
     flex-direction: column;
     align-self: flex-start;
     z-index: 100;
-    transition: all 0.2s ease;
 }
 
 .student-side-menu::before {
     content: '';
     display: block;
     height: 3px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, transparent);
+    background: linear-gradient(90deg, var(--primary-light), var(--primary), transparent);
     flex-shrink: 0;
 }
 
-/* Header */
+/* ---- Side Menu Header ---- */
 .student-side-menu-header {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 1.25rem 1rem 1rem;
+    padding: 1.2rem 1rem 0.95rem;
     border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(180deg, rgba(59, 130, 246, 0.03), transparent);
+    transition: padding var(--transition-normal);
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.035), transparent);
 }
 
 .student-side-menu-avatar {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.75rem;
+    height: 2.75rem;
     border-radius: 50%;
-    background: linear-gradient(135deg, #dbeafe, #e0e7ff);
-    color: #3b82f6;
+    background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+    color: var(--primary);
+    border: 2px solid var(--card-bg);
+    box-shadow: 0 2px 10px rgba(30, 64, 175, 0.12);
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    font-weight: 800;
-    flex-shrink: 0;
-}
-
-.student-side-menu-user {
-    flex: 1;
-    min-width: 0;
-}
-
-.student-side-menu-name {
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--text-primary);
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.student-side-menu-id {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-weight: 600;
-}
-
-/* Section Labels */
-.student-side-menu-label {
-    font-size: 0.6rem;
-    font-weight: 800;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 1rem 1rem 0.35rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
-/* Nav */
-.student-side-menu-nav {
-    padding: 0.35rem 0.65rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    flex: 1;
-}
-
-.student-side-menu-link {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    padding: 0.5rem 0.65rem;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 0.8rem;
-    border: 1px solid transparent;
-    transition: all 0.15s ease;
-    position: relative;
-}
-
-.student-side-menu-link:hover {
-    background: var(--bg-color);
-    border-color: var(--border-color);
-    color: #3b82f6;
-    transform: translateX(2px);
-}
-
-.student-side-menu-link.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03));
-    border-color: rgba(59, 130, 246, 0.2);
-    color: #3b82f6;
-    font-weight: 700;
-}
-
-.student-side-menu-link.active::before {
-    content: '';
-    position: absolute;
-    left: -0.65rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 1.25rem;
-    border-radius: 3px;
-    background: #3b82f6;
-}
-
-/* Icon Tiles */
-.student-side-menu-link-icon {
-    font-size: 0.9rem;
-    width: 1.75rem;
-    height: 1.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.5rem;
-    flex-shrink: 0;
-    transition: transform 0.15s ease;
-}
-
-.tile-blue   { background: rgba(59, 130, 246, 0.1); }
-.tile-green  { background: rgba(16, 185, 129, 0.1); }
-.tile-purple { background: rgba(139, 92, 246, 0.1); }
-.tile-teal   { background: rgba(20, 184, 166, 0.1); }
-.tile-amber  { background: rgba(245, 158, 11, 0.1); }
-.tile-pink   { background: rgba(236, 72, 153, 0.1); }
-
-/* Footer */
-.student-side-menu-footer {
-    padding: 0.5rem 0.65rem 0.85rem;
-    border-top: 1px solid var(--border-color);
-}
-
-.student-side-menu-logout {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    padding: 0.5rem 0.65rem;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    color: #dc2626;
-    font-weight: 600;
-    font-size: 0.8rem;
-    background: rgba(239, 68, 68, 0.06);
-    border: 1px solid rgba(239, 68, 68, 0.12);
-    transition: all 0.15s ease;
-}
-
-.student-side-menu-logout:hover {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.25);
-    transform: translateY(-1px);
-}
-
-.student-side-menu-logout-icon {
-    font-size: 0.9rem;
-    width: 1.75rem;
-    height: 1.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.5rem;
-    background: rgba(239, 68, 68, 0.1);
-    flex-shrink: 0;
-}
-
-/* Dark Mode */
-html.theme-dark .student-side-menu-avatar {
-    background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(129, 140, 248, 0.15));
-    color: #bfdbfe;
-}
-
-html.theme-dark .student-side-menu-link.active {
-    background: linear-gradient(135deg, rgba(96, 165, 250, 0.12), rgba(96, 165, 250, 0.04));
-    border-color: rgba(96, 165, 250, 0.2);
-}
-
-html.theme-dark .tile-blue   { background: rgba(59, 130, 246, 0.12); }
-html.theme-dark .tile-green  { background: rgba(16, 185, 129, 0.12); }
-html.theme-dark .tile-purple { background: rgba(139, 92, 246, 0.12); }
-html.theme-dark .tile-teal   { background: rgba(20, 184, 166, 0.12); }
-html.theme-dark .tile-amber  { background: rgba(245, 158, 11, 0.12); }
-html.theme-dark .tile-pink   { background: rgba(236, 72, 153, 0.12); }
-
-html.theme-dark .student-side-menu-logout {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
-}
-
-/* Mobile Responsive */
-@media (max-width: 992px) {
-    .student-side-menu {
-        width: 100%;
-        flex: 0 0 auto;
-        position: relative;
-        top: auto;
-        flex-direction: row;
-        padding: 0.5rem;
-        margin-bottom: 1rem;
-        border-radius: 0.75rem;
-    }
-    .student-side-menu::before { display: none; }
-    .student-side-menu-header { padding: 0; border: none; background: transparent; }
-    .student-side-menu-avatar { width: 1.75rem; height: 1.75rem; font-size: 0.7rem; }
-    .student-side-menu-user { display: none; }
-    .student-side-menu-toggle { display: none; }
-    .student-side-menu-label { display: none; }
-    .student-side-menu-nav { padding: 0; flex-direction: row; flex: 1; overflow-x: auto; gap: 0.15rem; -webkit-overflow-scrolling: touch; }
-    .student-side-menu-link { padding: 0.3rem 0.5rem; font-size: 0.7rem; white-space: nowrap; flex-shrink: 0; }
-    .student-side-menu-link:hover { transform: none; }
-    .student-side-menu-link.active::before { display: none; }
-    .student-side-menu-link-icon { width: 1.5rem; height: 1.5rem; font-size: 0.75rem; }
-    .student-side-menu-footer { padding: 0; border: none; flex: 0 0 auto; }
-    .student-side-menu-logout { padding: 0.3rem 0.5rem; font-size: 0.7rem; }
-    .student-side-menu-logout-icon { width: 1.5rem; height: 1.5rem; font-size: 0.75rem; }
-}
     align-items: center;
     justify-content: center;
     font-size: 1rem;

@@ -180,29 +180,8 @@ def calculate_urgency(text, sentiment):
     normalized, _ = semantic_context.normalize_domain_language(text)
     context = semantic_context.analyze_context(normalized)
 
-    # Critical safety keywords always get maximum urgency
     if has_critical_safety(normalized):
         return 5
-
-    # Check for serious safety keywords even in discussion context
-    # These topics are serious enough to warrant attention
-    serious_safety_terms = [
-        # Violent crimes
-        "kidnap", "kidnapped", "kidnapping", "abduct", "abduction", "hostage",
-        "shooting", "gunshot", "gunshots", "weapon", "murder", "rape", "sexual assault",
-        "assault", "stabbing", "bomb", "explosion", "terrorist", "terrorism",
-        "attacked", "attacker", "armed", "robbery", "robbed", "mugged", "mugging",
-        # Threats & harassment
-        "threat", "threatened", "threatening", "stalker", "stalking", "harassment",
-        "harassed", "intimidated", "intimidation", "blackmail", "extortion",
-        # Health emergencies
-        "death", "died", "fatal", "suicide", "self harm", "overdose", "unconscious",
-        "seizure", "heart attack", "stroke", "ambulance", "hospitalized",
-        # Severe incidents
-        "riot", "riotous", "mob", "lynching", "arson", "sabotage", "vandalism",
-        "break in", "burglary", "theft", "stolen", "intruder", "trespassing",
-    ]
-    has_serious_safety = any(term in normalized.lower() for term in serious_safety_terms)
 
     # Resolved/no-longer language suppresses the raw severity of nouns such as
     # "flood" when the problem has explicitly ended.
@@ -211,74 +190,12 @@ def calculate_urgency(text, sentiment):
 
     urgency = 1
     patterns = {
-        5: [
-            # Critical safety & emergencies
-            "emergency", "danger", "injured", "unsafe", "hazard", "assault", "harassment",
-            "urgent", "critical", "gunshots", "gunshot", "shooting", "weapon", "violence",
-            "hostage", "threat", "armed", "attack", "blood", "injury", "panic", "fight",
-            "fire outbreak", "building fire", "explosion", "bomb", "terrorist", "murder",
-            "rape", "sexual assault", "stabbing", "kidnapping", "kidnapped", "abduction",
-            # Health emergencies
-            "death", "died", "fatal", "life threatening", "medical emergency", "ambulance",
-            "hospitalized", "unconscious", "seizure", "overdose", "suicide", "self harm",
-            # Severe infrastructure
-            "building collapse", "structural damage", "gas leak", "electrocution",
-            "trapped", "stuck in elevator", "elevator failure",
-        ],
-        4: [
-            # Infrastructure failures
-            "still not working", "not working", "broken", "no water", "no power",
-            "no electricity", "collapsed", "fire", "ignored", "weeks", "out of order",
-            "not functional", "malfunctioning", "down", "offline", "disconnected",
-            # Health & safety concerns
-            "sick", "illness", "contagious", "infection", "infestation", "pest",
-            "cockroach", "rat", "mold", "asbestos", "chemical spill",
-            # Security concerns
-            "theft", "stolen", "robbery", "break in", "burglary", "vandalism",
-            "suspicious person", "intruder", "stalker", "threatening",
-            # Academic concerns
-            "failed", "failing", "academic dismissal", "suspension", "expulsion",
-            "wrong grade", "missing results", "not credited",
-            # Service failures
-            "no internet", "wifi down", "portal down", "system crash",
-            "payment not reflected", "no refund",
-        ],
-        3: [
-            # Delays & inefficiencies
-            "delay", "late", "rude", "unhelpful", "expensive", "overcharged",
-            "frustrated", "annoying", "slow", "long wait", "queue", "waiting",
-            "postponed", "rescheduled", "cancelled", "backlog",
-            # Academic issues
-            "unclear", "confusing", "disorganized", "unfair", "biased",
-            "inconsistent", "outdated", "irrelevant", "boring", "monotone",
-            "absent lecturer", "missed class", "no substitute",
-            # Facilities issues
-            "dirty", "unclean", "unsanitary", "smelly", "foul odor",
-            "leaking", "flooded", "clogged", "broken furniture",
-            "no lighting", "dark", "poor ventilation", "too hot", "too cold",
-            # Service quality
-            "poor quality", "bad service", "unprofessional", "unresponsive",
-            "no feedback", "ignored complaint", "no action",
-            # Financial
-            "overpriced", "hidden charges", "unexpected fee", "expensive",
-            # Accommodation
-            "noisy", "loud", "thin walls", "no privacy", "overcrowded",
-            "no hot water", "cold water", "bed bugs", "mosquitoes",
-        ],
-        2: [
-            # Minor inconveniences
-            "small", "noisy", "crowded", "uncomfortable", "inconvenient",
-            "far", "distance", "walking", "parking", "space",
-            # Suggestions for improvement
-            "could be better", "needs improvement", "upgrade", "renovation",
-            "more resources", "additional", "expand", "extend hours",
-            # Mild preferences
-            "prefer", "wish", "hope", "suggest", "recommend",
-            "would be nice", "better if", "should add",
-            # Minor issues
-            "minor", "slight", "occasionally", "sometimes", "rarely",
-            "not always", "a bit", "somewhat",
-        ],
+        5: ["emergency", "danger", "injured", "unsafe", "hazard", "assault", "harassment", "urgent", "critical",
+            "gunshots", "gunshot", "shooting", "weapon", "violence", "hostage", "threat", "armed", "attack",
+            "blood", "injury", "panic", "fight", "fire outbreak"],
+        4: ["still not working", "not working", "broken", "no water", "no power", "no electricity", "collapsed", "fire", "ignored", "weeks"],
+        3: ["delay", "late", "rude", "unhelpful", "expensive", "overcharged", "frustrated", "annoying"],
+        2: ["slow", "small", "noisy", "crowded", "uncomfortable"],
     }
 
     for level, terms in patterns.items():
@@ -293,10 +210,6 @@ def calculate_urgency(text, sentiment):
         # ended or been successfully handled; do not leave incident-level
         # urgency behind just because a severe noun appears in the sentence.
         urgency = min(urgency, 2)
-
-    # Boost urgency for serious safety topics even in discussion context
-    if has_serious_safety and urgency < 3:
-        urgency = 3
 
     if sentiment == "Negative" and urgency < 3 and not resolution:
         urgency = 3
@@ -347,7 +260,7 @@ def detect_category(text):
     category_keywords = {
         'Accommodation': ['hostel', 'dorm', 'room', 'bed', 'water', 'toilet', 'shower', 'accommodation', 'hall', 'bathroom', 'flood', 'leak'],
         'ICT/Wi-Fi': ['wifi', 'internet', 'network', 'connection', 'computer', 'lab', 'portal', 'slow', 'disconnect', 'server'],
-        'Academics': ['lecturer', 'class', 'exam', 'examination', 'malpractice', 'course', 'assignment', 'timetable', 'curriculum', 'grade', 'result', 'lecture', 'test', 'quiz', 'project', 'dissertation', 'thesis', 'research', 'study', 'academic', 'semester', 'credit', 'gpa', 'cgpa'],
+        'Academics': ['lecturer', 'class', 'exam', 'course', 'assignment', 'timetable', 'curriculum', 'grade', 'result', 'lecture'],
         'Catering': ['food', 'canteen', 'cafeteria', 'meal', 'dining', 'hungry', 'price', 'restaurant', 'kitchen', 'cook'],
         'Facilities': ['library', 'classroom', 'building', 'elevator', 'light', 'fan', 'ac', 'chair', 'desk', 'projector', 'flood', 'flooding', 'leak', 'leaking'],
         'Safety': ['security', 'safe', 'theft', 'dark', 'lighting', 'patrol', 'gate', 'danger', 'unsafe', 'cctv',
