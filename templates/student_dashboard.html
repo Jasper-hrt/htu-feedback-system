@@ -1,437 +1,301 @@
 {% extends "base.html" %}
 
 {% block content %}
-        <!-- Premium Hero Section -->
-        <div class="dashboard-hero-premium">
-            <div class="dashboard-hero-content">
-                <div class="dashboard-hero-greeting">
-                    <div class="dashboard-hero-avatar">{{ session.student_name.split()[0][0] }}</div>
-                    <div class="dashboard-hero-greeting-text">
-                        <div class="dashboard-hero-title">Welcome back, <span class="dashboard-hero-title-highlight">{{ session.student_name.split()[0] }}</span> 👋</div>
-                        <div class="dashboard-hero-subtitle">Track your feedback requests and stay updated with SRC responses.</div>
-                    </div>
-                </div>
-            </div>
-            <div class="dashboard-hero-actions">
-                <a href="/submit" class="btn-hero btn-hero-primary">✍️ Submit Feedback</a>
-                <a href="/announcements" class="btn-hero">📢 Announcements</a>
+<div class="dashboard-container">
+    
+    <!-- Hero Section -->
+    <section class="dash-hero">
+        <div class="dash-hero-left">
+            <div class="dash-avatar">{{ session.student_name.split()[0][0] }}</div>
+            <div class="dash-hero-info">
+                <h1>Welcome back, {{ session.student_name.split()[0] }}</h1>
+                <p>Track your feedback and stay connected with SRC</p>
             </div>
         </div>
-
-        <!-- Quick Action Cards -->
-        <div class="quick-actions-grid">
-            <a href="/forum" class="quick-action-card">
-                <div class="quick-action-icon quick-action-icon-purple">💬</div>
-                <div class="quick-action-info">
-                    <div class="quick-action-label">Forum Discussions</div>
-                    <div class="quick-action-desc">Join campus conversations</div>
-                </div>
-                <span class="quick-action-arrow">→</span>
-            </a>
-            <a href="/chat" class="quick-action-card">
-                <div class="quick-action-icon quick-action-icon-green">💬</div>
-                <div class="quick-action-info">
-                    <div class="quick-action-label">Live Chat</div>
-                    <div class="quick-action-desc">Chat with peers in real-time</div>
-                </div>
-                <span class="quick-action-arrow">→</span>
-            </a>
-            <a href="/announcements" class="quick-action-card">
-                <div class="quick-action-icon quick-action-icon-amber">📢</div>
-                <div class="quick-action-info">
-                    <div class="quick-action-label">Announcements</div>
-                    <div class="quick-action-desc">Latest SRC updates</div>
-                </div>
-                <span class="quick-action-arrow">→</span>
-            </a>
-            <a href="/public" class="quick-action-card">
-                <div class="quick-action-icon quick-action-icon-pink">🧾</div>
-                <div class="quick-action-info">
-                    <div class="quick-action-label">Public Board</div>
-                    <div class="quick-action-desc">See what other students voted on</div>
-                </div>
-                <span class="quick-action-arrow">→</span>
-            </a>
+        <div class="dash-hero-right">
+            <button class="notif-btn" onclick="toggleNotif()">
+                <span class="notif-icon">🔔</span>
+                <span class="notif-count" id="notifCount" hidden>0</span>
+            </button>
+            <a href="/submit" class="btn-main">✍️ Submit Feedback</a>
         </div>
+    </section>
 
-        <div class="phase3-mobile-summary"><strong>📱 Your feedback at a glance</strong><span>Track submitted feedback, current status and responses from a layout designed to stay easy to use on smaller screens.</span></div>
-        <div class="ai-insight-card" aria-label="AI dashboard insight">
-            <div class="ai-insight-icon">✨</div>
-            <div class="ai-insight-body">
-                <div class="ai-insight-title">AI insight</div>
-                {% if student_topics %}
-                <div class="ai-insight-text">Your recent feedback is mainly about
-                    {% for topic, count in student_topics %}<strong>{{ topic }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}.
-                    The system uses these themes to organize your concerns automatically.</div>
-                <div class="ai-topic-row">{% for topic, count in student_topics %}<span class="ai-topic-chip">{{ topic }} · {{ count }}</span>{% endfor %}</div>
-                {% else %}
-                <div class="ai-insight-text">Submit feedback and the AI will automatically identify the main topic, sentiment and priority for you.</div>
-                {% endif %}
-            </div>
+    <!-- Notification Dropdown -->
+    <div class="notif-dropdown" id="notifDropdown" hidden>
+        <div class="notif-head">
+            <span>Notifications</span>
+            <button onclick="markReadAll()" class="notif-read-all">Mark all read</button>
         </div>
-
-
-        <!-- Premium Stats Grid -->
-        <div class="stats-grid-premium">
-            <div class="stat-card-premium">
-                <div class="stat-card-premium-accent" style="background: var(--primary);"></div>
-                <div class="stat-card-premium-glow" style="background: var(--primary);"></div>
-                <div class="stat-card-premium-top">
-                    <div class="stat-card-premium-icon" style="background: rgba(30, 64, 175, 0.1); color: var(--primary);">📋</div>
-                    <span class="stat-card-premium-badge">Total</span>
-                </div>
-                <div class="stat-card-premium-value" style="color: var(--primary);">{{ stats.total }}</div>
-                <div class="stat-card-premium-label">Feedback Submitted</div>
-                <div class="stat-card-premium-trend">📈 All time submissions</div>
-            </div>
-            <div class="stat-card-premium">
-                <div class="stat-card-premium-accent" style="background: var(--warning);"></div>
-                <div class="stat-card-premium-glow" style="background: var(--warning);"></div>
-                <div class="stat-card-premium-top">
-                    <div class="stat-card-premium-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">⏳</div>
-                    <span class="stat-card-premium-badge" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);">Open</span>
-                </div>
-                <div class="stat-card-premium-value" style="color: var(--warning);">{{ stats.pending }}</div>
-                <div class="stat-card-premium-label">Pending Review</div>
-                <div class="stat-card-premium-trend">⏳ Awaiting SRC response</div>
-            </div>
-            <div class="stat-card-premium">
-                <div class="stat-card-premium-accent" style="background: var(--info);"></div>
-                <div class="stat-card-premium-glow" style="background: var(--info);"></div>
-                <div class="stat-card-premium-top">
-                    <div class="stat-card-premium-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">🔄</div>
-                    <span class="stat-card-premium-badge" style="background: rgba(59, 130, 246, 0.1); color: var(--info);">Active</span>
-                </div>
-                <div class="stat-card-premium-value" style="color: var(--info);">{{ stats.in_progress }}</div>
-                <div class="stat-card-premium-label">In Progress</div>
-                <div class="stat-card-premium-trend">⚙️ Being handled by SRC</div>
-            </div>
-            <div class="stat-card-premium">
-                <div class="stat-card-premium-accent" style="background: var(--success);"></div>
-                <div class="stat-card-premium-glow" style="background: var(--success);"></div>
-                <div class="stat-card-premium-top">
-                    <div class="stat-card-premium-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">✅</div>
-                    <span class="stat-card-premium-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success);">Done</span>
-                </div>
-                <div class="stat-card-premium-value" style="color: var(--success);">{{ stats.resolved }}</div>
-                <div class="stat-card-premium-label">Resolved</div>
-                <div class="stat-card-premium-trend">✓ Successfully completed</div>
-            </div>
+        <div class="notif-list" id="notifList">
+            <div class="notif-empty">No notifications</div>
         </div>
+    </div>
 
-        <!-- Charts Row Premium -->
-        <div class="charts-row-premium">
-            <div class="progress-card-premium">
-                <div class="progress-card-premium-header">
-                    <div class="progress-card-premium-title">📊 Resolution Progress</div>
-                    <div class="progress-card-premium-value">{{ stats.resolved }}/{{ stats.total }}</div>
+    <!-- Stats Grid -->
+    <section class="dash-stats">
+        <div class="stat-box stat-total">
+            <div class="stat-icon">📋</div>
+            <div class="stat-num">{{ stats.total }}</div>
+            <div class="stat-name">Total</div>
+        </div>
+        <div class="stat-box stat-pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-num">{{ stats.pending }}</div>
+            <div class="stat-name">Pending</div>
+        </div>
+        <div class="stat-box stat-progress">
+            <div class="stat-icon">🔄</div>
+            <div class="stat-num">{{ stats.in_progress }}</div>
+            <div class="stat-name">In Progress</div>
+        </div>
+        <div class="stat-box stat-resolved">
+            <div class="stat-icon">✅</div>
+            <div class="stat-num">{{ stats.resolved }}</div>
+            <div class="stat-name">Resolved</div>
+        </div>
+    </section>
+
+    <!-- Quick Links -->
+    <section class="dash-quick">
+        <a href="/forum" class="quick-link">
+            <span class="quick-icon">💬</span>
+            <span>Forum</span>
+        </a>
+        <a href="/chat" class="quick-link">
+            <span class="quick-icon">💬</span>
+            <span>Chat</span>
+        </a>
+        <a href="/announcements" class="quick-link">
+            <span class="quick-icon">📢</span>
+            <span>News</span>
+        </a>
+        <a href="/public" class="quick-link">
+            <span class="quick-icon">📊</span>
+            <span>Board</span>
+        </a>
+    </section>
+
+    <!-- Filters -->
+    <section class="dash-filters">
+        <button onclick="filterDash('all')" id="fAll" class="filter-btn active">All</button>
+        <button onclick="filterDash('Pending')" id="fPending" class="filter-btn">⏳ Pending</button>
+        <button onclick="filterDash('In Progress')" id="fProgress" class="filter-btn">🔄 In Progress</button>
+        <button onclick="filterDash('Resolved')" id="fResolved" class="filter-btn">✅ Resolved</button>
+        <button onclick="filterDash('Escalated')" id="fEscalated" class="filter-btn">🚨 Escalated</button>
+    </section>
+
+    <!-- Feedback Cards -->
+    <section class="dash-feedback">
+        {% for f in feedbacks %}
+        <div class="fb-card" data-status="{{ f.status }}">
+            <div class="fb-top">
+                <div class="fb-badges">
+                    {% if f.status == 'Resolved' %}<span class="badge badge-green">✅ Resolved</span>
+                    {% elif f.status == 'In Progress' %}<span class="badge badge-blue">🔄 In Progress</span>
+                    {% elif f.status == 'Acknowledged' %}<span class="badge badge-blue">👀 Acknowledged</span>
+                    {% elif f.status == 'Escalated' %}<span class="badge badge-red">🚨 Escalated</span>
+                    {% else %}<span class="badge badge-yellow">⏳ Pending</span>{% endif %}
+                    <span class="badge badge-gray">{{ f.category }}</span>
                 </div>
-                {% set pct = (stats.resolved / stats.total * 100) if stats.total > 0 else 0 %}
-                <div class="progress-bar-premium">
-                    <div class="progress-bar-premium-fill" style="width: {{ pct }}%;"></div>
+                <span class="fb-date">{{ f.created_at.strftime('%b %d') }}</span>
+            </div>
+            <p class="fb-text">{{ f.feedback_text }}</p>
+            <div class="fb-bottom">
+                <div class="fb-meta">
+                    {% if f.sentiment == 'Positive' %}<span class="tag tag-green">😊 Positive</span>
+                    {% elif f.sentiment == 'Negative' %}<span class="tag tag-red">😞 Negative</span>
+                    {% else %}<span class="tag tag-gray">😐 Neutral</span>{% endif %}
+                    <span class="tag tag-urgency-{{ f.urgency_score }}">{{ f.urgency_score }}/5</span>
                 </div>
-                <div class="progress-card-premium-info">
-                    <span>{{ pct|round }}% complete</span>
-                    <span>{{ stats.total - stats.resolved }} remaining</span>
+                <div class="fb-actions">
+                    {% if f.short_term_solution %}
+                    <button onclick="showSolution('{{ f.id }}')" class="btn-small">💡 Solution</button>
+                    {% endif %}
+                    <a href="/edit-feedback/{{ f.id }}" class="btn-small">✏️ Edit</a>
                 </div>
             </div>
-            <div class="chart-card-premium">
-                <div class="chart-card-premium-header">
-                    <div class="chart-card-premium-title">🎯 My Sentiment</div>
-                    <div class="chart-card-premium-stats">
-                        {% set pos = feedbacks|selectattr('sentiment', 'equalto', 'Positive')|list|length %}
-                        {% set neg = feedbacks|selectattr('sentiment', 'equalto', 'Negative')|list|length %}
-                        {% set neu = feedbacks|selectattr('sentiment', 'equalto', 'Neutral')|list|length %}
-                        <span class="chart-stat-dot chart-stat-dot-green">{{ pos }}</span>
-                        <span class="chart-stat-dot chart-stat-dot-red">{{ neg }}</span>
-                        <span class="chart-stat-dot chart-stat-dot-gray">{{ neu }}</span>
-                    </div>
-                </div>
-                <div style="position: relative; height: 155px; display: flex; align-items: center; justify-content: center;">
-                    <canvas id="premiumSentimentChart"></canvas>
+            {% if f.short_term_solution %}
+            <div class="fb-solution" id="sol-{{ f.id }}" hidden>
+                <div class="fb-solution-title">💡 Recommended Solution</div>
+                <p>{{ f.short_term_solution }}</p>
+                <div class="fb-solution-foot">
+                    <span>🏢 {{ f.responsible_department or 'SRC' }}</span>
+                    <span>⏱️ {{ f.estimated_time or 'N/A' }}</span>
                 </div>
             </div>
-        </div>
-
-        {% if feedbacks|length > 0 %}
-        <!-- Premium Filter Bar -->
-        <div class="filter-bar-premium">
-            <span class="filter-bar-premium-label">🔍 Filter</span>
-            {% set total_filter = feedbacks|length %}
-            {% set pending_count = feedbacks|selectattr('status', 'equalto', 'Pending')|list|length %}
-            {% set ack_count = feedbacks|selectattr('status', 'equalto', 'Acknowledged')|list|length %}
-            {% set prog_count = feedbacks|selectattr('status', 'equalto', 'In Progress')|list|length %}
-            {% set res_count = feedbacks|selectattr('status', 'equalto', 'Resolved')|list|length %}
-            {% set esc_count = feedbacks|selectattr('status', 'equalto', 'Escalated')|list|length %}
-            <button onclick="premiumFilter('all')" id="pfAll" class="filter-pill active">All <span class="filter-pill-count">{{ total_filter }}</span></button>
-            <button onclick="premiumFilter('Pending')" id="pfPending" class="filter-pill">⏳ Pending <span class="filter-pill-count">{{ pending_count }}</span></button>
-            <button onclick="premiumFilter('Acknowledged')" id="pfAcknowledged" class="filter-pill">👀 Acknowledged <span class="filter-pill-count">{{ ack_count }}</span></button>
-            <button onclick="premiumFilter('In Progress')" id="pfProgress" class="filter-pill">🔄 In Progress <span class="filter-pill-count">{{ prog_count }}</span></button>
-            <button onclick="premiumFilter('Resolved')" id="pfResolved" class="filter-pill">✅ Resolved <span class="filter-pill-count">{{ res_count }}</span></button>
-            <button onclick="premiumFilter('Escalated')" id="pfEscalated" class="filter-pill">🚨 Escalated <span class="filter-pill-count">{{ esc_count }}</span></button>
-        </div>
-
-        <!-- Feedback Cards -->
-        <div id="premiumFeedbackContainer">
-            {% for f in feedbacks %}
-            <div class="feedback-card-premium" data-status="{{ f.status }}">
-                <div class="feedback-card-premium-inner">
-                    <div class="feedback-card-premium-accent" style="background: {% if f.status == 'Resolved' %}var(--success){% elif f.status == 'In Progress' %}var(--info){% elif f.status == 'Acknowledged' %}var(--primary-light){% elif f.status == 'Escalated' %}var(--danger){% else %}var(--warning){% endif %};"></div>
-                    <div class="feedback-card-premium-body">
-                        <div class="feedback-card-premium-top">
-                            <div class="feedback-card-premium-badges">
-                                {% if f.status == 'Resolved' %}<span class="badge badge-success">✅ Resolved</span>
-                                {% elif f.status == 'In Progress' %}<span class="badge badge-info">🔄 In Progress</span>
-                                {% elif f.status == 'Acknowledged' %}<span class="badge badge-info">👀 Acknowledged</span>
-                                {% elif f.status == 'Escalated' %}<span class="badge badge-danger">🚨 Escalated</span>
-                                {% else %}<span class="badge badge-warning">⏳ Pending</span>{% endif %}
-                                {% if f.ai_topics %}
-                                    {% for topic in f.ai_topics[:2] %}<span class="ai-mini-topic">{{ topic }}</span>{% endfor %}
-                                {% endif %}
-                                {% if f.sentiment == 'Positive' %}<span class="badge badge-success">😊 Positive</span>
-                                {% elif f.sentiment == 'Negative' %}<span class="badge badge-danger">😟 Negative</span>
-                                {% else %}<span class="badge badge-neutral">😐 Neutral</span>{% endif %}
-                                {% set u = f.urgency_score %}{% if u >= 4 %}<span class="badge badge-danger">🔴 Urgency {{ u }}/5</span>
-                                {% elif u >= 3 %}<span class="badge badge-warning">🟡 Urgency {{ u }}/5</span>
-                                {% else %}<span class="badge badge-neutral">🟢 Urgency {{ u }}/5</span>{% endif %}
-                            </div>
-                            <span class="feedback-card-premium-time">{{ f.created_at.strftime('%d %b %Y, %H:%M') }}</span>
-                        </div>
-                        <div class="feedback-card-premium-text">
-                            {{ f.feedback_text }}
-                        </div>
-                        <div class="feedback-card-premium-meta">
-                            <span>📁 {{ f.category }}</span>
-                            {% if f.location %}<span>📍 {{ f.location }}</span>{% endif %}
-                        </div>
-                        {% if f.src_response %}
-                        <div class="feedback-card-premium-response">
-                            <div class="feedback-card-premium-response-header">
-                                <div class="feedback-card-premium-response-avatar">SR</div>
-                                <span class="feedback-card-premium-response-label">SRC Response</span>
-                                {% if f.assigned_to %}<span class="feedback-card-premium-response-by">by {{ f.assigned_to }}</span>{% endif %}
-                            </div>
-                            <p class="feedback-card-premium-response-text">{{ f.src_response }}</p>
-                            {% if f.resolved_at %}<div style="margin-top: 0.4rem; font-size: 0.78rem; color: var(--success); font-weight: 700;">✅ Resolved on {{ f.resolved_at.strftime('%Y-%m-%d') }}</div>{% endif %}
-                        </div>
-                        {% else %}
-                        <div class="feedback-card-premium-pending">
-                            <span>⏳</span>
-                            <span>{% if f.status == 'Resolved' %}Resolved.{% elif f.status == 'In Progress' %}SRC is working on this.{% elif f.status == 'Acknowledged' %}Acknowledged by SRC.{% elif f.status == 'Escalated' %}This issue has been escalated.{% else %}Pending SRC review.{% endif %}</span>
-                        </div>
-                        {% endif %}
-                        <div class="feedback-card-premium-actions">
-                            <button type="button" onclick="togglePremiumExplain('{{ f.id }}')" class="feedback-card-premium-action">🧠 Analyze</button>
-                            {% if f.short_term_solution %}<button type="button" onclick="togglePremiumSolution('{{ f.id }}')" class="feedback-card-premium-action">💡 Recommendations</button>{% endif %}
-                            <a href="/edit-feedback/{{ f.id }}" class="feedback-card-premium-action">✏️ Edit</a>
-                            <form method="POST" action="/delete-feedback/{{ f.id }}" onsubmit="return confirm('Delete this feedback permanently?')" style="display:inline;margin:0;">
-                                {{ csrf_field() }}
-                                <button type="submit" class="feedback-card-premium-action feedback-card-premium-action-danger">🗑️ Delete</button>
-                            </form>
-                        </div>
-                        <!-- AI Explanation Section -->
-                        <div id="explain-{{ f.id }}" class="analysis-section-premium ai-explanation-card">
-                            {% set ai = f.ai_explanation %}
-                            <div class="ai-explanation-header">
-                                <div>
-                                    <div class="ai-explanation-title">🤖 AI Feedback Analysis</div>
-                                    <div class="ai-explanation-subtitle">A short explanation of what the AI understood</div>
-                                </div>
-                                {% if ai and ai.confidence %}
-                                <span class="ai-confidence-pill">{{ ai.confidence }}% confidence</span>
-                                {% endif %}
-                            </div>
-
-                            <div class="ai-explanation-summary">
-                                <span class="ai-explanation-icon">💡</span>
-                                <div>
-                                    <div class="ai-explanation-label">What the AI understood</div>
-                                    <div class="ai-explanation-text">{{ ai.summary }}</div>
-                                </div>
-                            </div>
-
-                            <div class="ai-explanation-why">
-                                <div class="ai-explanation-label">Why was it classified this way?</div>
-                                <div class="ai-explanation-text">{{ ai.why }}</div>
-                            </div>
-
-                            <div class="ai-explanation-recommendation">
-                                <div class="ai-explanation-label">What happens next?</div>
-                                <div class="ai-explanation-text">{{ ai.recommendation }}</div>
-                            </div>
-
-                            {% if ai.review_required %}
-                            <div class="ai-review-note">ℹ️ The AI is not fully certain about this feedback, so it may need an SRC review.</div>
-                            {% endif %}
-                        </div>
-                        <!-- Solutions Section -->
-                        {% if f.short_term_solution %}
-                        <div id="solution-{{ f.id }}" class="analysis-section-premium">
-                            <div class="flex items-center gap-2 mb-3 flex-wrap">
-                                <span class="dept-badge">🏢 {{ f.responsible_department or 'SRC Secretariat' }}</span>
-                                <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">⏱️ {{ f.estimated_time or 'N/A' }}</span>
-                                {% if f.recommendation_confidence is not none %}
-                                {% set conf_pct = (f.recommendation_confidence * 100) | round | int %}
-                                <span style="font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: var(--radius-full); background: {% if conf_pct >= 70 %}rgba(16,185,129,0.1); color: var(--success);{% elif conf_pct >= 40 %}rgba(245,158,11,0.1); color: var(--warning);{% else %}rgba(239,68,68,0.1); color: var(--danger);{% endif %}">🎯 {{ conf_pct }}% match confidence</span>
-                                {% endif %}
-                            </div>
-                            {% if f.recommended_keywords %}
-                            <div class="mb-3">
-                                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">🏷️ Matched Keywords</div>
-                                <div class="flex flex-wrap gap-1">{% for kw in f.recommended_keywords.split(',') %}<span class="keyword-chip">{{ kw.strip() }}</span>{% endfor %}</div>
-                            </div>
-                            {% endif %}
-                            {% set secondary_cats = f.secondary_categories | fromjson %}
-                            {% if secondary_cats %}
-                            <div class="mb-3">
-                                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">🔀 Might Also Involve</div>
-                                <div class="flex flex-wrap gap-1">{% for sc in secondary_cats %}<span class="keyword-chip">{{ sc if sc is string else sc.category }}</span>{% endfor %}</div>
-                            </div>
-                            {% endif %}
-                            <div style="background: var(--bg-color); border-radius: 0.5rem; padding: 0.75rem; border: 1px solid var(--border-color);">
-                                <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem;">💡 Recommended Solution</div>
-                                <div style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.5;">{{ f.short_term_solution }}</div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
+            {% endif %}
+            {% if f.src_response %}
+            <div class="fb-response">
+                <div class="fb-response-head">
+                    <div class="fb-response-avatar">SR</div>
+                    <span class="fb-response-label">SRC Response</span>
+                    {% if f.resolved_at %}<span class="fb-response-date">✅ {{ f.resolved_at.strftime('%b %d') }}</span>{% endif %}
                 </div>
+                <p>{{ f.src_response }}</p>
             </div>
-            {% endfor %}
-        </div>
-
-        <!-- Submit New Button -->
-        <div style="text-align: center; margin-top: 1.75rem;">
-            <a href="/submit" class="btn btn-primary btn-lg" style="display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 8px 25px rgba(30, 64, 175, 0.2); padding: 0.85rem 2rem;">
-                + Submit New Feedback
-            </a>
+            {% endif %}
         </div>
         {% else %}
-        <!-- Empty State -->
-        <div class="empty-state-premium">
-            <span class="empty-state-premium-icon">📝</span>
-            <h3 class="empty-state-premium-title">No Feedback Yet</h3>
-            <p class="empty-state-premium-desc">You haven't submitted any feedback to the SRC. Take the first step and share your thoughts!</p>
-            <a href="/submit" class="btn btn-primary btn-lg">✍️ Submit Your First Feedback</a>
+        <div class="dash-empty">
+            <div class="dash-empty-icon">📝</div>
+            <h3>No Feedback Yet</h3>
+            <p>Share your thoughts with SRC and track responses here</p>
+            <a href="/submit" class="btn-main">✍️ Submit Your First Feedback</a>
         </div>
-        {% endif %}
+        {% endfor %}
+    </section>
+</div>
 
-        <script>
-        // Premium filter function
-        function premiumFilter(status) {
-            var cards = document.querySelectorAll('.feedback-card-premium');
-            var visibleCount = 0;
-            var filterMap = {
-                'all': 'pfAll',
-                'Pending': 'pfPending',
-                'Acknowledged': 'pfAcknowledged',
-                'In Progress': 'pfProgress',
-                'Resolved': 'pfResolved',
-                'Escalated': 'pfEscalated'
-            };
+<style>
+/* Container */
+.dashboard-container { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem; }
 
-            cards.forEach(function(card) {
-                var cardStatus = card.getAttribute('data-status');
-                if (status === 'all' || cardStatus === status) {
-                    card.style.display = '';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
+/* Hero */
+.dash-hero { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.dash-hero-left { display: flex; align-items: center; gap: 0.85rem; }
+.dash-avatar { width: 2.75rem; height: 2.75rem; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #1e40af); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700; color: #fff; }
+.dash-hero-info h1 { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.2; }
+.dash-hero-info p { font-size: 0.8rem; color: var(--text-secondary); margin: 0.2rem 0 0; }
+.dash-hero-right { display: flex; align-items: center; gap: 0.6rem; }
+.notif-btn { position: relative; width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 1px solid var(--border-color); background: var(--card-bg); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.notif-btn:hover { border-color: var(--primary); }
+.notif-icon { font-size: 1.1rem; }
+.notif-count { position: absolute; top: -4px; right: -4px; min-width: 1.1rem; height: 1.1rem; border-radius: 9999px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 0.2rem; }
+.btn-main { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 0.5rem; background: #3b82f6; color: #fff; font-size: 0.8rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.15s ease; }
+.btn-main:hover { background: #1e40af; transform: translateY(-1px); }
 
-            // Update active pill
-            document.querySelectorAll('.filter-pill').forEach(function(pill) {
-                pill.classList.remove('active');
-            });
-            var activePill = document.getElementById(filterMap[status]);
-            if (activePill) activePill.classList.add('active');
+/* Notification Dropdown */
+.notif-dropdown { position: absolute; top: 4.5rem; right: 1rem; width: 18rem; max-height: 22rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); z-index: 100; overflow: hidden; }
+.notif-head { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); font-weight: 700; font-size: 0.85rem; color: var(--text-primary); }
+.notif-read-all { background: none; border: none; color: #3b82f6; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
+.notif-list { max-height: 16rem; overflow-y: auto; }
+.notif-empty { padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.8rem; }
 
-            // Handle empty message
-            var emptyMsg = document.getElementById('premiumFilterEmptyMsg');
-            if (visibleCount === 0 && status !== 'all') {
-                if (!emptyMsg) {
-                    emptyMsg = document.createElement('div');
-                    emptyMsg.id = 'premiumFilterEmptyMsg';
-                    emptyMsg.className = 'empty-state-premium';
-                    emptyMsg.style.cssText = 'margin-top: 1rem; padding: 2rem;';
-                    emptyMsg.innerHTML = '<span class="empty-state-premium-icon" style="font-size: 2.5rem;">🔍</span><div style="font-weight: 700; margin-bottom: 0.25rem;">No results found</div><div style="font-size: 0.85rem; color: var(--text-secondary);">Try selecting a different filter.</div>';
-                    document.getElementById('premiumFeedbackContainer').appendChild(emptyMsg);
-                }
-                emptyMsg.style.display = '';
-            } else if (emptyMsg) {
-                emptyMsg.style.display = 'none';
-            }
+/* Stats */
+.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
+.stat-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.6rem; padding: 0.85rem 0.5rem; text-align: center; }
+.stat-icon { font-size: 1.1rem; margin-bottom: 0.3rem; }
+.stat-num { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.stat-name { font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.2rem; }
+
+/* Quick Links */
+.dash-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 1.25rem; }
+.quick-link { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.7rem 0.4rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.6rem; text-decoration: none; color: var(--text-primary); font-size: 0.7rem; font-weight: 600; transition: all 0.15s ease; }
+.quick-link:hover { border-color: #3b82f6; transform: translateY(-2px); }
+.quick-icon { font-size: 1.1rem; }
+
+/* Filters */
+.dash-filters { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.filter-btn { padding: 0.35rem 0.7rem; border-radius: 9999px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
+.filter-btn:hover { border-color: #3b82f6; }
+.filter-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+/* Feedback Cards */
+.dash-feedback { display: flex; flex-direction: column; gap: 0.75rem; }
+.fb-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.6rem; padding: 0.85rem; transition: all 0.15s ease; }
+.fb-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.fb-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem; }
+.fb-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 600; }
+.badge-green { background: rgba(16,185,129,0.1); color: #059669; }
+.badge-blue { background: rgba(59,130,246,0.1); color: #2563eb; }
+.badge-yellow { background: rgba(245,158,11,0.1); color: #d97706; }
+.badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+.badge-gray { background: var(--bg-color); color: var(--text-secondary); }
+.fb-date { font-size: 0.7rem; color: var(--text-muted); }
+.fb-text { font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; margin: 0 0 0.6rem; }
+.fb-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
+.fb-meta { display: flex; gap: 0.4rem; align-items: center; }
+.tag { font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.4rem; border-radius: 0.3rem; }
+.tag-green { background: rgba(16,185,129,0.1); color: #059669; }
+.tag-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+.tag-gray { background: var(--bg-color); color: var(--text-secondary); }
+.tag-urgency-1, .tag-urgency-2 { background: rgba(16,185,129,0.1); color: #059669; }
+.tag-urgency-3 { background: rgba(245,158,11,0.1); color: #d97706; }
+.tag-urgency-4 { background: rgba(249,115,22,0.1); color: #ea580c; }
+.tag-urgency-5 { background: rgba(239,68,68,0.1); color: #dc2626; }
+.fb-actions { display: flex; gap: 0.4rem; }
+.btn-small { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.3rem 0.6rem; border-radius: 0.4rem; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary); font-size: 0.65rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.15s ease; }
+.btn-small:hover { border-color: #3b82f6; color: #3b82f6; }
+
+/* Solution Box */
+.fb-solution { margin-top: 0.6rem; padding: 0.65rem; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.12); border-radius: 0.5rem; }
+.fb-solution-title { font-weight: 700; font-size: 0.75rem; color: #3b82f6; margin-bottom: 0.3rem; }
+.fb-solution p { font-size: 0.8rem; color: var(--text-primary); margin: 0 0 0.4rem; line-height: 1.4; }
+.fb-solution-foot { display: flex; gap: 0.75rem; font-size: 0.7rem; color: var(--text-secondary); }
+
+/* Response Box */
+.fb-response { margin-top: 0.6rem; padding: 0.65rem; background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.12); border-radius: 0.5rem; }
+.fb-response-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+.fb-response-avatar { width: 1.25rem; height: 1.25rem; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #fff; }
+.fb-response-label { font-weight: 700; font-size: 0.75rem; color: #059669; }
+.fb-response-date { font-size: 0.65rem; color: #059669; margin-left: auto; }
+.fb-response p { font-size: 0.8rem; color: var(--text-primary); margin: 0; line-height: 1.4; }
+
+/* Empty State */
+.dash-empty { text-align: center; padding: 2.5rem 1rem; }
+.dash-empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.dash-empty h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.4rem; }
+.dash-empty p { font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 1.25rem; }
+
+/* Mobile */
+@media (max-width: 600px) {
+    .dash-stats { grid-template-columns: repeat(2, 1fr); }
+    .dash-quick { grid-template-columns: repeat(2, 1fr); }
+    .dash-hero { flex-direction: column; align-items: flex-start; }
+}
+</style>
+
+<script>
+function filterDash(status) {
+    document.querySelectorAll('.fb-card').forEach(function(c) {
+        c.style.display = (status === 'all' || c.getAttribute('data-status') === status) ? '' : 'none';
+    });
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    var btn = document.getElementById('f' + status.replace(' ', ''));
+    if (btn) btn.classList.add('active');
+}
+
+function showSolution(id) {
+    var el = document.getElementById('sol-' + id);
+    if (el) el.hidden = !el.hidden;
+}
+
+// Notifications
+function loadNotifs() {
+    fetch('/api/notifications').then(function(r) { return r.json(); }).then(function(data) {
+        if (data.success) {
+            var badge = document.getElementById('notifCount');
+            if (data.unread_count > 0) {
+                badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
+                badge.hidden = false;
+            } else { badge.hidden = true; }
+            var list = document.getElementById('notifList');
+            if (data.notifications && data.notifications.length > 0) {
+                list.innerHTML = data.notifications.map(function(n) {
+                    var icon = n.notification_type === 'status_change' ? '📋' : n.notification_type === 'response' ? '💬' : '🔔';
+                    return '<div class="notif-item ' + (n.is_read ? '' : 'unread') + '">' +
+                        '<div class="notif-item-title">' + icon + ' ' + n.title + '</div>' +
+                        '<div class="notif-item-text">' + n.message + '</div>' +
+                        '<div class="notif-item-time">' + n.created_at + '</div></div>';
+                }).join('');
+            } else { list.innerHTML = '<div class="notif-empty">No notifications</div>'; }
         }
-
-        // Toggle analysis sections
-        function togglePremiumExplain(id) {
-            var el = document.getElementById('explain-' + id);
-            if (el) {
-                el.classList.toggle('visible');
-            }
-        }
-
-        function togglePremiumSolution(id) {
-            var el = document.getElementById('solution-' + id);
-            if (el) {
-                el.classList.toggle('visible');
-            }
-        }
-
-        // Initialize sentiment chart
-        document.addEventListener('DOMContentLoaded', function() {
-            var ctx = document.getElementById('premiumSentimentChart');
-            if (ctx) {
-                new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Positive', 'Negative', 'Neutral'],
-                        datasets: [{
-                            data: [{{ pos }}, {{ neg }}, {{ neu }}],
-                            backgroundColor: ['#10b981', '#ef4444', '#6b7280'],
-                            borderWidth: 0,
-                            hoverOffset: 8
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        cutout: '65%',
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: 'var(--card-bg)',
-                                titleColor: 'var(--text-primary)',
-                                bodyColor: 'var(--text-secondary)',
-                                borderColor: 'var(--border-color)',
-                                borderWidth: 1,
-                                cornerRadius: 8,
-                                callbacks: {
-                                    label: function(ctx) {
-                                        var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
-                                        var pct = total > 0 ? Math.round(ctx.parsed / total * 100) : 0;
-                                        return ctx.label + ': ' + ctx.parsed + ' (' + pct + '%)';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Animate progress bar on load
-            setTimeout(function() {
-                var progressFill = document.querySelector('.progress-bar-premium-fill');
-                if (progressFill) {
-                    var targetWidth = progressFill.style.width;
-                    progressFill.style.width = '0%';
-                    setTimeout(function() {
-                        progressFill.style.width = targetWidth;
-                    }, 100);
-                }
-            }, 200);
-        });
-        </script>
+    });
+}
+function toggleNotif() {
+    var d = document.getElementById('notifDropdown');
+    d.hidden = !d.hidden;
+}
+function markReadAll() {
+    fetch('/api/notifications/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }, body: JSON.stringify({ ids: [] }) }).then(function() { loadNotifs(); });
+}
+document.addEventListener('click', function(e) {
+    var b = document.querySelector('.notif-btn'), d = document.getElementById('notifDropdown');
+    if (b && d && !b.contains(e.target) && !d.contains(e.target)) d.hidden = true;
+});
+loadNotifs();
+setInterval(loadNotifs, 30000);
+</script>
 {% endblock %}
-

@@ -9,7 +9,7 @@ import re
 from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken
 from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag, ForumReplyVote
 from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
-from database import SolutionTemplate, SolutionFeedback, CustomLexicon, UnknownWord, AIReviewLog
+from database import SolutionTemplate, SolutionFeedback, CustomLexicon, UnknownWord, AIReviewLog, Notification
 from database import is_valid_htu_email, extract_student_id_from_email
 from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation, build_ai_explanation
 from sentiment.topic_extractor import extract_topics
@@ -42,6 +42,117 @@ logging.basicConfig(
 )
 logger = logging.getLogger('HTU_SRC')
 from logger import log_student_action, log_admin_action, log_feedback_action, log_system_action
+
+# ==================== NOTIFICATION HELPER ====================
+
+def create_notification(student_id, feedback_id, notification_type, title, message):
+    """Create a notification for a student."""
+    try:
+        notification = Notification(
+            recipient_type='student',
+            student_id=student_id,
+            feedback_id=feedback_id,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            is_read=False
+        )
+        db.session.add(notification)
+        db.session.commit()
+        return notification
+    except Exception as e:
+        logger.error(f"Error creating notification: {e}")
+        db.session.rollback()
+        return None
+
+
+def create_admin_notification(feedback_id, notification_type, title, message):
+    """Create a notification for admins."""
+    try:
+        notification = Notification(
+            recipient_type='admin',
+            feedback_id=feedback_id,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            is_read=False
+        )
+        db.session.add(notification)
+        db.session.commit()
+        return notification
+    except Exception as e:
+        logger.error(f"Error creating admin notification: {e}")
+        db.session.rollback()
+        return None
+
+
+def notify_admins_new_feedback(feedback):
+    """Notify all admins about new feedback."""
+    try:
+        student_name = feedback.student.full_name if feedback.student else 'Anonymous'
+        title = f'New Feedback #{feedback.id}'
+        message = f'{student_name} submitted feedback in {feedback.category or "General"} - Urgency {feedback.urgency_score}/5'
+        
+        # Get all admin users
+        admins = SRCUser.query.all()
+        for admin in admins:
+            notification = Notification(
+                recipient_type='admin',
+                admin_id=admin.id,
+                feedback_id=feedback.id,
+                notification_type='new_feedback',
+                title=title,
+                message=message,
+                is_read=False
+            )
+            db.session.add(notification)
+        db.session.commit()
+    except Exception as e:
+        logger.error(f"Error notifying admins: {e}")
+        db.session.rollback()
+
+
+def check_unattended_feedback():
+    """Check for unattended feedback and notify admins."""
+    try:
+        from datetime import timedelta
+        now = datetime.utcnow()
+        
+        # Feedback pending for more than 24 hours
+        old_pending = Feedback.query.filter(
+            Feedback.status == 'Pending',
+            Feedback.created_at <= now - timedelta(hours=24)
+        ).all()
+        
+        for feedback in old_pending:
+            # Check if notification already sent today
+            existing = Notification.query.filter(
+                Notification.feedback_id == feedback.id,
+                Notification.notification_type == 'unattended',
+                Notification.created_at >= now - timedelta(hours=24)
+            ).first()
+            
+            if not existing:
+                student_name = feedback.student.full_name if feedback.student else 'Anonymous'
+                title = f'Unattended Feedback #{feedback.id}'
+                message = f'Feedback from {student_name} has been pending for over 24 hours. Category: {feedback.category or "General"}, Urgency: {feedback.urgency_score}/5'
+                
+                admins = SRCUser.query.all()
+                for admin in admins:
+                    notification = Notification(
+                        recipient_type='admin',
+                        admin_id=admin.id,
+                        feedback_id=feedback.id,
+                        notification_type='unattended',
+                        title=title,
+                        message=message,
+                        is_read=False
+                    )
+                    db.session.add(notification)
+        db.session.commit()
+    except Exception as e:
+        logger.error(f"Error checking unattended feedback: {e}")
+        db.session.rollback()
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_limiter import Limiter
@@ -961,6 +1072,9 @@ def submit_feedback():
         db.session.add(feedback)
         db.session.commit()
         
+        # Notify admins about new feedback
+        notify_admins_new_feedback(feedback)
+        
         if analysis['has_profanity']:
             log_feedback_action(feedback.id, session['student_id'], 'Profanity Detected', 
                                'Feedback contained inappropriate language', 'WARNING')
@@ -1834,6 +1948,32 @@ def update_feedback(feedback_id):
     log_admin_action(session['admin_name'], 'Feedback Update', f'Feedback ID: {feedback_id}, Status: {old_status} -> {new_status}')
     add_db_log('feedback', 'INFO', 'admin', session['admin_name'], 'Feedback Updated', f'Feedback ID: {feedback_id}, Status: {old_status} -> {new_status}')
     
+    # Create notification for student
+    if feedback.student_id:
+        if old_status != new_status:
+            status_messages = {
+                'Pending': 'Your feedback is pending review.',
+                'Acknowledged': 'Your feedback has been acknowledged by the SRC.',
+                'In Progress': 'The SRC is working on your feedback.',
+                'Resolved': 'Your feedback has been resolved!',
+                'Escalated': 'Your feedback has been escalated to the relevant department.'
+            }
+            create_notification(
+                student_id=feedback.student_id,
+                feedback_id=feedback.id,
+                notification_type='status_change',
+                title=f'Status Updated: {new_status}',
+                message=status_messages.get(new_status, f'Your feedback status was updated to {new_status}.')
+            )
+        if request.form.get('src_response') and request.form.get('src_response') != feedback.src_response:
+            create_notification(
+                student_id=feedback.student_id,
+                feedback_id=feedback.id,
+                notification_type='response',
+                title='New SRC Response',
+                message='The SRC has responded to your feedback.'
+            )
+    
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/feedback/<int:feedback_id>/regenerate-recommendation', methods=['POST'])
@@ -2114,11 +2254,32 @@ def review_ai_feedback(feedback_id):
     if new_sentiment not in allowed:
         new_sentiment = feedback.sentiment or 'neutral'
 
-    feedback.sentiment = new_sentiment
-    feedback.category = new_category
-    feedback.urgency_score = new_urgency
+        feedback.sentiment = new_sentiment
+        feedback.category = new_category
+        feedback.urgency_score = new_urgency
 
-    action = 'approved' if old == (new_sentiment, new_category, new_urgency) else 'corrected'
+        # Regenerate solution recommendation if sentiment changed to Negative
+        if new_sentiment == 'negative' and old[0] != 'negative':
+            try:
+                rec = recommend_solutions(
+                    text=feedback.feedback_text,
+                    category=new_category,
+                    urgency_score=new_urgency,
+                    sentiment=new_sentiment,
+                    sentiment_score=-0.5,
+                    db_templates=_get_db_templates_for_category(new_category),
+                )
+                feedback.short_term_solution = rec.short_term_solution
+                feedback.long_term_solution = rec.long_term_solution
+                feedback.responsible_department = rec.responsible_department
+                feedback.estimated_time = rec.estimated_time
+                feedback.recommended_keywords = ','.join(rec.matched_keywords) if rec.matched_keywords else ''
+                feedback.secondary_categories = json.dumps(rec.secondary_categories) if rec.secondary_categories else '[]'
+                feedback.recommendation_confidence = rec.confidence
+            except Exception:
+                pass
+
+        action = 'approved' if old == (new_sentiment, new_category, new_urgency) else 'corrected'
     db.session.add(AIReviewLog(
         feedback_id=feedback.id, admin_name=session.get('admin_name', 'admin'),
         action=action, old_sentiment=old[0], new_sentiment=new_sentiment,
@@ -2144,6 +2305,26 @@ def review_ai_feedback(feedback_id):
             pass
     db.session.commit()
     log_admin_action(session['admin_name'], 'AI Review', f'Feedback ID {feedback.id}: {action}')
+
+    # Create notification for student
+    if feedback.student_id:
+        if old[0] != new_sentiment:
+            create_notification(
+                student_id=feedback.student_id,
+                feedback_id=feedback.id,
+                notification_type='sentiment_change',
+                title='Feedback Sentiment Updated',
+                message=f'Your feedback #{feedback.id} sentiment was changed from {old[0]} to {new_sentiment}.'
+            )
+        if old[1] != new_category:
+            create_notification(
+                student_id=feedback.student_id,
+                feedback_id=feedback.id,
+                notification_type='category_change',
+                title='Feedback Category Updated',
+                message=f'Your feedback #{feedback.id} category was changed from {old[1]} to {new_category}.'
+            )
+
     return redirect(url_for('admin_ai_review'))
 
 
@@ -2387,6 +2568,107 @@ def api_ai_review_bulk_approve():
     db.session.commit()
     log_admin_action(session['admin_name'], 'AI Review Bulk Approve', f'{count} items approved')
     return jsonify({'success': True, 'count': count})
+
+# ==================== NOTIFICATION API ROUTES ====================
+
+@app.route('/api/notifications')
+@login_required
+def api_get_notifications():
+    """Get notifications for the logged-in student."""
+    student_id = session.get('student_id')
+    if not student_id:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    notifications = Notification.query.filter_by(student_id=student_id).order_by(Notification.created_at.desc()).limit(20).all()
+    unread_count = Notification.query.filter_by(student_id=student_id, is_read=False).count()
+    
+    return jsonify({
+        'success': True,
+        'notifications': [n.to_dict() for n in notifications],
+        'unread_count': unread_count
+    })
+
+@app.route('/api/notifications/mark-read', methods=['POST'])
+@login_required
+def api_mark_notifications_read():
+    """Mark notifications as read."""
+    student_id = session.get('student_id')
+    if not student_id:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    data = request.get_json()
+    notification_ids = data.get('ids', [])
+    
+    if notification_ids:
+        Notification.query.filter(
+            Notification.id.in_(notification_ids),
+            Notification.student_id == student_id
+        ).update({'is_read': True}, synchronize_session=False)
+    else:
+        # Mark all as read
+        Notification.query.filter_by(student_id=student_id, is_read=False).update({'is_read': True}, synchronize_session=False)
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/notifications/unread-count')
+@login_required
+def api_unread_count():
+    """Get unread notification count."""
+    student_id = session.get('student_id')
+    if not student_id:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    count = Notification.query.filter_by(student_id=student_id, is_read=False).count()
+    return jsonify({'success': True, 'unread_count': count})
+
+# ==================== ADMIN NOTIFICATION API ROUTES ====================
+
+@app.route('/api/admin/notifications')
+@src_required
+def api_admin_get_notifications():
+    """Get notifications for the logged-in admin."""
+    admin_id = session.get('admin_id')
+    if not admin_id:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    # Check for unattended feedback periodically
+    check_unattended_feedback()
+    
+    notifications = Notification.query.filter_by(recipient_type='admin').order_by(Notification.created_at.desc()).limit(30).all()
+    unread_count = Notification.query.filter_by(recipient_type='admin', is_read=False).count()
+    
+    return jsonify({
+        'success': True,
+        'notifications': [n.to_dict() for n in notifications],
+        'unread_count': unread_count
+    })
+
+@app.route('/api/admin/notifications/mark-read', methods=['POST'])
+@src_required
+def api_admin_mark_notifications_read():
+    """Mark admin notifications as read."""
+    data = request.get_json()
+    notification_ids = data.get('ids', [])
+    
+    if notification_ids:
+        Notification.query.filter(
+            Notification.id.in_(notification_ids),
+            Notification.recipient_type == 'admin'
+        ).update({'is_read': True}, synchronize_session=False)
+    else:
+        # Mark all as read
+        Notification.query.filter_by(recipient_type='admin', is_read=False).update({'is_read': True}, synchronize_session=False)
+    
+    db.session.commit()
+    return jsonify({'success': True})
+
+@app.route('/api/admin/notifications/unread-count')
+@src_required
+def api_admin_unread_count():
+    """Get unread notification count for admin."""
+    count = Notification.query.filter_by(recipient_type='admin', is_read=False).count()
+    return jsonify({'success': True, 'unread_count': count})
 
 @app.route('/admin/logs')
 @src_required

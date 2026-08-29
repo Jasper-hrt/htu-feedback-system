@@ -43,9 +43,25 @@
                 </div>
             </div>
             <div class="admin-hero-actions">
+                <div class="notification-bell" id="adminNotificationBell" onclick="toggleAdminNotificationDropdown()">
+                    <span class="notification-bell-icon">🔔</span>
+                    <span class="notification-badge" id="adminNotificationBadge" style="display:none;">0</span>
+                </div>
                 <a href="/admin/analytics" class="btn-hero btn-hero-primary">📈 View Analytics</a>
                 <a href="/admin/export/excel" class="btn-hero">📊 Export Data</a>
             </div>
+        </div>
+
+        <!-- Admin Notification Dropdown -->
+        <div class="notification-dropdown" id="adminNotificationDropdown" style="display:none;">
+            <div class="notification-dropdown-header">
+                <span>🔔 Notifications</span>
+                <button onclick="markAllAdminNotificationsRead()" class="notification-mark-read">Mark all read</button>
+            </div>
+            <div class="notification-dropdown-list" id="adminNotificationList">
+                <div class="notification-empty">No notifications yet</div>
+            </div>
+        </div>
         </div>
         <div class="quick-actions-label"><span class="quick-actions-icon">⚡</span> Quick Actions</div>
         <div class="phase3-action-grid" aria-label="Admin quick actions">
@@ -661,6 +677,91 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
             this.style.borderColor = 'var(--primary)';
             setTimeout(function() { document.getElementById('trendPeriod').style.borderColor = 'var(--border-color)'; }, 500);
         });
+
+        // ==================== ADMIN NOTIFICATIONS ====================
+        function loadAdminNotifications() {
+            fetch('/api/admin/notifications')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    updateAdminNotificationBadge(data.unread_count);
+                    renderAdminNotifications(data.notifications);
+                }
+            })
+            .catch(function(e) { console.error('Admin notifications error:', e); });
+        }
+
+        function updateAdminNotificationBadge(count) {
+            var badge = document.getElementById('adminNotificationBadge');
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function renderAdminNotifications(notifications) {
+            var list = document.getElementById('adminNotificationList');
+            if (!notifications || notifications.length === 0) {
+                list.innerHTML = '<div class="notification-empty">No notifications yet</div>';
+                return;
+            }
+            list.innerHTML = notifications.map(function(n) {
+                var icon = '🔔';
+                if (n.notification_type === 'new_feedback') icon = '📝';
+                else if (n.notification_type === 'unattended') icon = '⚠️';
+                else if (n.notification_type === 'status_change') icon = '📋';
+                return '<div class="notification-item ' + (n.is_read ? '' : 'unread') + '" onclick="markAdminNotificationRead(' + n.id + ')">' +
+                    '<div class="notification-item-title">' + icon + ' ' + n.title + '</div>' +
+                    '<div class="notification-item-message">' + n.message + '</div>' +
+                    '<div class="notification-item-time">' + n.created_at + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function toggleAdminNotificationDropdown() {
+            var dropdown = document.getElementById('adminNotificationDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function markAdminNotificationRead(id) {
+            fetch('/api/admin/notifications/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+                body: JSON.stringify({ ids: [id] })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) loadAdminNotifications();
+            });
+        }
+
+        function markAllAdminNotificationsRead() {
+            fetch('/api/admin/notifications/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+                body: JSON.stringify({ ids: [] })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) loadAdminNotifications();
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            var bell = document.getElementById('adminNotificationBell');
+            var dropdown = document.getElementById('adminNotificationDropdown');
+            if (bell && dropdown && !bell.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Load notifications on page load
+        loadAdminNotifications();
+        // Refresh every 30 seconds
+        setInterval(loadAdminNotifications, 30000);
         </script>
     </section>
 </div>

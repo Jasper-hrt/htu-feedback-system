@@ -648,6 +648,38 @@ class SolutionFeedback(db.Model):
         }
 
 
+# ==================== NOTIFICATION MODEL ====================
+
+class Notification(db.Model):
+    """Notifications for students and admins."""
+    __tablename__ = 'notifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    recipient_type = db.Column(db.String(20), nullable=False, index=True)  # 'student' or 'admin'
+    student_id = db.Column(db.String(20), db.ForeignKey('students.student_id'), nullable=True, index=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('src_users.id'), nullable=True, index=True)
+    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=True, index=True)
+    notification_type = db.Column(db.String(50), nullable=False)  # 'new_feedback', 'unattended', 'status_change', 'response'
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'recipient_type': self.recipient_type,
+            'student_id': self.student_id,
+            'admin_id': self.admin_id,
+            'feedback_id': self.feedback_id,
+            'notification_type': self.notification_type,
+            'title': self.title,
+            'message': self.message,
+            'is_read': self.is_read,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+        }
+
+
 # ==================== HELPER FUNCTIONS ====================
 
 def is_valid_htu_email(email):
