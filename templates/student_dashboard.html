@@ -105,12 +105,54 @@
                     <span class="sd-tag sd-tag-urgency-{{ f.urgency_score }}">{{ f.urgency_score }}/5</span>
                 </div>
                 <div class="sd-card-actions">
+                    {% if f.phase2_ai_explanation %}
+                    <button onclick="showAnalysis('{{ f.id }}')" class="sd-btn-small">🧠 Analysis</button>
+                    {% endif %}
                     {% if f.short_term_solution %}
                     <button onclick="showSolution('{{ f.id }}')" class="sd-btn-small">💡 Solution</button>
                     {% endif %}
                     <a href="/edit-feedback/{{ f.id }}" class="sd-btn-small">✏️ Edit</a>
                 </div>
             </div>
+            {% if f.phase2_ai_explanation %}
+            <div class="sd-analysis" id="analysis-{{ f.id }}" hidden>
+                <div class="sd-analysis-title">🧠 AI Analysis</div>
+                <div class="sd-analysis-content">
+                    {% set expl = f.phase2_ai_explanation %}
+                    {% if expl is string %}
+                        <p>{{ expl }}</p>
+                    {% elif expl is mapping %}
+                        {% if expl.get('summary') %}
+                        <div class="sd-analysis-item">
+                            <strong>Summary:</strong> {{ expl.summary }}
+                        </div>
+                        {% endif %}
+                        {% if expl.get('sentiment_reason') %}
+                        <div class="sd-analysis-item">
+                            <strong>Sentiment Reason:</strong> {{ expl.sentiment_reason }}
+                        </div>
+                        {% endif %}
+                        {% if expl.get('category_reason') %}
+                        <div class="sd-analysis-item">
+                            <strong>Category Reason:</strong> {{ expl.category_reason }}
+                        </div>
+                        {% endif %}
+                        {% if expl.get('keywords') %}
+                        <div class="sd-analysis-item">
+                            <strong>Keywords:</strong>
+                            <div class="sd-keywords">
+                                {% for kw in expl.keywords %}
+                                <span class="sd-keyword">{{ kw }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p>{{ expl }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
             {% if f.short_term_solution %}
             <div class="sd-solution" id="sol-{{ f.id }}" hidden>
                 <div class="sd-solution-title">💡 Recommended Solution</div>
@@ -222,6 +264,15 @@
 .sd-solution p { font-size: 0.75rem; color: var(--text-primary); margin: 0 0 0.3rem; line-height: 1.4; }
 .sd-solution-foot { display: flex; gap: 0.6rem; font-size: 0.65rem; color: var(--text-secondary); }
 
+/* Analysis Box */
+.sd-analysis { margin-top: 0.5rem; padding: 0.5rem; background: rgba(139,92,246,0.04); border: 1px solid rgba(139,92,246,0.12); border-radius: 0.4rem; }
+.sd-analysis-title { font-weight: 700; font-size: 0.7rem; color: #7c3aed; margin-bottom: 0.3rem; }
+.sd-analysis-content { font-size: 0.75rem; color: var(--text-primary); line-height: 1.4; }
+.sd-analysis-item { margin-bottom: 0.25rem; }
+.sd-analysis-item strong { color: #7c3aed; }
+.sd-keywords { display: flex; flex-wrap: wrap; gap: 0.2rem; margin-top: 0.15rem; }
+.sd-keyword { font-size: 0.6rem; padding: 0.1rem 0.35rem; background: rgba(139,92,246,0.1); color: #7c3aed; border-radius: 0.25rem; font-weight: 600; }
+
 /* Response Box */
 .sd-response { margin-top: 0.5rem; padding: 0.5rem; background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.1); border-radius: 0.4rem; }
 .sd-response-head { display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem; }
@@ -270,6 +321,11 @@ function filterDash(status) {
 
 function showSolution(id) {
     var el = document.getElementById('sol-' + id);
+    if (el) el.hidden = !el.hidden;
+}
+
+function showAnalysis(id) {
+    var el = document.getElementById('analysis-' + id);
     if (el) el.hidden = !el.hidden;
 }
 

@@ -53,13 +53,26 @@ def censor_text(text):
 
 
 def analyze_sentiment(text):
-    """Authoritative sentiment API used by feedback, chat and forum.
-
-    This function deliberately delegates to the same HybridSentimentEngine as
-    process_feedback so there is no hidden VADER-only sentiment path.
-    """
-    result = hybrid_engine.analyze(text)
-    return result["sentiment"], result["final_score"]
+    """Fast, reliable sentiment analysis using VADER."""
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    from sentiment.custom_lexicon import CustomLexiconManager
+    
+    analyzer = SentimentIntensityAnalyzer()
+    custom_lexicon = CustomLexiconManager()
+    for word, score in custom_lexicon.get_lexicon().items():
+        analyzer.lexicon[word] = score
+    
+    vs = analyzer.polarity_scores(text)
+    compound = vs['compound']
+    
+    if compound >= 0.05:
+        sentiment = 'Positive'
+    elif compound <= -0.05:
+        sentiment = 'Negative'
+    else:
+        sentiment = 'Neutral'
+    
+    return sentiment, round(compound, 3)
 
 def get_sentiment_explanation(text, top_n=6):
     """Return explanation evidence from the authoritative hybrid analysis."""
@@ -293,117 +306,100 @@ def detect_category(text):
 # ==================== MAIN PROCESSING ====================
 
 def process_feedback(text, user_category=None):
+    """Simplified, reliable sentiment analysis using VADER + custom lexicon."""
 
-    # =====================================
-    # 1. Run the Hybrid Sentiment Engine
-    # =====================================
-    # This can fail if NLTK language data isn't available yet (e.g. a cold
-    # start on Render where the background NLTK download hasn't finished).
-    # A sentiment-analysis failure must never cost a student their feedback
-    # submission, so we fall back to a safe neutral result instead of
-    # letting the exception propagate into a 500 error.
-    try:
-        hybrid_result = hybrid_engine.analyze(text)
-    except Exception as e:
-        print(f"[sentiment_analyzer] hybrid_engine.analyze failed, falling back to neutral: {e}")
-        hybrid_result = {
-            "cleaned_text": text,
-            "sentiment": "Neutral",
-            "final_score": 0.0,
-            "confidence": 0.0,
-            "emotion": {
-                "dominant_emotion": "neutral",
-                "emotion_scores": {},
-                "emotion_intensities": {},
-                "secondary_emotions": [],
-                "compound_mood": "neutral",
-            },
-            "unknown_words": [],
-        }
-
-
-    # =====================================
-    # 2. Get results from the hybrid engine
-    # =====================================
-
-    cleaned_text = hybrid_result["cleaned_text"]
-
-    sentiment = hybrid_result["sentiment"]
-
-    score = hybrid_result["final_score"]
-
-
-    # =====================================
-    # 3. Run the existing profanity check
-    # =====================================
-
-    profanity_flag = has_profanity(text)
-
-
-    # =====================================
-    # 4. Calculate urgency
-    # =====================================
-
-    urgency = calculate_urgency(
-        cleaned_text,
-        sentiment
-    )
-
-
-    # =====================================
-    # 5. Detect or use selected category
-    # =====================================
-
-    if user_category and user_category != "Other":
-
-        category = user_category
-
+    # 1. Clean the text
+    cleaned_text = unified_clean_text(text)
+    
+    # 2. Run VADER sentiment analysis (fast and reliable)
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    from sentiment.custom_lexicon import CustomLexiconManager
+    
+    analyzer = SentimentIntensityAnalyzer()
+    custom_lexicon = CustomLexiconManager()
+    
+    # Add custom lexicon words to VADER
+    for word, score in custom_lexicon.lexicon.items():
+        analyzer.lexicon[word] = score
+    
+    vs = analyzer.polarity_scores(cleaned_text)
+    compound = vs['compound']
+    
+    # 3. Also calculate custom lexicon score for phrase matching
+    custom_score = custom_lexicon.calculate_score(cleaned_text)
+    
+    # 4. Combine scores - prioritize custom lexicon for sarcasm/phrase detection
+    # If VADER and custom disagree significantly, trust custom (it detects phrases)
+    if abs(compound - custom_score) > 0.3:
+        # Significant disagreement - trust custom lexicon (phrase-level analysis)
+        compound = custom_score
+    elif abs(compound) < 0.05 and abs(custom_score) >= 0.05:
+        # VADER is neutral but custom detects sentiment
+        compound = custom_score
+    elif compound > 0.05 and custom_score < -0.05:
+        # VADER positive, custom negative - sarcasm detected
+        compound = custom_score
+    elif compound < -0.05 and custom_score > 0.05:
+        # VADER negative, custom positive - understatement detected
+        compound = custom_score
+    
+    # 5. Determine sentiment
+    if compound >= 0.05:
+        sentiment = 'Positive'
+    elif compound <= -0.05:
+        sentiment = 'Negative'
     else:
-
-        category = detect_category(
-            cleaned_text
-        )
-
-
-    # =====================================
-    # 6. Return results to app.py
-    # =====================================
-
+        sentiment = 'Neutral'
+    
+    # 6. Calculate urgency
+    urgency = calculate_urgency(cleaned_text, sentiment)
+    
+    # 7. Detect category
+    if user_category and user_category != 'Other':
+        category = user_category
+    else:
+        category = detect_category(cleaned_text)
+    
+    # 8. Check profanity
+    profanity_flag = has_profanity(text)
+    
+    # 9. Calculate confidence based on compound score
+    confidence = min(100, abs(compound) * 100 + 50)
+    
+    # 10. Simple emotion detection
+    emotion_data = {
+        'dominant_emotion': 'positive' if compound > 0.05 else ('negative' if compound < -0.05 else 'neutral'),
+        'emotion_scores': {'positive': max(0, compound), 'negative': max(0, -compound)},
+        'compound_mood': 'positive' if compound > 0.05 else ('negative' if compound < -0.05 else 'neutral'),
+    }
+    
     return {
-
-        "sentiment": sentiment,
-
-        "sentiment_score": round(
-            score,
-            3
-        ),
-
-        "urgency_score": urgency,
-
-        "detected_category": category,
-
-        "cleaned_text": cleaned_text,
-
-        "has_profanity": profanity_flag,
-
-        # Extra hybrid results
-        "confidence": hybrid_result[
-            "confidence"
-        ],
-
-        "emotion": hybrid_result[
-            "emotion"
-        ],
-
-        "unknown_words": hybrid_result[
-            "unknown_words"
-        ]
-
+        'sentiment': sentiment,
+        'sentiment_score': round(compound, 3),
+        'urgency_score': urgency,
+        'detected_category': category,
+        'cleaned_text': cleaned_text,
+        'has_profanity': profanity_flag,
+        'confidence': round(confidence, 1),
+        'emotion': emotion_data,
+        'unknown_words': [],
     }
 
 def analyze_chat_message(message):
-    result = hybrid_engine.analyze(message)
-    sentiment = result["sentiment"]
+    """Fast sentiment analysis for chat messages."""
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    analyzer = SentimentIntensityAnalyzer()
+    vs = analyzer.polarity_scores(message)
+    compound = vs['compound']
+    
+    if compound >= 0.05:
+        sentiment = 'Positive'
+    elif compound <= -0.05:
+        sentiment = 'Negative'
+    else:
+        sentiment = 'Neutral'
+    
+    return sentiment, round(compound, 3)
     urgency = calculate_urgency(result.get("normalized_text") or result.get("cleaned_text") or message, sentiment)
     is_flagged = (sentiment == "Negative" and urgency >= 3) or result.get("safety_mode") == "critical_incident"
     return {
