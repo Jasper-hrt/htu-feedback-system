@@ -1,264 +1,319 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-container">
+<div class="student-dash">
     
     <!-- Hero Section -->
-    <section class="dash-hero">
-        <div class="dash-hero-left">
-            <div class="dash-avatar">{{ session.student_name.split()[0][0] }}</div>
-            <div class="dash-hero-info">
-                <h1>Welcome back, {{ session.student_name.split()[0] }}</h1>
-                <p>Track your feedback and stay connected with SRC</p>
+    <section class="sd-hero">
+        <div class="sd-hero-left">
+            <div class="sd-avatar">{{ session.student_name.split()[0][0] }}</div>
+            <div class="sd-hero-text">
+                <h1>Welcome, {{ session.student_name.split()[0] }} 👋</h1>
+                <p>Track your feedback and SRC responses</p>
             </div>
         </div>
-        <div class="dash-hero-right">
-            <button class="notif-btn" onclick="toggleNotif()">
-                <span class="notif-icon">🔔</span>
-                <span class="notif-count" id="notifCount" hidden>0</span>
+        <div class="sd-hero-right">
+            <button class="sd-notif" onclick="toggleNotif()">
+                <span>🔔</span>
+                <span class="sd-notif-badge" id="notifBadge" hidden>0</span>
             </button>
-            <a href="/submit" class="btn-main">✍️ Submit Feedback</a>
+            <a href="/submit" class="sd-btn sd-btn-primary">✍️ Submit</a>
         </div>
     </section>
 
     <!-- Notification Dropdown -->
-    <div class="notif-dropdown" id="notifDropdown" hidden>
-        <div class="notif-head">
+    <div class="sd-notif-drop" id="notifDrop" hidden>
+        <div class="sd-notif-drop-head">
             <span>Notifications</span>
-            <button onclick="markReadAll()" class="notif-read-all">Mark all read</button>
+            <button onclick="markReadAll()" class="sd-notif-read">Mark all read</button>
         </div>
-        <div class="notif-list" id="notifList">
-            <div class="notif-empty">No notifications</div>
+        <div class="sd-notif-drop-list" id="notifList">
+            <div class="sd-notif-empty">No notifications</div>
         </div>
     </div>
 
-    <!-- Stats Grid -->
-    <section class="dash-stats">
-        <div class="stat-box stat-total">
-            <div class="stat-icon">📋</div>
-            <div class="stat-num">{{ stats.total }}</div>
-            <div class="stat-name">Total</div>
+    <!-- Stats -->
+    <section class="sd-stats">
+        <div class="sd-stat">
+            <div class="sd-stat-num">{{ stats.total }}</div>
+            <div class="sd-stat-label">Total</div>
         </div>
-        <div class="stat-box stat-pending">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-num">{{ stats.pending }}</div>
-            <div class="stat-name">Pending</div>
+        <div class="sd-stat sd-stat-amber">
+            <div class="sd-stat-num">{{ stats.pending }}</div>
+            <div class="sd-stat-label">Pending</div>
         </div>
-        <div class="stat-box stat-progress">
-            <div class="stat-icon">🔄</div>
-            <div class="stat-num">{{ stats.in_progress }}</div>
-            <div class="stat-name">In Progress</div>
+        <div class="sd-stat sd-stat-blue">
+            <div class="sd-stat-num">{{ stats.in_progress }}</div>
+            <div class="sd-stat-label">Active</div>
         </div>
-        <div class="stat-box stat-resolved">
-            <div class="stat-icon">✅</div>
-            <div class="stat-num">{{ stats.resolved }}</div>
-            <div class="stat-name">Resolved</div>
+        <div class="sd-stat sd-stat-green">
+            <div class="sd-stat-num">{{ stats.resolved }}</div>
+            <div class="sd-stat-label">Resolved</div>
         </div>
     </section>
 
     <!-- Quick Links -->
-    <section class="dash-quick">
-        <a href="/forum" class="quick-link">
-            <span class="quick-icon">💬</span>
+    <section class="sd-links">
+        <a href="/forum" class="sd-link">
+            <span class="sd-link-icon">💬</span>
             <span>Forum</span>
         </a>
-        <a href="/chat" class="quick-link">
-            <span class="quick-icon">💬</span>
+        <a href="/chat" class="sd-link">
+            <span class="sd-link-icon">💬</span>
             <span>Chat</span>
         </a>
-        <a href="/announcements" class="quick-link">
-            <span class="quick-icon">📢</span>
+        <a href="/announcements" class="sd-link">
+            <span class="sd-link-icon">📢</span>
             <span>News</span>
         </a>
-        <a href="/public" class="quick-link">
-            <span class="quick-icon">📊</span>
+        <a href="/public" class="sd-link">
+            <span class="sd-link-icon">📊</span>
             <span>Board</span>
         </a>
     </section>
 
     <!-- Filters -->
-    <section class="dash-filters">
-        <button onclick="filterDash('all')" id="fAll" class="filter-btn active">All</button>
-        <button onclick="filterDash('Pending')" id="fPending" class="filter-btn">⏳ Pending</button>
-        <button onclick="filterDash('In Progress')" id="fProgress" class="filter-btn">🔄 In Progress</button>
-        <button onclick="filterDash('Resolved')" id="fResolved" class="filter-btn">✅ Resolved</button>
-        <button onclick="filterDash('Escalated')" id="fEscalated" class="filter-btn">🚨 Escalated</button>
+    <section class="sd-filters">
+        <button onclick="filterDash('all')" id="fAll" class="sd-filter active">All</button>
+        <button onclick="filterDash('Pending')" id="fPending" class="sd-filter">⏳ Pending</button>
+        <button onclick="filterDash('In Progress')" id="fProgress" class="sd-filter">🔄 Active</button>
+        <button onclick="filterDash('Resolved')" id="fResolved" class="sd-filter">✅ Resolved</button>
+        <button onclick="filterDash('Escalated')" id="fEscalated" class="sd-filter">🚨 Escalated</button>
     </section>
 
-    <!-- Feedback Cards -->
-    <section class="dash-feedback">
+    <!-- Feedback List -->
+    <section class="sd-list">
         {% for f in feedbacks %}
-        <div class="fb-card" data-status="{{ f.status }}">
-            <div class="fb-top">
-                <div class="fb-badges">
-                    {% if f.status == 'Resolved' %}<span class="badge badge-green">✅ Resolved</span>
-                    {% elif f.status == 'In Progress' %}<span class="badge badge-blue">🔄 In Progress</span>
-                    {% elif f.status == 'Acknowledged' %}<span class="badge badge-blue">👀 Acknowledged</span>
-                    {% elif f.status == 'Escalated' %}<span class="badge badge-red">🚨 Escalated</span>
-                    {% else %}<span class="badge badge-yellow">⏳ Pending</span>{% endif %}
-                    <span class="badge badge-gray">{{ f.category }}</span>
+        <div class="sd-card" data-status="{{ f.status }}">
+            <div class="sd-card-top">
+                <div class="sd-card-badges">
+                    {% if f.status == 'Resolved' %}<span class="sd-badge sd-badge-green">✅ Resolved</span>
+                    {% elif f.status == 'In Progress' %}<span class="sd-badge sd-badge-blue">🔄 In Progress</span>
+                    {% elif f.status == 'Acknowledged' %}<span class="sd-badge sd-badge-blue">👀 Acknowledged</span>
+                    {% elif f.status == 'Escalated' %}<span class="sd-badge sd-badge-red">🚨 Escalated</span>
+                    {% else %}<span class="sd-badge sd-badge-amber">⏳ Pending</span>{% endif %}
+                    <span class="sd-badge sd-badge-gray">{{ f.category }}</span>
                 </div>
-                <span class="fb-date">{{ f.created_at.strftime('%b %d') }}</span>
+                <span class="sd-card-date">{{ f.created_at.strftime('%b %d') }}</span>
             </div>
-            <p class="fb-text">{{ f.feedback_text }}</p>
-            <div class="fb-bottom">
-                <div class="fb-meta">
-                    {% if f.sentiment == 'Positive' %}<span class="tag tag-green">😊 Positive</span>
-                    {% elif f.sentiment == 'Negative' %}<span class="tag tag-red">😞 Negative</span>
-                    {% else %}<span class="tag tag-gray">😐 Neutral</span>{% endif %}
-                    <span class="tag tag-urgency-{{ f.urgency_score }}">{{ f.urgency_score }}/5</span>
+            <p class="sd-card-text">{{ f.feedback_text }}</p>
+            <div class="sd-card-foot">
+                <div class="sd-card-tags">
+                    {% if f.sentiment == 'Positive' %}<span class="sd-tag sd-tag-green">😊 Positive</span>
+                    {% elif f.sentiment == 'Negative' %}<span class="sd-tag sd-tag-red">😞 Negative</span>
+                    {% else %}<span class="sd-tag sd-tag-gray">😐 Neutral</span>{% endif %}
+                    <span class="sd-tag sd-tag-urgent-{{ f.urgency_score }}">{{ f.urgency_score }}/5</span>
                 </div>
-                <div class="fb-actions">
+                <div class="sd-card-btns">
+                    <button onclick="toggleAnalysis('{{ f.id }}')" class="sd-btn-sm">🧠 Analyze</button>
                     {% if f.short_term_solution %}
-                    <button onclick="showSolution('{{ f.id }}')" class="btn-small">💡 Solution</button>
+                    <button onclick="toggleSol('{{ f.id }}')" class="sd-btn-sm">💡 Solution</button>
                     {% endif %}
-                    <a href="/edit-feedback/{{ f.id }}" class="btn-small">✏️ Edit</a>
+                    <a href="/edit-feedback/{{ f.id }}" class="sd-btn-sm">✏️ Edit</a>
                 </div>
             </div>
             {% if f.short_term_solution %}
-            <div class="fb-solution" id="sol-{{ f.id }}" hidden>
-                <div class="fb-solution-title">💡 Recommended Solution</div>
+            <div class="sd-sol" id="sol-{{ f.id }}" hidden>
+                <div class="sd-sol-title">💡 Recommended Solution</div>
                 <p>{{ f.short_term_solution }}</p>
-                <div class="fb-solution-foot">
+                <div class="sd-sol-foot">
                     <span>🏢 {{ f.responsible_department or 'SRC' }}</span>
                     <span>⏱️ {{ f.estimated_time or 'N/A' }}</span>
                 </div>
             </div>
             {% endif %}
+            {% if f.ai_explanation %}
+            <div class="sd-analysis" id="analysis-{{ f.id }}" hidden>
+                <div class="sd-analysis-title">🧠 AI Analysis</div>
+                <div class="sd-analysis-item">
+                    <div class="sd-analysis-label">What the AI understood</div>
+                    <div class="sd-analysis-text">{{ f.ai_explanation.summary }}</div>
+                </div>
+                <div class="sd-analysis-item">
+                    <div class="sd-analysis-label">Why this classification?</div>
+                    <div class="sd-analysis-text">{{ f.ai_explanation.why }}</div>
+                </div>
+                <div class="sd-analysis-item">
+                    <div class="sd-analysis-label">What happens next?</div>
+                    <div class="sd-analysis-text">{{ f.ai_explanation.recommendation }}</div>
+                </div>
+                {% if f.ai_explanation.confidence %}
+                <div class="sd-analysis-confidence">🎯 {{ f.ai_explanation.confidence }}% confidence</div>
+                {% endif %}
+            </div>
+            {% endif %}
             {% if f.src_response %}
-            <div class="fb-response">
-                <div class="fb-response-head">
-                    <div class="fb-response-avatar">SR</div>
-                    <span class="fb-response-label">SRC Response</span>
-                    {% if f.resolved_at %}<span class="fb-response-date">✅ {{ f.resolved_at.strftime('%b %d') }}</span>{% endif %}
+            <div class="sd-resp">
+                <div class="sd-resp-head">
+                    <div class="sd-resp-avatar">SR</div>
+                    <span class="sd-resp-label">SRC Response</span>
+                    {% if f.resolved_at %}<span class="sd-resp-date">✅ {{ f.resolved_at.strftime('%b %d') }}</span>{% endif %}
                 </div>
                 <p>{{ f.src_response }}</p>
             </div>
             {% endif %}
         </div>
         {% else %}
-        <div class="dash-empty">
-            <div class="dash-empty-icon">📝</div>
+        <div class="sd-empty">
+            <div class="sd-empty-icon">📝</div>
             <h3>No Feedback Yet</h3>
             <p>Share your thoughts with SRC and track responses here</p>
-            <a href="/submit" class="btn-main">✍️ Submit Your First Feedback</a>
+            <a href="/submit" class="sd-btn sd-btn-primary">✍️ Submit Your First Feedback</a>
         </div>
         {% endfor %}
     </section>
 </div>
 
 <style>
-/* Container */
-.dashboard-container { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem; }
+/* ========== STUDENT DASHBOARD ========== */
+.student-dash { max-width: 720px; margin: 0 auto; padding: 1.25rem 1rem; }
 
 /* Hero */
-.dash-hero { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-.dash-hero-left { display: flex; align-items: center; gap: 0.85rem; }
-.dash-avatar { width: 2.75rem; height: 2.75rem; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #1e40af); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700; color: #fff; }
-.dash-hero-info h1 { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.2; }
-.dash-hero-info p { font-size: 0.8rem; color: var(--text-secondary); margin: 0.2rem 0 0; }
-.dash-hero-right { display: flex; align-items: center; gap: 0.6rem; }
-.notif-btn { position: relative; width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 1px solid var(--border-color); background: var(--card-bg); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.notif-btn:hover { border-color: var(--primary); }
-.notif-icon { font-size: 1.1rem; }
-.notif-count { position: absolute; top: -4px; right: -4px; min-width: 1.1rem; height: 1.1rem; border-radius: 9999px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 0.2rem; }
-.btn-main { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1rem; border-radius: 0.5rem; background: #3b82f6; color: #fff; font-size: 0.8rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.15s ease; }
-.btn-main:hover { background: #1e40af; transform: translateY(-1px); }
+.sd-hero { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 1rem; }
+.sd-hero-left { display: flex; align-items: center; gap: 0.75rem; }
+.sd-avatar { width: 2.5rem; height: 2.5rem; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #1e40af); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+.sd-hero-text h1 { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.2; }
+.sd-hero-text p { font-size: 0.75rem; color: var(--text-secondary); margin: 0.15rem 0 0; }
+.sd-hero-right { display: flex; align-items: center; gap: 0.5rem; }
+.sd-notif { position: relative; width: 2.25rem; height: 2.25rem; border-radius: 50%; border: 1px solid var(--border-color); background: var(--card-bg); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+.sd-notif:hover { border-color: #3b82f6; }
+.sd-notif-badge { position: absolute; top: -4px; right: -4px; min-width: 1rem; height: 1rem; border-radius: 9999px; background: #ef4444; color: #fff; font-size: 0.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 0.15rem; }
+.sd-btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 0.9rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.15s ease; }
+.sd-btn-primary { background: #3b82f6; color: #fff; }
+.sd-btn-primary:hover { background: #1e40af; transform: translateY(-1px); }
 
 /* Notification Dropdown */
-.notif-dropdown { position: absolute; top: 4.5rem; right: 1rem; width: 18rem; max-height: 22rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); z-index: 100; overflow: hidden; }
-.notif-head { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); font-weight: 700; font-size: 0.85rem; color: var(--text-primary); }
-.notif-read-all { background: none; border: none; color: #3b82f6; font-size: 0.7rem; font-weight: 600; cursor: pointer; }
-.notif-list { max-height: 16rem; overflow-y: auto; }
-.notif-empty { padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.8rem; }
+.sd-notif-drop { position: absolute; top: 4rem; right: 1rem; width: 17rem; max-height: 20rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); z-index: 100; overflow: hidden; }
+.sd-notif-drop-head { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border-color); font-weight: 700; font-size: 0.8rem; color: var(--text-primary); }
+.sd-notif-read { background: none; border: none; color: #3b82f6; font-size: 0.65rem; font-weight: 600; cursor: pointer; }
+.sd-notif-drop-list { max-height: 14rem; overflow-y: auto; }
+.sd-notif-empty { padding: 1.25rem; text-align: center; color: var(--text-secondary); font-size: 0.75rem; }
 
 /* Stats */
-.dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; }
-.stat-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.6rem; padding: 0.85rem 0.5rem; text-align: center; }
-.stat-icon { font-size: 1.1rem; margin-bottom: 0.3rem; }
-.stat-num { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
-.stat-name { font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.2rem; }
+.sd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 1rem; }
+.sd-stat { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.6rem; padding: 0.7rem 0.4rem; text-align: center; }
+.sd-stat-num { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.sd-stat-label { font-size: 0.65rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.15rem; }
+.sd-stat-amber .sd-stat-num { color: #d97706; }
+.sd-stat-blue .sd-stat-num { color: #2563eb; }
+.sd-stat-green .sd-stat-num { color: #059669; }
 
 /* Quick Links */
-.dash-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; margin-bottom: 1.25rem; }
-.quick-link { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.7rem 0.4rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.6rem; text-decoration: none; color: var(--text-primary); font-size: 0.7rem; font-weight: 600; transition: all 0.15s ease; }
-.quick-link:hover { border-color: #3b82f6; transform: translateY(-2px); }
-.quick-icon { font-size: 1.1rem; }
+.sd-links { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 1rem; }
+.sd-link { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.6rem 0.3rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; text-decoration: none; color: var(--text-primary); font-size: 0.65rem; font-weight: 600; transition: all 0.15s ease; }
+.sd-link:hover { border-color: #3b82f6; transform: translateY(-2px); }
+.sd-link-icon { font-size: 1rem; }
 
 /* Filters */
-.dash-filters { display: flex; gap: 0.4rem; margin-bottom: 1rem; flex-wrap: wrap; }
-.filter-btn { padding: 0.35rem 0.7rem; border-radius: 9999px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary); font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
-.filter-btn:hover { border-color: #3b82f6; }
-.filter-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.sd-filters { display: flex; gap: 0.35rem; margin-bottom: 0.85rem; flex-wrap: wrap; }
+.sd-filter { padding: 0.3rem 0.6rem; border-radius: 9999px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary); font-size: 0.65rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
+.sd-filter:hover { border-color: #3b82f6; }
+.sd-filter.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
 
 /* Feedback Cards */
-.dash-feedback { display: flex; flex-direction: column; gap: 0.75rem; }
-.fb-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.6rem; padding: 0.85rem; transition: all 0.15s ease; }
-.fb-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.fb-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem; }
-.fb-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-.badge { display: inline-flex; align-items: center; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 600; }
-.badge-green { background: rgba(16,185,129,0.1); color: #059669; }
-.badge-blue { background: rgba(59,130,246,0.1); color: #2563eb; }
-.badge-yellow { background: rgba(245,158,11,0.1); color: #d97706; }
-.badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
-.badge-gray { background: var(--bg-color); color: var(--text-secondary); }
-.fb-date { font-size: 0.7rem; color: var(--text-muted); }
-.fb-text { font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; margin: 0 0 0.6rem; }
-.fb-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
-.fb-meta { display: flex; gap: 0.4rem; align-items: center; }
-.tag { font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.4rem; border-radius: 0.3rem; }
-.tag-green { background: rgba(16,185,129,0.1); color: #059669; }
-.tag-red { background: rgba(239,68,68,0.1); color: #dc2626; }
-.tag-gray { background: var(--bg-color); color: var(--text-secondary); }
-.tag-urgency-1, .tag-urgency-2 { background: rgba(16,185,129,0.1); color: #059669; }
-.tag-urgency-3 { background: rgba(245,158,11,0.1); color: #d97706; }
-.tag-urgency-4 { background: rgba(249,115,22,0.1); color: #ea580c; }
-.tag-urgency-5 { background: rgba(239,68,68,0.1); color: #dc2626; }
-.fb-actions { display: flex; gap: 0.4rem; }
-.btn-small { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.3rem 0.6rem; border-radius: 0.4rem; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary); font-size: 0.65rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.15s ease; }
-.btn-small:hover { border-color: #3b82f6; color: #3b82f6; }
+.sd-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.sd-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.6rem; padding: 0.75rem; transition: all 0.15s ease; }
+.sd-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.sd-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.3rem; }
+.sd-card-badges { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.sd-badge { display: inline-flex; align-items: center; padding: 0.15rem 0.4rem; border-radius: 9999px; font-size: 0.6rem; font-weight: 600; }
+.sd-badge-green { background: rgba(16,185,129,0.1); color: #059669; }
+.sd-badge-blue { background: rgba(59,130,246,0.1); color: #2563eb; }
+.sd-badge-amber { background: rgba(245,158,11,0.1); color: #d97706; }
+.sd-badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+.sd-badge-gray { background: var(--bg-color); color: var(--text-secondary); }
+.sd-card-date { font-size: 0.65rem; color: var(--text-muted); }
+.sd-card-text { font-size: 0.8rem; color: var(--text-primary); line-height: 1.45; margin: 0 0 0.5rem; }
+.sd-card-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.3rem; }
+.sd-card-tags { display: flex; gap: 0.3rem; align-items: center; }
+.sd-tag { font-size: 0.6rem; font-weight: 600; padding: 0.12rem 0.35rem; border-radius: 0.3rem; }
+.sd-tag-green { background: rgba(16,185,129,0.1); color: #059669; }
+.sd-tag-red { background: rgba(239,68,68,0.1); color: #dc2626; }
+.sd-tag-gray { background: var(--bg-color); color: var(--text-secondary); }
+.sd-tag-urgent-1, .sd-tag-urgent-2 { background: rgba(16,185,129,0.1); color: #059669; }
+.sd-tag-urgent-3 { background: rgba(245,158,11,0.1); color: #d97706; }
+.sd-tag-urgent-4 { background: rgba(249,115,22,0.1); color: #ea580c; }
+.sd-tag-urgent-5 { background: rgba(239,68,68,0.1); color: #dc2626; }
+.sd-card-btns { display: flex; gap: 0.3rem; }
+.sd-btn-sm { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary); font-size: 0.6rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.15s ease; }
+.sd-btn-sm:hover { border-color: #3b82f6; color: #3b82f6; }
 
 /* Solution Box */
-.fb-solution { margin-top: 0.6rem; padding: 0.65rem; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.12); border-radius: 0.5rem; }
-.fb-solution-title { font-weight: 700; font-size: 0.75rem; color: #3b82f6; margin-bottom: 0.3rem; }
-.fb-solution p { font-size: 0.8rem; color: var(--text-primary); margin: 0 0 0.4rem; line-height: 1.4; }
-.fb-solution-foot { display: flex; gap: 0.75rem; font-size: 0.7rem; color: var(--text-secondary); }
+.sd-sol { margin-top: 0.5rem; padding: 0.5rem; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.12); border-radius: 0.4rem; }
+.sd-sol-title { font-weight: 700; font-size: 0.7rem; color: #3b82f6; margin-bottom: 0.25rem; }
+.sd-sol p { font-size: 0.75rem; color: var(--text-primary); margin: 0 0 0.3rem; line-height: 1.4; }
+.sd-sol-foot { display: flex; gap: 0.6rem; font-size: 0.65rem; color: var(--text-secondary); }
+
+/* Analysis Box */
+.sd-analysis { margin-top: 0.5rem; padding: 0.5rem; background: rgba(139,92,246,0.04); border: 1px solid rgba(139,92,246,0.12); border-radius: 0.4rem; }
+.sd-analysis-title { font-weight: 700; font-size: 0.7rem; color: #7c3aed; margin-bottom: 0.35rem; }
+.sd-analysis-item { margin-bottom: 0.35rem; }
+.sd-analysis-label { font-weight: 600; font-size: 0.65rem; color: #7c3aed; margin-bottom: 0.1rem; }
+.sd-analysis-text { font-size: 0.72rem; color: var(--text-primary); line-height: 1.4; }
+.sd-analysis-confidence { font-size: 0.65rem; font-weight: 600; color: #7c3aed; margin-top: 0.25rem; }
 
 /* Response Box */
-.fb-response { margin-top: 0.6rem; padding: 0.65rem; background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.12); border-radius: 0.5rem; }
-.fb-response-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
-.fb-response-avatar { width: 1.25rem; height: 1.25rem; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: 700; color: #fff; }
-.fb-response-label { font-weight: 700; font-size: 0.75rem; color: #059669; }
-.fb-response-date { font-size: 0.65rem; color: #059669; margin-left: auto; }
-.fb-response p { font-size: 0.8rem; color: var(--text-primary); margin: 0; line-height: 1.4; }
+.sd-resp { margin-top: 0.5rem; padding: 0.5rem; background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.12); border-radius: 0.4rem; }
+.sd-resp-head { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.3rem; }
+.sd-resp-avatar { width: 1.1rem; height: 1.1rem; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; font-size: 0.5rem; font-weight: 700; color: #fff; }
+.sd-resp-label { font-weight: 700; font-size: 0.7rem; color: #059669; }
+.sd-resp-date { font-size: 0.6rem; color: #059669; margin-left: auto; }
+.sd-resp p { font-size: 0.75rem; color: var(--text-primary); margin: 0; line-height: 1.4; }
 
 /* Empty State */
-.dash-empty { text-align: center; padding: 2.5rem 1rem; }
-.dash-empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
-.dash-empty h3 { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.4rem; }
-.dash-empty p { font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 1.25rem; }
+.sd-empty { text-align: center; padding: 2rem 1rem; }
+.sd-empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.sd-empty h3 { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.3rem; }
+.sd-empty p { font-size: 0.75rem; color: var(--text-secondary); margin: 0 0 1rem; }
 
-/* Mobile */
+/* ========== MOBILE RESPONSIVE ========== */
 @media (max-width: 600px) {
-    .dash-stats { grid-template-columns: repeat(2, 1fr); }
-    .dash-quick { grid-template-columns: repeat(2, 1fr); }
-    .dash-hero { flex-direction: column; align-items: flex-start; }
+    .student-dash { padding: 1rem 0.75rem; }
+    
+    .sd-hero { flex-direction: column; align-items: flex-start; }
+    .sd-hero-right { width: 100%; }
+    .sd-hero-right .sd-btn { flex: 1; justify-content: center; }
+    
+    .sd-stats { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .sd-stat { padding: 0.6rem 0.3rem; }
+    .sd-stat-num { font-size: 1.1rem; }
+    
+    .sd-links { grid-template-columns: repeat(2, 1fr); }
+    
+    .sd-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 0.25rem; -webkit-overflow-scrolling: touch; }
+    .sd-filter { white-space: nowrap; flex-shrink: 0; }
+    
+    .sd-card { padding: 0.6rem; }
+    .sd-card-foot { flex-direction: column; align-items: flex-start; }
+    .sd-card-btns { width: 100%; }
+    .sd-card-btns .sd-btn-sm { flex: 1; justify-content: center; }
+    
+    .sd-notif-drop { width: calc(100% - 2rem); right: 0.5rem; }
+}
+
+@media (max-width: 380px) {
+    .sd-stats { grid-template-columns: repeat(2, 1fr); }
+    .sd-links { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 
 <script>
 function filterDash(status) {
-    document.querySelectorAll('.fb-card').forEach(function(c) {
+    document.querySelectorAll('.sd-card').forEach(function(c) {
         c.style.display = (status === 'all' || c.getAttribute('data-status') === status) ? '' : 'none';
     });
-    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.sd-filter').forEach(function(b) { b.classList.remove('active'); });
     var btn = document.getElementById('f' + status.replace(' ', ''));
     if (btn) btn.classList.add('active');
 }
 
-function showSolution(id) {
+function toggleSol(id) {
     var el = document.getElementById('sol-' + id);
+    if (el) el.hidden = !el.hidden;
+}
+
+function toggleAnalysis(id) {
+    var el = document.getElementById('analysis-' + id);
     if (el) el.hidden = !el.hidden;
 }
 
@@ -266,7 +321,7 @@ function showSolution(id) {
 function loadNotifs() {
     fetch('/api/notifications').then(function(r) { return r.json(); }).then(function(data) {
         if (data.success) {
-            var badge = document.getElementById('notifCount');
+            var badge = document.getElementById('notifBadge');
             if (data.unread_count > 0) {
                 badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
                 badge.hidden = false;
@@ -280,19 +335,19 @@ function loadNotifs() {
                         '<div class="notif-item-text">' + n.message + '</div>' +
                         '<div class="notif-item-time">' + n.created_at + '</div></div>';
                 }).join('');
-            } else { list.innerHTML = '<div class="notif-empty">No notifications</div>'; }
+            } else { list.innerHTML = '<div class="sd-notif-empty">No notifications</div>'; }
         }
     });
 }
 function toggleNotif() {
-    var d = document.getElementById('notifDropdown');
+    var d = document.getElementById('notifDrop');
     d.hidden = !d.hidden;
 }
 function markReadAll() {
     fetch('/api/notifications/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }, body: JSON.stringify({ ids: [] }) }).then(function() { loadNotifs(); });
 }
 document.addEventListener('click', function(e) {
-    var b = document.querySelector('.notif-btn'), d = document.getElementById('notifDropdown');
+    var b = document.querySelector('.sd-notif'), d = document.getElementById('notifDrop');
     if (b && d && !b.contains(e.target) && !d.contains(e.target)) d.hidden = true;
 });
 loadNotifs();
