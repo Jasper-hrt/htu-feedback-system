@@ -116,7 +116,7 @@
         </div>
         <div class="reply-actions">
             {% if reply.student_id == session.student_id %}
-            <button class="btn btn-secondary btn-sm" onclick="editReply({{ reply.id }})">✏️ Edit</button>
+            <button class="btn btn-secondary btn-sm" onclick="editReply({{ reply.id }})">Edit</button>
             {% endif %}
             {% if not topic.is_locked %}
             <button class="btn btn-secondary btn-sm reply-btn" onclick="replyToMessage({{ reply.id }}, '{{ reply.student.full_name.split()[0] if reply.student else 'Student' }}', '{{ reply.content[:80] }}')">↩ Reply</button>

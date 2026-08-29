@@ -15,9 +15,9 @@
             <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
             <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
             <a href="/admin/ai-review" class="admin-sidebar-link">🔎 AI Review Queue</a>
-            <a href="/admin/lexicon-manager" class="admin-sidebar-link">🧠 Lexicon Manager</a>
+            <a href="/admin/lexicon-manager" class="admin-sidebar-link">Lexicon Manager</a>
             <a href="/admin/ai-audit" class="admin-sidebar-link">🛡️ AI Audit Trail</a>
-            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">🧠 Lexicon Gaps</a>
+            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">Lexicon Gaps</a>
             <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
             <a href="/admin/chat" class="admin-sidebar-link">💬 Chat Rooms</a>
             <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
@@ -128,7 +128,7 @@
                         {% if pred.recommended_actions %}
                         <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem;">
                             {% for action in pred.recommended_actions[:2] %}
-                            <span class="keyword-chip">💡 {{ action }}</span>
+                            <span class="keyword-chip">{{ action }}</span>
                             {% endfor %}
                         </div>
                         {% endif %}
@@ -346,7 +346,7 @@
         <!-- Recommendation Insights -->
         <div class="chart-card" style="margin-top: 1.5rem;">
             <div class="chart-card-header">
-                <div class="chart-card-title">🧠 Recommendation Insights</div>
+                <div class="chart-card-title">Recommendation Insights</div>
                 <span class="badge badge-neutral">{{ learning_report.total_feedback_analyzed }} items analyzed</span>
             </div>
             <p class="text-sm text-secondary mb-3" style="font-weight: 500;">

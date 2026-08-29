@@ -379,7 +379,7 @@ socket.on('user_joined', function(data) {
 socket.on('user_left', function(data) {
     var n = document.createElement('div');
     n.className = 'chat-system-notice';
-    n.innerHTML = '👋 ' + esc(data.username) + ' left';
+    n.innerHTML = esc(data.username) + ' left';
     md.appendChild(n);
     md.scrollTop = md.scrollHeight;
 });

@@ -23,7 +23,6 @@
         </div>
         <h1 class="landing-hero-title-v2">
             Your Voice, <span class="title-gradient">Our Commitment</span>
-            <span class="title-wave">👋</span>
         </h1>
         <p class="landing-hero-subtitle-v2">
             <span class="highlight-text">A Better HTU.</span> Share your feedback, suggestions or complaints. 
@@ -32,7 +31,7 @@
         <div class="landing-hero-actions-v2">
             {% if session.student_id %}
                 <a href="/submit" class="landing-hero-btn-primary">
-                    ✏️ Submit Feedback
+                    Submit Feedback
                     <span class="btn-pulse"></span>
                 </a>
                 <a href="/student/dashboard" class="landing-hero-btn-secondary">👤 My Dashboard</a>
@@ -79,7 +78,7 @@
         <div class="step-card-v2 reveal reveal-delay-1">
             <div class="step-number-v2">1</div>
             <div class="step-content-v2">
-                <span class="step-icon-v2">✏️</span>
+                <span class="step-icon-v2">1</span>
                 <h3 class="step-title-v2">Submit Feedback</h3>
                 <p class="step-desc-v2">Share your thoughts via text or voice. Choose a category and urgency level.</p>
             </div>
@@ -146,7 +145,7 @@
     <p class="landing-cta-desc-v2">Join hundreds of HTU students who are already shaping the future of our university.</p>
     <div class="landing-cta-actions-v2">
         {% if session.student_id %}
-            <a href="/submit" class="landing-cta-btn-primary">✏️ Submit Feedback Now</a>
+            <a href="/submit" class="landing-cta-btn-primary">Submit Feedback Now</a>
             <a href="/forum" class="landing-hero-btn-secondary">💬 Join Discussion</a>
         {% else %}
             <a href="/student/register" class="landing-cta-btn-primary">📝 Get Started Now</a>

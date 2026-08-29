@@ -1,478 +1,186 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="student-content animate-slide-up">
-        <div class="student-top-actions">
-            <a href="{{ url_for('student_dashboard') }}" class="btn-back">
-                <span class="btn-back-icon">←</span>
-                <span class="btn-back-text">Back to Dashboard</span>
-            </a>
-        </div>
-
-        <div class="feedback-form-card">
-            <div class="feedback-form-header">
-                <h2>✍️ Submit Feedback</h2>
-                <p>Share your concerns, suggestions, or feedback with the SRC. Your voice matters!</p>
-            </div>
-
-            <!-- Step Wizard -->
-            <div class="step-wizard" id="stepWizard">
-                <div class="step-indicator">
-                    <div class="step-dot active" data-step="1">1</div>
-                    <div class="step-label" data-step="1">Category</div>
-                </div>
-                <div class="step-connector" data-step="1"></div>
-                <div class="step-indicator">
-                    <div class="step-dot" data-step="2">2</div>
-                    <div class="step-label" data-step="2">Details</div>
-                </div>
-                <div class="step-connector" data-step="2"></div>
-                <div class="step-indicator">
-                    <div class="step-dot" data-step="3">3</div>
-                    <div class="step-label" data-step="3">Review</div>
-                </div>
-            </div>
-
-            <form method="POST" id="feedbackForm" novalidate>
-                {{ csrf_field() }}
-                <!-- STEP 1: Category -->
-                <div class="step-panel active" id="step1">
-                    <div class="step-title">📂 Select Category</div>
-                    <div class="step-subtitle">Choose the category that best describes your feedback</div>
-
-                    <div class="form-group-enhanced">
-                        <div class="category-grid-modern" id="categoryGrid">
-                            <label class="category-card" data-category="Wi-Fi Issues">
-                                <input type="radio" name="category" value="Wi-Fi Issues">
-                                <span class="category-card-icon">📶</span>
-                                <span class="category-card-name">Wi-Fi Issues</span>
-                                <span class="category-desc">Network & connectivity problems</span>
-                            </label>
-                            <label class="category-card" data-category="Maintenance">
-                                <input type="radio" name="category" value="Maintenance">
-                                <span class="category-card-icon">🔧</span>
-                                <span class="category-card-name">Maintenance</span>
-                                <span class="category-desc">Facility repair & upkeep</span>
-                            </label>
-                            <label class="category-card" data-category="Staff Conduct">
-                                <input type="radio" name="category" value="Staff Conduct">
-                                <span class="category-card-icon">👤</span>
-                                <span class="category-card-name">Staff Conduct</span>
-                                <span class="category-desc">Staff behavior & professionalism</span>
-                            </label>
-                            <label class="category-card" data-category="Safety Concern">
-                                <input type="radio" name="category" value="Safety Concern">
-                                <span class="category-card-icon">🛡️</span>
-                                <span class="category-card-name">Safety Concern</span>
-                                <span class="category-desc">Security & safety issues</span>
-                            </label>
-                            <label class="category-card" data-category="Accommodation">
-                                <input type="radio" name="category" value="Accommodation">
-                                <span class="category-card-icon">🏠</span>
-                                <span class="category-card-name">Accommodation</span>
-                                <span class="category-desc">Hall & hostel concerns</span>
-                            </label>
-                            <label class="category-card" data-category="Catering">
-                                <input type="radio" name="category" value="Catering">
-                                <span class="category-card-icon">🍽️</span>
-                                <span class="category-card-name">Catering</span>
-                                <span class="category-desc">Food services feedback</span>
-                            </label>
-                            <label class="category-card" data-category="Academics">
-                                <input type="radio" name="category" value="Academics">
-                                <span class="category-card-icon">📚</span>
-                                <span class="category-card-name">Academics</span>
-                                <span class="category-desc">Academic & lecture issues</span>
-                            </label>
-                            <label class="category-card" data-category="Financial">
-                                <input type="radio" name="category" value="Financial">
-                                <span class="category-card-icon">💰</span>
-                                <span class="category-card-name">Financial</span>
-                                <span class="category-desc">Fees & financial matters</span>
-                            </label>
-                            <label class="category-card" data-category="Other">
-                                <input type="radio" name="category" value="Other">
-                                <span class="category-card-icon">📋</span>
-                                <span class="category-card-name">Other</span>
-                                <span class="category-desc">Anything else not listed</span>
-                            </label>
-                        </div>
-                        <div class="field-error" id="categoryError">⚠️ Please select a category</div>
-                    </div>
-
-                    <div class="step-actions">
-                        <button type="button" class="btn btn-primary" onclick="goToStep(2)" id="step1Next">Next →</button>
-                    </div>
-                </div>
-
-                <!-- STEP 2: Details -->
-                <div class="step-panel" id="step2">
-                    <div class="step-title">📝 Provide Details</div>
-                    <div class="step-subtitle">Describe your feedback in detail so we can take appropriate action</div>
-
-                    <div class="form-group-enhanced">
-                        <label class="form-label">Your Feedback <span class="text-danger">*</span></label>
-                        <span class="form-label-hint">Be as specific as possible about your concern or suggestion.</span>
-                        <textarea name="feedback_text" id="feedbackText" class="form-textarea-enhanced" rows="5" placeholder="Describe your feedback, concern, or suggestion in detail..." maxlength="1000" required></textarea>
-                        <div class="char-counter">
-                            <span class="char-counter-hint">Minimum 10 characters</span>
-                            <span class="char-counter-count" id="charCount">0/1000</span>
-                        </div>
-                        <div class="field-error" id="textError">⚠️ Please provide at least 10 characters of feedback</div>
-                    </div>
-
-                    <div class="form-group-enhanced">
-                        <label class="form-label">Location (optional)</label>
-                        <span class="form-label-hint">Where did this issue occur?</span>
-                        <input type="text" name="location" class="form-input-enhanced" placeholder="e.g. Science Lab, Block A, Main Hall" id="locationInput">
-                    </div>
-
-                    <div class="form-group-enhanced">
-                        <label class="form-label">Urgency Level</label>
-                        <span class="form-label-hint">How urgent is this issue to you?</span>
-                        <div class="urgency-container">
-                            <input type="range" name="user_urgency" class="urgency-slider" id="urgencySlider" min="1" max="5" value="3" step="1">
-                        </div>
-                        <div class="urgency-labels">
-                            <span>🔵 Low (1)</span>
-                            <span>🟡 Medium (3)</span>
-                            <span>🔴 Critical (5)</span>
-                        </div>
-                        <div class="urgency-meter" id="urgencyMeter">
-                            <span id="urgencyEmoji" style="font-size: 1.2rem;">⚡</span>
-                            <div class="urgency-meter-bar">
-                                <div class="urgency-meter-fill" id="urgencyFill" style="width: 60%; background: linear-gradient(90deg, var(--warning), #f59e0b);"></div>
-                            </div>
-                            <span class="urgency-meter-label" id="urgencyLabel">Medium (3)</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group-enhanced">
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="anonymous" id="anonymousCheck">
-                            <span>🙈 Submit anonymously</span>
-                        </label>
-                        <span class="form-label-hint" style="margin-top: 0.25rem; display: block;">Your identity will be hidden from public display but SRC admins will still see it.</span>
-                    </div>
-
-                    <div class="step-actions">
-                        <button type="button" class="btn btn-ghost" onclick="goToStep(1)">← Back</button>
-                        <button type="button" class="btn btn-primary" onclick="goToStep(3)" id="step2Next">Review →</button>
-                    </div>
-                </div>
-
-                <!-- STEP 3: Review & Submit -->
-                <div class="step-panel" id="step3">
-                    <div class="step-title">✅ Review & Submit</div>
-                    <div class="step-subtitle">Please review your feedback before submitting</div>
-
-                    <div class="review-card">
-                        <div class="review-card-row">
-                            <span class="review-card-label">Category</span>
-                            <span class="review-card-value"><span class="review-badge" id="reviewCategory">—</span></span>
-                        </div>
-                        <div class="review-card-row">
-                            <span class="review-card-label">Location</span>
-                            <span class="review-card-value" id="reviewLocation">—</span>
-                        </div>
-                        <div class="review-card-row">
-                            <span class="review-card-label">Urgency</span>
-                            <span class="review-card-value" id="reviewUrgency">—</span>
-                        </div>
-                        <div class="review-card-row">
-                            <span class="review-card-label">Anonymous</span>
-                            <span class="review-card-value" id="reviewAnonymous">No</span>
-                        </div>
-                        <div class="review-card-row" style="border-bottom: none;">
-                            <span class="review-card-label">Feedback</span>
-                            <span class="review-card-value" id="reviewText" style="text-align: left; font-weight: 500; font-size: 0.85rem;">—</span>
-                        </div>
-                    </div>
-
-                    <div class="alert alert-info">
-                        💡 By submitting, you agree that your feedback will be reviewed by SRC administrators and appropriate actions will be taken.
-                    </div>
-
-                    <div class="step-actions">
-                        <button type="button" class="btn btn-ghost" onclick="goToStep(2)">← Edit Details</button>
-                        <button type="submit" class="btn btn-success" id="submitBtn">🚀 Submit Feedback</button>
-                    </div>
-                </div>
-
-                <!-- Hidden field to track current step -->
-                <input type="hidden" name="current_step" id="currentStep" value="1">
-            </form>
-        </div>
+<div class="submit-page">
+    
+    <!-- Header -->
+    <div class="submit-header">
+        <a href="/student/dashboard" class="submit-back">← Back</a>
+        <h1>✍️ Submit Feedback</h1>
+        <p>Share your concerns, suggestions, or feedback with the SRC</p>
     </div>
 
+    <!-- Form -->
+    <form method="POST" class="submit-form" id="feedbackForm" novalidate>
+        {{ csrf_field() }}
+        
+        <!-- Category Section -->
+        <div class="submit-section">
+            <label class="submit-label">📂 Select Category <span class="text-danger">*</span></label>
+            <div class="submit-categories">
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Wi-Fi Issues" required>
+                    <span class="submit-cat-icon">📶</span>
+                    <span class="submit-cat-name">Wi-Fi</span>
+                </label>
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Maintenance">
+                    <span class="submit-cat-icon">🔧</span>
+                    <span class="submit-cat-name">Maintenance</span>
+                </label>
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Staff Conduct">
+                    <span class="submit-cat-icon">👤</span>
+                    <span class="submit-cat-name">Staff</span>
+                </label>
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Safety Concern">
+                    <span class="submit-cat-icon">🛡️</span>
+                    <span class="submit-cat-name">Safety</span>
+                </label>
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Accommodation">
+                    <span class="submit-cat-icon">🏠</span>
+                    <span class="submit-cat-name">Housing</span>
+                </label>
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Catering">
+                    <span class="submit-cat-icon">🍽️</span>
+                    <span class="submit-cat-name">Catering</span>
+                </label>
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Academics">
+                    <span class="submit-cat-icon">📚</span>
+                    <span class="submit-cat-name">Academics</span>
+                </label>
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Financial">
+                    <span class="submit-cat-icon">💰</span>
+                    <span class="submit-cat-name">Financial</span>
+                </label>
+                <label class="submit-cat">
+                    <input type="radio" name="category" value="Other">
+                    <span class="submit-cat-icon">📋</span>
+                    <span class="submit-cat-name">Other</span>
+                </label>
+            </div>
+            <div class="submit-error" id="categoryError">⚠️ Please select a category</div>
+        </div>
+
+        <!-- Feedback Text -->
+        <div class="submit-section">
+            <label class="submit-label">📝 Your Feedback <span class="text-danger">*</span></label>
+            <textarea name="feedback_text" id="feedbackText" class="submit-textarea" rows="4" placeholder="Describe your feedback, concern, or suggestion in detail..." maxlength="1000" required></textarea>
+            <div class="submit-char-count"><span id="charCount">0</span>/1000</div>
+            <div class="submit-error" id="textError">⚠️ Please provide at least 10 characters</div>
+        </div>
+
+        <!-- Location -->
+        <div class="submit-section">
+            <label class="submit-label">📍 Location (optional)</label>
+            <input type="text" name="location" class="submit-input" placeholder="e.g. Science Lab, Block A, Main Hall">
+        </div>
+
+        <!-- Anonymous -->
+        <div class="submit-section">
+            <label class="submit-check">
+                <input type="checkbox" name="anonymous" id="anonymousCheck">
+                <span>🙈 Submit anonymously</span>
+            </label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="submit-btn">🚀 Submit Feedback</button>
+    </form>
+</div>
+
+<style>
+.submit-page { max-width: 600px; margin: 0 auto; padding: 1.25rem 1rem; }
+
+/* Header */
+.submit-header { margin-bottom: 1.5rem; }
+.submit-back { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--text-secondary); text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.75rem; }
+.submit-back:hover { color: var(--primary); }
+.submit-header h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.25rem; }
+.submit-header p { font-size: 0.8rem; color: var(--text-secondary); margin: 0; }
+
+/* Form */
+.submit-form { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* Section */
+.submit-section { display: flex; flex-direction: column; gap: 0.5rem; }
+.submit-label { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+.text-danger { color: #ef4444; }
+
+/* Categories */
+.submit-categories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.submit-cat { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.6rem 0.4rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; cursor: pointer; transition: all 0.15s ease; text-align: center; }
+.submit-cat:hover { border-color: #3b82f6; transform: translateY(-2px); }
+.submit-cat.selected { border-color: #3b82f6; background: rgba(59,130,246,0.08); }
+.submit-cat input { display: none; }
+.submit-cat-icon { font-size: 1.25rem; }
+.submit-cat-name { font-size: 0.7rem; font-weight: 600; color: var(--text-primary); }
+
+/* Textarea */
+.submit-textarea { width: 100%; padding: 0.65rem; border: 1px solid var(--border-color); border-radius: 0.5rem; background: var(--card-bg); color: var(--text-primary); font-size: 0.85rem; resize: vertical; transition: border-color 0.15s ease; }
+.submit-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
+.submit-char-count { font-size: 0.7rem; color: var(--text-muted); text-align: right; }
+
+/* Input */
+.submit-input { width: 100%; padding: 0.6rem 0.65rem; border: 1px solid var(--border-color); border-radius: 0.5rem; background: var(--card-bg); color: var(--text-primary); font-size: 0.85rem; transition: border-color 0.15s ease; }
+.submit-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
+
+/* Checkbox */
+.submit-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); cursor: pointer; }
+.submit-check input { width: 1rem; height: 1rem; accent-color: #3b82f6; }
+
+/* Error */
+.submit-error { font-size: 0.75rem; color: #ef4444; font-weight: 600; display: none; }
+.submit-error.visible { display: block; }
+
+/* Submit Button */
+.submit-btn { width: 100%; padding: 0.75rem; border-radius: 0.6rem; border: none; background: #3b82f6; color: #fff; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease; }
+.submit-btn:hover { background: #1e40af; transform: translateY(-1px); }
+
+/* Mobile */
+@media (max-width: 500px) {
+    .submit-categories { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+    .submit-cat { padding: 0.5rem 0.3rem; }
+    .submit-cat-icon { font-size: 1.1rem; }
+    .submit-cat-name { font-size: 0.65rem; }
+}
+</style>
+
 <script>
-// ==================== STEP WIZARD ====================
-let currentStep = 1;
-
-function goToStep(step) {
-    // Validate current step before moving forward
-    if (step > currentStep) {
-        if (!validateStep(currentStep)) {
-            return;
-        }
-    }
-
-    // Update step panels
-    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('step' + step).classList.add('active');
-
-    // Update step dots
-    document.querySelectorAll('.step-dot').forEach(d => {
-        d.classList.remove('active', 'completed');
-        const s = parseInt(d.dataset.step);
-        if (s === step) d.classList.add('active');
-        else if (s < step) d.classList.add('completed');
-    });
-
-    // Update step connectors
-    document.querySelectorAll('.step-connector').forEach(c => {
-        c.classList.remove('completed');
-        const s = parseInt(c.dataset.step);
-        if (s < step) c.classList.add('completed');
-    });
-
-    // Update hidden input
-    document.getElementById('currentStep').value = step;
-    currentStep = step;
-
-    // Update review if we're on step 3
-    if (step === 3) {
-        updateReview();
-    }
-
-    // Scroll to top of form
-    document.querySelector('.feedback-form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-// ==================== VALIDATION ====================
-function validateStep(step) {
-    if (step === 1) {
-        const selected = document.querySelector('input[name="category"]:checked');
-        const errorEl = document.getElementById('categoryError');
-        if (!selected) {
-            errorEl.classList.add('visible');
-            return false;
-        }
-        errorEl.classList.remove('visible');
-        return true;
-    }
-
-    if (step === 2) {
-        const text = document.getElementById('feedbackText').value.trim();
-        const textError = document.getElementById('textError');
-        if (text.length < 10) {
-            textError.classList.add('visible');
-            document.getElementById('feedbackText').focus();
-            return false;
-        }
-        textError.classList.remove('visible');
-        return true;
-    }
-
-    return true;
-}
-
-// ==================== CATEGORY SELECTION ====================
-document.querySelectorAll('.category-card').forEach(card => {
-    card.addEventListener('click', function() {
-        // Remove selected from all
-        document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
-        // Add selected to this one
+// Category selection
+document.querySelectorAll('.submit-cat').forEach(function(cat) {
+    cat.addEventListener('click', function() {
+        document.querySelectorAll('.submit-cat').forEach(function(c) { c.classList.remove('selected'); });
         this.classList.add('selected');
-        // Check the radio
-        this.querySelector('input[type="radio"]').checked = true;
-        // Hide error
+        this.querySelector('input').checked = true;
         document.getElementById('categoryError').classList.remove('visible');
     });
 });
 
-// ==================== URGENCY SLIDER ====================
-const urgencySlider = document.getElementById('urgencySlider');
-const urgencyFill = document.getElementById('urgencyFill');
-const urgencyLabel = document.getElementById('urgencyLabel');
-const urgencyEmoji = document.getElementById('urgencyEmoji');
-
-function updateUrgency(value) {
-    const pct = ((value - 1) / 4) * 100;
-    urgencyFill.style.width = pct + '%';
-
-    if (value <= 2) {
-        urgencyFill.style.background = 'linear-gradient(90deg, var(--success), #34d399)';
-        urgencyLabel.textContent = 'Low (' + value + ')';
-        urgencyEmoji.textContent = '😊';
-        urgencyLabel.style.color = 'var(--success)';
-    } else if (value <= 3) {
-        urgencyFill.style.background = 'linear-gradient(90deg, var(--warning), #f59e0b)';
-        urgencyLabel.textContent = 'Medium (' + value + ')';
-        urgencyEmoji.textContent = '😐';
-        urgencyLabel.style.color = 'var(--warning)';
-    } else if (value <= 4) {
-        urgencyFill.style.background = 'linear-gradient(90deg, #f97316, #ef4444)';
-        urgencyLabel.textContent = 'High (' + value + ')';
-        urgencyEmoji.textContent = '😟';
-        urgencyLabel.style.color = '#f97316';
-    } else {
-        urgencyFill.style.background = 'linear-gradient(90deg, var(--danger), #dc2626)';
-        urgencyLabel.textContent = 'Critical (' + value + ')';
-        urgencyEmoji.textContent = '🚨';
-        urgencyLabel.style.color = 'var(--danger)';
-    }
-}
-
-urgencySlider.addEventListener('input', function() {
-    updateUrgency(this.value);
-});
-
-// ==================== CHARACTER COUNTER ====================
-const feedbackText = document.getElementById('feedbackText');
-const charCount = document.getElementById('charCount');
-
-feedbackText.addEventListener('input', function() {
-    const len = this.value.length;
-    charCount.textContent = len + '/1000';
-    charCount.classList.remove('warning', 'danger');
-
-    if (len > 800) {
-        charCount.classList.add('warning');
-    }
-    if (len >= 1000) {
-        charCount.classList.add('danger');
-    }
-
-    // Real-time validation
-    const textError = document.getElementById('textError');
-    if (len >= 10) {
-        textError.classList.remove('visible');
-        this.classList.remove('error');
-        this.classList.add('valid');
-    } else if (len > 0) {
-        this.classList.remove('valid');
-        this.classList.add('error');
-    } else {
-        this.classList.remove('error', 'valid');
-    }
-});
-
-// ==================== REVIEW UPDATE ====================
-function updateReview() {
-    // Category
-    const selectedCat = document.querySelector('input[name="category"]:checked');
-    if (selectedCat) {
-        document.getElementById('reviewCategory').textContent = selectedCat.value;
-    }
-
-    // Location
-    const location = document.getElementById('locationInput').value.trim();
-    document.getElementById('reviewLocation').textContent = location || 'Not specified';
-    document.getElementById('reviewLocation').style.color = location ? '' : 'var(--text-muted)';
-
-    // Urgency
-    const urgencyVal = urgencySlider.value;
-    let urgencyText = '';
-    if (urgencyVal <= 2) urgencyText = 'Low (' + urgencyVal + '/5)';
-    else if (urgencyVal <= 3) urgencyText = 'Medium (' + urgencyVal + '/5)';
-    else if (urgencyVal <= 4) urgencyText = 'High (' + urgencyVal + '/5)';
-    else urgencyText = 'Critical (' + urgencyVal + '/5)';
-    document.getElementById('reviewUrgency').textContent = urgencyText;
-
-    // Anonymous
-    document.getElementById('reviewAnonymous').textContent = document.getElementById('anonymousCheck').checked ? 'Yes' : 'No';
-
-    // Feedback text
-    const text = feedbackText.value.trim();
-    document.getElementById('reviewText').textContent = text || '—';
-}
-
-// ==================== FORM SUBMIT VALIDATION ====================
-document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-    if (!validateStep(1) || !validateStep(2)) {
-        e.preventDefault();
-        goToStep(1);
-        // Show error alert
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-error mb-4';
-        alertDiv.textContent = '⚠️ Please fix the errors above before submitting.';
-        document.querySelector('.feedback-form-header').after(alertDiv);
-        setTimeout(() => alertDiv.remove(), 4000);
-    }
-});
-
-// ==================== KEYBOARD SHORTCUTS ====================
-document.addEventListener('keydown', function(e) {
-    // Enter on step 1 or 2 goes to next step
-    if (e.key === 'Enter' && (currentStep === 1 || currentStep === 2)) {
-        const activeBtn = document.querySelector('.step-panel.active .step-actions .btn-primary');
-        if (activeBtn) activeBtn.click();
-    }
-});
-
-// ==================== AUTO-SAVE DRAFT ====================
-function saveDraft() {
-    var draft = {
-        category: document.querySelector('input[name="category"]:checked')?.value || '',
-        feedback_text: document.getElementById('feedbackText').value,
-        location: document.getElementById('locationInput')?.value || '',
-        urgency: document.getElementById('urgencySlider')?.value || 3,
-        anonymous: document.getElementById('anonymousCheck')?.checked || false,
-        step: currentStep,
-        saved_at: new Date().toISOString()
-    };
-    localStorage.setItem('feedback_draft', JSON.stringify(draft));
-}
-
-function loadDraft() {
-    var saved = localStorage.getItem('feedback_draft');
-    if (!saved) return;
-    try {
-        var draft = JSON.parse(saved);
-        if (draft.category) {
-            var radio = document.querySelector('input[name="category"][value="' + draft.category + '"]');
-            if (radio) radio.checked = true;
-        }
-        if (draft.feedback_text) document.getElementById('feedbackText').value = draft.feedback_text;
-        if (draft.location && document.getElementById('locationInput')) document.getElementById('locationInput').value = draft.location;
-        if (draft.urgency) {
-            document.getElementById('urgencySlider').value = draft.urgency;
-            updateUrgency(parseInt(draft.urgency));
-        }
-        if (draft.anonymous && document.getElementById('anonymousCheck')) document.getElementById('anonymousCheck').checked = true;
-        if (draft.step && draft.step > 1) goToStep(draft.step);
-    } catch(e) {}
-}
-
-function clearDraft() {
-    localStorage.removeItem('feedback_draft');
-}
-
-// Auto-save on input changes
+// Character count
 document.getElementById('feedbackText').addEventListener('input', function() {
-    saveDraft();
-    // Update char count
     var len = this.value.length;
-    document.getElementById('charCount').textContent = len + '/1000';
+    document.getElementById('charCount').textContent = len;
     if (len >= 10) document.getElementById('textError').classList.remove('visible');
 });
 
-document.querySelectorAll('input[name="category"]').forEach(function(radio) {
-    radio.addEventListener('change', saveDraft);
-});
-
-// Load draft on page load
-loadDraft();
-
-// Clear draft on successful submit
+// Form validation
 document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-    if (validateStep(1) && validateStep(2)) {
-        clearDraft();
+    var valid = true;
+    if (!document.querySelector('input[name="category"]:checked')) {
+        document.getElementById('categoryError').classList.add('visible');
+        valid = false;
     }
+    if (document.getElementById('feedbackText').value.trim().length < 10) {
+        document.getElementById('textError').classList.add('visible');
+        valid = false;
+    }
+    if (!valid) e.preventDefault();
 });
-
-// ==================== INIT ====================
-updateUrgency(3);
 </script>
 {% endblock %}
-

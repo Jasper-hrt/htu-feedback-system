@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block content %}
 <style>
@@ -39,9 +39,9 @@
             <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
             <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
             <a href="/admin/ai-review" class="admin-sidebar-link">🔎 AI Review Queue</a>
-            <a href="/admin/lexicon-manager" class="admin-sidebar-link">🧠 Lexicon Manager</a>
+            <a href="/admin/lexicon-manager" class="admin-sidebar-link">Lexicon Manager</a>
             <a href="/admin/ai-audit" class="admin-sidebar-link">🛡️ AI Audit Trail</a>
-            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">🧠 Lexicon Gaps</a>
+            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">Lexicon Gaps</a>
             <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
             <a href="/admin/chat" class="admin-sidebar-link">💬 Chat Rooms</a>
             <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
@@ -67,7 +67,7 @@
 
     <!-- Hero Info -->
     <div class="alert alert-info mb-6 flex items-center gap-2" style="padding: 0.85rem 1rem; border-radius: 0.75rem;">
-        <span style="font-size: 1.2rem;">💡</span>
+        <span style="font-size: 1.2rem;">Tip:</span>
         <p class="text-sm" style="font-weight: 600;">Click any template to copy. Use these when responding to student feedback. <strong>{{ templates|length }} templates available</strong>.</p>
     </div>
 
@@ -124,7 +124,7 @@
             <div class="temp-card-preview">{{ value[:200] }}{% if value|length > 200 %}...{% endif %}</div>
             <div class="temp-card-actions">
                 <button class="btn btn-primary btn-sm copy-btn">📋 Copy</button>
-                <button class="btn btn-secondary btn-sm edit-btn">✏️ Edit</button>
+                <button class="btn btn-secondary btn-sm edit-btn">Edit</button>
             </div>
         </div>
         {% endfor %}
@@ -142,7 +142,7 @@
 <!-- Edit Modal -->
 <div class="modal" id="editModal">
     <div class="modal-content" style="max-width: 40rem;">
-        <div class="modal-header">✏️ Edit Template</div>
+        <div class="modal-header">Edit Template</div>
         <form method="POST" action="/admin/templates" id="editForm">
             {{ csrf_field() }}
             <div class="form-group">
