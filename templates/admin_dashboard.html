@@ -1,393 +1,667 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="admin-layout">
-    <!-- Sidebar -->
-    <aside class="admin-sidebar">
-        <div class="admin-sidebar-header">
-            <div class="admin-sidebar-logo">SRC Admin</div>
-            <div class="admin-sidebar-subtitle">Control & review</div>
+<div class="student-layout">
+    <aside class="admin-sidebar" aria-label="Admin dashboard sidebar">
+        <div class="admin-sidebar-title">
+            🛡️ SRC Admin
+            <span class="sub">Control & review</span>
         </div>
         <nav class="admin-sidebar-nav">
-            <a href="/admin/dashboard" class="admin-sidebar-link active">Dashboard</a>
-            <a href="/admin/analytics" class="admin-sidebar-link">Analytics</a>
-            <a href="/admin/templates" class="admin-sidebar-link">Templates</a>
-            <a href="/admin/solution-templates" class="admin-sidebar-link">Solution Templates</a>
-            <a href="/admin/students" class="admin-sidebar-link">Students</a>
-            <a href="/admin/announcements" class="admin-sidebar-link">Announcements</a>
-            <a href="/admin/ai-review" class="admin-sidebar-link">AI Review Queue</a>
-            <a href="/admin/lexicon-manager" class="admin-sidebar-link">Lexicon Manager</a>
-            <a href="/admin/ai-audit" class="admin-sidebar-link">AI Audit Trail</a>
-            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">Lexicon Gaps</a>
-            <a href="/admin/logs" class="admin-sidebar-link">Logs</a>
-            <a href="/admin/chat" class="admin-sidebar-link">Chat Rooms</a>
-            <a href="/admin/export/excel" class="admin-sidebar-link">Export Excel</a>
-            <a href="/admin/change-password" class="admin-sidebar-link">Change Password</a>
+            <a href="/admin/dashboard" class="admin-sidebar-link admin-sidebar-link-active">📋 Dashboard</a>
+            <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
+            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+            <a href="/admin/solution-templates" class="admin-sidebar-link">🧩 Solution Templates</a>
+            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+            <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+            <a href="/admin/ai-review" class="admin-sidebar-link">🔎 AI Review Queue</a>
+            <a href="/admin/lexicon-manager" class="admin-sidebar-link">🧠 Lexicon Manager</a>
+            <a href="/admin/ai-audit" class="admin-sidebar-link">🛡️ AI Audit Trail</a>
+            <a href="/admin/lexicon-gaps" class="admin-sidebar-link">🧠 Lexicon Gaps</a>
+            <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
+            <a href="/admin/chat" class="admin-sidebar-link">💬 Chat Rooms</a>
+            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+            <a href="/admin/change-password" class="admin-sidebar-link">🔑 Change Password</a>
         </nav>
-        <div class="admin-sidebar-footer">
-            <form method="POST" action="/admin/logout">
+        <div style="margin-top: 1.25rem;">
+            <form method="POST" action="/admin/logout" style="margin:0;">
                 {{ csrf_field() }}
-                <button type="submit" class="admin-logout-btn">Logout</button>
+                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
+                    <span class="btn-logout-icon">⏻</span>
+                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+                </button>
             </form>
         </div>
     </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main">
-        <!-- Header -->
-        <header class="admin-header">
-            <div class="admin-header-left">
-                <h1>Welcome back, {{ admin_name }}</h1>
-                <p>Here's what's happening with your feedback system today.</p>
+    <section class="student-content">
+        <div class="admin-hero">
+            <div class="admin-hero-content">
+                <div class="admin-hero-text">
+                    <span class="admin-hero-eyebrow">✨ SRC Control Center</span>
+                    <div class="admin-hero-title">👋 Welcome back, {{ admin_name }}</div>
+                    <div class="admin-hero-subtitle">Here's what's happening with your feedback system today.</div>
+                </div>
             </div>
-            <div class="admin-header-right">
-                <button class="admin-icon-btn" onclick="toggleAdminNotif()" title="Notifications">
-                    <span>🔔</span>
-                    <span class="admin-badge" id="adminNotifBadge" hidden>0</span>
-                </button>
-                <a href="/admin/analytics" class="admin-btn admin-btn-primary">View Analytics</a>
-            </div>
-        </header>
-
-        <!-- Notifications Dropdown -->
-        <div class="admin-notif-dropdown" id="adminNotifDrop" hidden>
-            <div class="admin-notif-header">
-                <span>Notifications</span>
-                <button onclick="markAdminNotifRead()" class="admin-notif-read">Mark all read</button>
-            </div>
-            <div class="admin-notif-list" id="adminNotifList">
-                <div class="admin-notif-empty">No notifications</div>
+            <div class="admin-hero-actions">
+                <a href="/admin/analytics" class="btn-hero btn-hero-primary">📈 View Analytics</a>
+                <a href="/admin/export/excel" class="btn-hero">📊 Export Data</a>
             </div>
         </div>
-
-        <!-- Stats Row -->
-        <div class="admin-stats">
-            <div class="admin-stat-card">
-                <div class="admin-stat-value">{{ stats.total }}</div>
-                <div class="admin-stat-label">Total Feedback</div>
-            </div>
-            <div class="admin-stat-card admin-stat-pending">
-                <div class="admin-stat-value">{{ stats.pending }}</div>
-                <div class="admin-stat-label">Pending</div>
-            </div>
-            <div class="admin-stat-card admin-stat-progress">
-                <div class="admin-stat-value">{{ stats.in_progress }}</div>
-                <div class="admin-stat-label">In Progress</div>
-            </div>
-            <div class="admin-stat-card admin-stat-resolved">
-                <div class="admin-stat-value">{{ stats.resolved }}</div>
-                <div class="admin-stat-label">Resolved</div>
-            </div>
+        <div class="quick-actions-label"><span class="quick-actions-icon">⚡</span> Quick Actions</div>
+        <div class="phase3-action-grid" aria-label="Admin quick actions">
+            <a class="phase3-action-card" href="/admin/analytics"><span class="phase3-action-icon">📈</span><span class="phase3-action-copy"><span class="phase3-action-title">Analytics</span><span class="phase3-action-desc">Trends, patterns and early warnings</span></span></a>
+            <a class="phase3-action-card" href="/admin/ai-review"><span class="phase3-action-icon">🔎</span><span class="phase3-action-copy"><span class="phase3-action-title">AI Review</span><span class="phase3-action-desc">Review uncertain classifications</span></span></a>
+            <a class="phase3-action-card" href="/admin/lexicon-manager"><span class="phase3-action-icon">🧠</span><span class="phase3-action-copy"><span class="phase3-action-title">AI Lexicon</span><span class="phase3-action-desc">Manage terms used by the classifier</span></span></a>
+            <a class="phase3-action-card" href="/admin/chat"><span class="phase3-action-icon">💬</span><span class="phase3-action-copy"><span class="phase3-action-title">Chat Rooms</span><span class="phase3-action-desc">Monitor rooms and activity</span></span></a>
         </div>
-
-        <!-- Quick Actions -->
-        <div class="admin-section">
-            <div class="admin-section-title">Quick Actions</div>
-            <div class="admin-quick-actions">
-                <a href="/admin/analytics" class="admin-quick-action">
-                    <span class="admin-quick-action-icon">📈</span>
-                    <span class="admin-quick-action-title">Analytics</span>
-                    <span class="admin-quick-action-desc">Trends and patterns</span>
-                </a>
-                <a href="/admin/ai-review" class="admin-quick-action">
-                    <span class="admin-quick-action-icon">🔎</span>
-                    <span class="admin-quick-action-title">AI Review</span>
-                    <span class="admin-quick-action-desc">Review classifications</span>
-                </a>
-                <a href="/admin/lexicon-manager" class="admin-quick-action">
-                    <span class="admin-quick-action-icon">📝</span>
-                    <span class="admin-quick-action-title">Lexicon</span>
-                    <span class="admin-quick-action-desc">Manage AI terms</span>
-                </a>
-                <a href="/admin/chat" class="admin-quick-action">
-                    <span class="admin-quick-action-icon">💬</span>
-                    <span class="admin-quick-action-title">Chat Rooms</span>
-                    <span class="admin-quick-action-desc">Monitor activity</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- AI Intelligence Strip -->
-        <div class="admin-intelligence">
-            <div class="admin-intelligence-content">
-                <div class="admin-intelligence-title">AI Operations Snapshot</div>
-                <div class="admin-intelligence-subtitle">Signals that may need attention.</div>
+        <div class="phase3-mobile-summary"><strong>📱 Responsive admin workspace</strong><span>Quick actions, cards and analytics adapt automatically for phone, tablet and desktop screens.</span></div>
+        <div class="admin-intelligence-strip">
+            <div class="admin-intelligence-copy">
+                <div class="admin-intelligence-title">🧠 AI operations snapshot</div>
+                <div class="admin-intelligence-subtitle">A quick view of signals that may need attention.</div>
             </div>
             <div class="admin-intelligence-metrics">
-                <a href="/admin/ai-review" class="admin-metric">
-                    <strong>{{ stats.low_confidence }}</strong>
-                    <span>Low confidence</span>
-                </a>
-                <span class="admin-metric">
-                    <strong>{{ stats.open_negative }}</strong>
-                    <span>Open negative</span>
-                </span>
-                <span class="admin-metric">
-                    <strong>{{ stats.duplicate_reports }}</strong>
-                    <span>Possible repeats</span>
-                </span>
+                <a href="/admin/ai-review" class="ai-op-metric"><strong>{{ stats.low_confidence }}</strong><span>low-confidence</span></a>
+                <span class="ai-op-metric"><strong>{{ stats.open_negative }}</strong><span>open negative</span></span>
+                <span class="ai-op-metric"><strong>{{ stats.duplicate_reports }}</strong><span>possible repeats</span></span>
             </div>
         </div>
-
-        <!-- Topic Summary -->
-        <div class="admin-section">
-            <div class="admin-section-title">What Students Are Talking About</div>
-            <div class="admin-topics">
-                {% for topic, count in topic_summary %}
-                <span class="admin-topic-chip">{{ topic }} ({{ count }})</span>
-                {% else %}
-                <span class="admin-muted">No topics detected yet.</span>
-                {% endfor %}
-            </div>
+        <div class="topic-summary-card">
+            <div><strong>📌 What students are talking about</strong><span>Top themes detected automatically from recent feedback.</span></div>
+            <div class="ai-topic-row">{% for topic, count in topic_summary %}<span class="ai-topic-chip">{{ topic }} · {{ count }}</span>{% else %}<span class="muted">No topics detected yet.</span>{% endfor %}</div>
         </div>
 
-        <!-- Trending Issues -->
+        <!-- Trending Issues Widget -->
         {% if trending_issues %}
-        <div class="admin-section">
-            <div class="admin-section-title">Trending Issues</div>
-            <div class="admin-trending-list">
+        <div class="trending-issues-card">
+            <div class="trending-issues-header">
+                <strong>🔥 Trending Issues</strong>
+                <span class="trending-issues-count">{{ trending_issues|length }} active</span>
+            </div>
+            <div class="trending-issues-list">
                 {% for trend in trending_issues[:5] %}
-                <div class="admin-trending-item">
-                    <span class="admin-trending-category">{{ trend.category }}</span>
-                    <span class="admin-trending-count">{{ trend.count }} reports</span>
-                    <span class="admin-trending-rate">{{ trend.success_rate }}% resolved</span>
+                <div class="trending-issue-item">
+                    <span class="trending-issue-category">{{ trend.category }}</span>
+                    <span class="trending-issue-count">{{ trend.count }} reports</span>
+                    <span class="trending-issue-rate">{{ trend.success_rate }}% resolved</span>
                 </div>
                 {% endfor %}
             </div>
         </div>
         {% endif %}
 
-        <!-- Feedback Table -->
-        <div class="admin-section">
-            <div class="admin-section-title">All Feedback ({{ pagination.total if pagination else feedbacks|length }})</div>
-            <div class="admin-table-container">
-                <table class="admin-table">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--primary);"></div>
+                <div class="stat-card-icon stat-card-icon-blue">📋</div>
+                <div class="stat-card-value">{{ stats.total }}</div>
+                <div class="stat-card-label">Total Feedback</div>
+                <div class="stat-card-trend stat-card-trend-up">● {{ stats.resolution_rate }}% resolved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--danger);"></div>
+                <div class="stat-card-icon stat-card-icon-red">⚠️</div>
+                <div class="stat-card-value" style="color: var(--danger);">{{ stats.urgent }}</div>
+                <div class="stat-card-label">Urgent Issues</div>
+                <div class="stat-card-trend stat-card-trend-down">🔴 Needs attention</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--success);"></div>
+                <div class="stat-card-icon stat-card-icon-green">✅</div>
+                <div class="stat-card-value" style="color: var(--success);">{{ stats.resolved }}</div>
+                <div class="stat-card-label">Resolved</div>
+                <div class="stat-card-trend stat-card-trend-up">📈 {{ stats.resolution_rate }}% rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: #8b5cf6;"></div>
+                <div class="stat-card-icon stat-card-icon-purple">📊</div>
+                <div class="stat-card-value">{{ stats.resolution_rate }}%</div>
+                <div class="stat-card-label">Resolution Rate</div>
+                <div class="stat-card-trend stat-card-trend-up">⚡ System health</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: #14b8a6;"></div>
+                <div class="stat-card-icon stat-card-icon-teal">👥</div>
+                <div class="stat-card-value">{{ stats.total_students }}</div>
+                <div class="stat-card-label">Students</div>
+                <div class="stat-card-trend stat-card-trend-up">🎓 Registered</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-accent" style="background: var(--warning);"></div>
+                <div class="stat-card-icon stat-card-icon-amber">💬</div>
+                <div class="stat-card-value">{% set total_sentiment = stats.positive + stats.negative + stats.neutral %}{% if total_sentiment > 0 %}{{ (stats.positive / total_sentiment * 100) | round }}{% else %}0{% endif %}%</div>
+                <div class="stat-card-label">Positive Sentiment</div>
+                <div class="stat-card-trend stat-card-trend-up">😊 Student mood</div>
+            </div>
+        </div>
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">📈 Sentiment Trend (Last 6 Months)</div>
+                    <select class="chart-period-selector" id="trendPeriod">
+                        <option>6 Months</option>
+                        <option>3 Months</option>
+                        <option>1 Month</option>
+                    </select>
+                </div>
+                <canvas id="trendChart" height="100"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-card-header">
+                    <div class="chart-card-title">🎯 Sentiment Breakdown</div>
+                </div>
+                <div style="position: relative; height: 200px; display: flex; align-items: center; justify-content: center;">
+                    <canvas id="sentimentDonutChart"></canvas>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 0.75rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600;"><span style="width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--success); display: inline-block;"></span> Positive {{ stats.positive }}</div>
+                    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600;"><span style="width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--danger); display: inline-block;"></span> Negative {{ stats.negative }}</div>
+                    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600;"><span style="width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--secondary); display: inline-block;"></span> Neutral {{ stats.neutral }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="filter-bar-enhanced">
+            <span class="filter-label">🔍 Filter</span>
+            <input type="text" id="searchInput" placeholder="Search feedback..." class="filter-input">
+            <select id="categoryFilter" class="filter-select">
+                <option value="">All Categories</option>{% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+            </select>
+            <select id="statusFilter" class="filter-select">
+                <option value="">All Status</option><option value="Pending">⏳ Pending</option><option value="Acknowledged">👀 Acknowledged</option><option value="In Progress">🔄 In Progress</option><option value="Resolved">✅ Resolved</option><option value="Escalated">🚨 Escalated</option>
+            </select>
+            <select id="urgencyFilter" class="filter-select">
+                <option value="">All Urgency</option><option value="4">⚠️ Urgent (4+)</option><option value="5">🚨 Emergency (5)</option>
+            </select>
+            <button class="filter-clear" onclick="clearFilters()">✕ Clear</button>
+        </div>
+        <div class="section-header">
+            <div class="section-title"><span class="section-title-icon">📋</span> All Feedback <span class="badge badge-neutral" style="margin-left: 0.5rem;">{{ pagination.total if pagination else feedbacks|length }} total</span></div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Showing {{ feedbacks|length }} items</span>
+            </div>
+        </div>
+        <div class="premium-table-container">
+            <div class="premium-table-wrapper">
+                <table class="premium-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Feedback</th>
-                            <th>Category</th>
-                            <th>Sentiment</th>
-                            <th>Urgency</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Actions</th>
+                            <th class="col-check"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                            <th class="col-id">ID</th>
+                            <th class="col-feedback">Feedback</th>
+                            <th class="col-category">Category</th>
+                            <th class="col-sentiment">Sentiment</th>
+                            <th class="col-urgency">Urgency</th>
+                            <th class="col-status">Status</th>
+                            <th class="col-date">Date</th>
+                            <th class="col-assign">Assigned</th>
+                            <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for f in feedbacks %}
-                        <tr data-status="{{ f.status }}">
-                            <td><span class="admin-id-badge">#{{ f.id }}</span></td>
-                            <td>
-                                <div class="admin-feedback-text" title="{{ f.feedback_text }}">
-                                    {{ f.feedback_text[:60] }}{% if f.feedback_text|length > 60 %}...{% endif %}
+                        <tr class="premium-row" data-id="{{ f.id }}" data-status="{{ f.status }}" data-urgency="{{ f.urgency_score }}">
+                            <td class="col-check"><input type="checkbox" class="row-select" value="{{ f.id }}"></td>
+                            <td class="col-id"><span class="id-badge">#{{ f.id }}</span></td>
+                            <td class="col-feedback">
+                                <div class="feedback-preview">
+                                    <span class="feedback-text-snippet" onclick="toggleFeedbackText({{ f.id }})">{{ f.feedback_text[:60] }}{% if f.feedback_text|length > 60 %}...{% endif %}</span>
+                                    <span class="feedback-text-full" id="feedback-full-{{ f.id }}" style="display:none;">{{ f.feedback_text }}</span>
+                                    {% if f.has_profanity %}<span class="profanity-badge">🤬</span>{% endif %}
+                                    {% if f.phase2_ai_explanation %}
+                                    <span class="ai-badge" onclick="showAnalyzeModal({{ f.id }})">🤖 AI</span>
+                                    {% endif %}
                                 </div>
-                                {% if f.has_profanity %}<span class="admin-profanity-tag">Profanity</span>{% endif %}
                             </td>
-                            <td><span class="admin-badge admin-badge-gray">{{ f.category }}</span></td>
-                            <td>
-                                {% if f.sentiment == 'Positive' %}<span class="admin-badge admin-badge-green">Positive</span>
-                                {% elif f.sentiment == 'Negative' %}<span class="admin-badge admin-badge-red">Negative</span>
-                                {% else %}<span class="admin-badge admin-badge-gray">Neutral</span>{% endif %}
+                            <td class="col-category"><span class="cat-badge cat-{{ f.category|lower|replace(' ', '-') }}">{{ f.category }}</span></td>
+                            <td class="col-sentiment">
+                                <span class="sentiment-badge sentiment-{{ f.sentiment.lower() }}">
+                                    {% if f.sentiment == 'Positive' %}😊{% elif f.sentiment == 'Negative' %}😞{% else %}😐{% endif %}
+                                    {{ f.sentiment }}
+                                </span>
                             </td>
-                            <td><span class="admin-urgency admin-urgency-{{ f.urgency_score }}">{{ f.urgency_score }}/5</span></td>
-                            <td>
+                            <td class="col-urgency">
+                                <span class="urgency-text urgency-{{ f.urgency_score }}">{{ f.urgency_score }}/5</span>
+                            </td>
+                            <td class="col-status">
                                 <form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}
-                                    <select name="status" onchange="this.form.submit()" class="admin-status-select status-{{ f.status.lower().replace(' ', '-') }}">
-                                        <option value="Pending" {% if f.status == 'Pending' %}selected{% endif %}>Pending</option>
-                                        <option value="Acknowledged" {% if f.status == 'Acknowledged' %}selected{% endif %}>Acknowledged</option>
-                                        <option value="In Progress" {% if f.status == 'In Progress' %}selected{% endif %}>In Progress</option>
-                                        <option value="Resolved" {% if f.status == 'Resolved' %}selected{% endif %}>Resolved</option>
-                                        <option value="Escalated" {% if f.status == 'Escalated' %}selected{% endif %}>Escalated</option>
-                                    </select>
+                                    <div class="status-dropdown">
+                                        <select name="status" onchange="this.form.submit()" class="status-select status-{{ f.status.lower().replace(' ', '-') }}">
+                                            <option value="Pending" {% if f.status == 'Pending' %}selected{% endif %}>⏳ Pending</option>
+                                            <option value="Acknowledged" {% if f.status == 'Acknowledged' %}selected{% endif %}>👀 Acknowledged</option>
+                                            <option value="In Progress" {% if f.status == 'In Progress' %}selected{% endif %}>🔄 In Progress</option>
+                                            <option value="Resolved" {% if f.status == 'Resolved' %}selected{% endif %}>✅ Resolved</option>
+                                            <option value="Escalated" {% if f.status == 'Escalated' %}selected{% endif %}>🚨 Escalated</option>
+                                        </select>
+                                    </div>
                                 </form>
                             </td>
-                            <td>{{ f.created_at.strftime('%b %d') }}</td>
-                            <td>
-                                <div class="admin-actions">
-                                    <button onclick="showAnalyzeModal({{ f.id }})" class="admin-action-btn" title="Analyze">🔍</button>
-                                    <button onclick="showSolutionModal({{ f.id }})" class="admin-action-btn" title="Solutions">💡</button>
-                                    <button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="admin-action-btn" title="Response">💬</button>
+                            <td class="col-date">
+                                <div class="date-info">
+                                    <span class="date-primary">{{ f.created_at.strftime('%b %d') if f.created_at else 'N/A' }}</span>
+                                    <span class="date-secondary">{{ f.created_at.strftime('%H:%M') if f.created_at else '' }}</span>
+                                </div>
+                            </td>
+                            <td class="col-assign">
+                                <form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}
+                                    <div class="assign-wrapper">
+                                        <input type="text" name="assigned_to" value="{{ f.assigned_to or '' }}" placeholder="Assign..." class="assign-field">
+                                        <button type="submit" class="assign-save" title="Save">💾</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td class="col-actions">
+                                <div class="action-buttons">
+                                    <button onclick="showAnalyzeModal({{ f.id }})" class="action-btn action-analyze" title="Analyze">🔍</button>
+                                    <button onclick="showSolutionModal({{ f.id }})" class="action-btn action-solution" title="Solutions">💡</button>
+                                    <button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn action-response" title="Response">💬</button>
                                     <form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Delete?')" style="display:inline;">{{ csrf_field() }}
-                                        <button type="submit" class="admin-action-btn admin-action-danger" title="Delete">🗑️</button>
+                                        <button type="submit" class="action-btn action-delete" title="Delete">🗑️</button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="8" class="admin-empty-cell">No feedback found</td>
+                            <td colspan="10">
+                                <div class="empty-state-premium">
+                                    <div class="empty-state-premium-icon">📭</div>
+                                    <div class="empty-state-premium-title">No feedback found</div>
+                                    <div class="empty-state-premium-desc">Feedback submissions will appear here.</div>
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-
-        <!-- Pagination -->
         {% if pagination and pagination.pages > 1 %}
-        <div class="admin-pagination">
-            {% if pagination.has_prev %}<a href="{{ url_for('admin_dashboard', page=pagination.prev_num, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="admin-page-btn">← Prev</a>{% endif %}
-            {% for p in range(1, pagination.pages + 1) %}
-                {% if p == pagination.page %}<span class="admin-page-btn active">{{ p }}</span>
-                {% elif p >= pagination.page - 2 and p <= pagination.page + 2 %}<a href="{{ url_for('admin_dashboard', page=p, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="admin-page-btn">{{ p }}</a>
-                {% elif p == 1 or p == pagination.pages %}<a href="{{ url_for('admin_dashboard', page=p, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="admin-page-btn">{{ p }}</a>
-                {% elif p == pagination.page - 3 or p == pagination.page + 3 %}<span class="admin-page-btn" style="border:none;cursor:default;">…</span>{% endif %}
-            {% endfor %}
-            {% if pagination.has_next %}<a href="{{ url_for('admin_dashboard', page=pagination.next_num, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="admin-page-btn">Next →</a>{% endif %}
+        <div class="pagination-modern">
+            {% if pagination.has_prev %}<a href="{{ url_for('admin_dashboard', page=pagination.prev_num, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="page-btn">← Prev</a>{% endif %}
+            {% for p in range(1, pagination.pages + 1) %}{% if p == pagination.page %}<span class="page-btn page-btn-active">{{ p }}</span>{% elif p >= pagination.page - 2 and p <= pagination.page + 2 %}<a href="{{ url_for('admin_dashboard', page=p, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="page-btn">{{ p }}</a>{% elif p == 1 or p == pagination.pages %}<a href="{{ url_for('admin_dashboard', page=p, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="page-btn">{{ p }}</a>{% elif p == pagination.page - 3 or p == pagination.page + 3 %}<span class="page-btn" style="border: none; cursor: default;">…</span>{% endif %}{% endfor %}
+            {% if pagination.has_next %}<a href="{{ url_for('admin_dashboard', page=pagination.next_num, category=current_category, status=current_status, urgency=current_urgency, search=current_search) }}" class="page-btn">Next →</a>{% endif %}
+            <span class="page-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
         </div>
         {% endif %}
-    </main>
-</div>
-
-<style>
-/* Admin Layout */
-.admin-layout { display: flex; min-height: calc(100vh - 56px); }
-
-/* Sidebar */
-.admin-sidebar { width: 240px; flex-shrink: 0; background: var(--card-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto; }
-.admin-sidebar-header { padding: 1.25rem 1rem; border-bottom: 1px solid var(--border-color); }
-.admin-sidebar-logo { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
-.admin-sidebar-subtitle { font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.25rem; }
-.admin-sidebar-nav { flex: 1; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.15rem; }
-.admin-sidebar-link { display: block; padding: 0.5rem 0.75rem; border-radius: 0.5rem; text-decoration: none; color: var(--text-primary); font-size: 0.8rem; font-weight: 600; transition: all 0.15s ease; }
-.admin-sidebar-link:hover { background: var(--bg-color); }
-.admin-sidebar-link.active { background: rgba(59,130,246,0.1); color: #3b82f6; }
-.admin-sidebar-footer { padding: 0.75rem; border-top: 1px solid var(--border-color); }
-.admin-logout-btn { width: 100%; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid rgba(239,68,68,0.2); background: rgba(239,68,68,0.05); color: #dc2626; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
-.admin-logout-btn:hover { background: rgba(239,68,68,0.1); }
-
-/* Main Content */
-.admin-main { flex: 1; padding: 2rem; overflow-y: auto; }
-
-/* Header */
-.admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
-.admin-header-left h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0; }
-.admin-header-left p { font-size: 0.85rem; color: var(--text-secondary); margin: 0.25rem 0 0; }
-.admin-header-right { display: flex; align-items: center; gap: 0.75rem; }
-.admin-icon-btn { position: relative; width: 2.5rem; height: 2.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--card-bg); cursor: pointer; font-size: 1.1rem; }
-.admin-icon-btn:hover { border-color: #3b82f6; }
-.admin-badge { position: absolute; top: -6px; right: -6px; min-width: 1.25rem; height: 1.25rem; border-radius: 9999px; background: #ef4444; color: #fff; font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 0.25rem; }
-.admin-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.15s ease; }
-.admin-btn-primary { background: #3b82f6; color: #fff; }
-.admin-btn-primary:hover { background: #1e40af; }
-
-/* Notifications */
-.admin-notif-dropdown { position: absolute; top: 4.5rem; right: 2rem; width: 20rem; max-height: 24rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; box-shadow: 0 8px 32px rgba(0,0,0,0.12); z-index: 100; overflow: hidden; }
-.admin-notif-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); font-weight: 700; font-size: 0.85rem; }
-.admin-notif-read { background: none; border: none; color: #3b82f6; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
-.admin-notif-list { max-height: 18rem; overflow-y: auto; }
-.admin-notif-empty { padding: 1.5rem; text-align: center; color: var(--text-secondary); font-size: 0.85rem; }
-
-/* Stats */
-.admin-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
-.admin-stat-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1rem; text-align: center; }
-.admin-stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
-.admin-stat-label { font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.25rem; }
-.admin-stat-pending .admin-stat-value { color: #d97706; }
-.admin-stat-progress .admin-stat-value { color: #2563eb; }
-.admin-stat-resolved .admin-stat-value { color: #059669; }
-
-/* Sections */
-.admin-section { margin-bottom: 2rem; }
-.admin-section-title { font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; }
-
-/* Quick Actions */
-.admin-quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-.admin-quick-action { display: flex; flex-direction: column; gap: 0.25rem; padding: 1rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; text-decoration: none; transition: all 0.15s ease; }
-.admin-quick-action:hover { border-color: #3b82f6; transform: translateY(-2px); }
-.admin-quick-action-icon { font-size: 1.25rem; }
-.admin-quick-action-title { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
-.admin-quick-action-desc { font-size: 0.7rem; color: var(--text-secondary); }
-
-/* Intelligence Strip */
-.admin-intelligence { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.03)); border: 1px solid rgba(99,102,241,0.12); border-radius: 0.75rem; margin-bottom: 2rem; }
-.admin-intelligence-title { font-weight: 700; font-size: 0.9rem; color: var(--text-primary); }
-.admin-intelligence-subtitle { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem; }
-.admin-intelligence-metrics { display: flex; gap: 1.5rem; }
-.admin-metric { display: flex; flex-direction: column; align-items: center; text-decoration: none; }
-.admin-metric strong { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
-.admin-metric span { font-size: 0.7rem; color: var(--text-secondary); }
-
-/* Topics */
-.admin-topics { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.admin-topic-chip { padding: 0.35rem 0.75rem; background: var(--bg-color); border-radius: 9999px; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); }
-.admin-muted { font-size: 0.85rem; color: var(--text-muted); }
-
-/* Trending */
-.admin-trending-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.admin-trending-item { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.5rem; }
-.admin-trending-category { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); flex: 1; }
-.admin-trending-count { font-size: 0.8rem; color: var(--text-secondary); }
-.admin-trending-rate { font-size: 0.75rem; color: #059669; font-weight: 600; }
-
-/* Table */
-.admin-table-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; overflow: hidden; }
-.admin-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.admin-table thead th { padding: 0.75rem; text-align: left; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); background: var(--bg-color); border-bottom: 1px solid var(--border-color); }
-.admin-table tbody td { padding: 0.75rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-.admin-table tbody tr:hover { background: rgba(59,130,246,0.02); }
-.admin-id-badge { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); background: var(--bg-color); padding: 0.2rem 0.5rem; border-radius: 0.4rem; }
-.admin-feedback-text { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.admin-profanity-tag { font-size: 0.65rem; font-weight: 600; color: #dc2626; background: rgba(239,68,68,0.1); padding: 0.15rem 0.4rem; border-radius: 0.3rem; margin-left: 0.5rem; }
-.admin-badge { display: inline-flex; align-items: center; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
-.admin-badge-green { background: rgba(16,185,129,0.1); color: #059669; }
-.admin-badge-red { background: rgba(239,68,68,0.1); color: #dc2626; }
-.admin-badge-gray { background: var(--bg-color); color: var(--text-secondary); }
-.admin-urgency { font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 0.4rem; }
-.admin-urgency-1, .admin-urgency-2 { background: rgba(16,185,129,0.1); color: #059669; }
-.admin-urgency-3 { background: rgba(245,158,11,0.1); color: #d97706; }
-.admin-urgency-4 { background: rgba(249,115,22,0.1); color: #ea580c; }
-.admin-urgency-5 { background: rgba(239,68,68,0.1); color: #dc2626; }
-.admin-status-select { padding: 0.3rem 0.5rem; border-radius: 0.4rem; border: 1px solid var(--border-color); font-size: 0.75rem; font-weight: 600; background: var(--card-bg); color: var(--text-primary); cursor: pointer; }
-.admin-actions { display: flex; gap: 0.25rem; }
-.admin-action-btn { width: 1.75rem; height: 1.75rem; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); border-radius: 0.4rem; background: var(--card-bg); font-size: 0.8rem; cursor: pointer; transition: all 0.15s ease; }
-.admin-action-btn:hover { transform: scale(1.1); }
-.admin-action-danger:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
-.admin-empty-cell { text-align: center; padding: 2rem; color: var(--text-secondary); }
-
-/* Pagination */
-.admin-pagination { display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1.5rem; }
-.admin-page-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; padding: 0 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-decoration: none; transition: all 0.15s ease; }
-.admin-page-btn:hover { border-color: #3b82f6; color: #3b82f6; }
-.admin-page-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
-</style>
-
-<script>
-// Notifications
-function loadAdminNotifs() {
-    fetch('/api/admin/notifications').then(function(r) { return r.json(); }).then(function(data) {
-        if (data.success) {
-            var badge = document.getElementById('adminNotifBadge');
-            if (data.unread_count > 0) {
-                badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
-                badge.style.display = 'flex';
-            } else { badge.style.display = 'none'; }
-            var list = document.getElementById('adminNotifList');
-            if (data.notifications && data.notifications.length > 0) {
-                list.innerHTML = data.notifications.map(function(n) {
-                    var icon = n.notification_type === 'new_feedback' ? 'New' : n.notification_type === 'unattended' ? 'Alert' : '';
-                    return '<div class="admin-notif-item ' + (n.is_read ? '' : 'unread') + '">' +
-                        '<div class="admin-notif-item-title">' + icon + ' ' + n.title + '</div>' +
-                        '<div class="admin-notif-item-text">' + n.message + '</div>' +
-                        '<div class="admin-notif-item-time">' + n.created_at + '</div></div>';
-                }).join('');
-            } else { list.innerHTML = '<div class="admin-notif-empty">No notifications</div>'; }
+        <script>
+        function toggleSelectAll() {
+            var checked = document.getElementById('selectAll').checked;
+            document.querySelectorAll('.row-select').forEach(function(cb) { cb.checked = checked; });
         }
-    });
-}
-function toggleAdminNotif() {
-    var d = document.getElementById('adminNotifDrop');
-    d.style.display = d.style.display === 'none' ? 'block' : 'none';
-}
-function markAdminNotifRead() {
-    fetch('/api/admin/notifications/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }, body: JSON.stringify({ ids: [] }) }).then(function() { loadAdminNotifs(); });
-}
-document.addEventListener('click', function(e) {
-    var b = document.querySelector('.admin-icon-btn'), d = document.getElementById('adminNotifDrop');
-    if (b && d && !b.contains(e.target) && !d.contains(e.target)) d.style.display = 'none';
-});
-loadAdminNotifs();
-setInterval(loadAdminNotifs, 30000);
-</script>
+        function toggleFeedbackText(id) {
+            var full = document.getElementById('feedback-full-' + id);
+            if (full) full.style.display = full.style.display === 'none' ? 'inline' : 'none';
+        }
+        </script>
+        <div id="responseModal" class="modal"><div class="modal-content"><div class="modal-header">💬 Add SRC Response</div><form method="POST" id="responseForm">{{ csrf_field() }}<textarea name="src_response" rows="4" class="form-textarea mb-3" placeholder="Write your official response here..."></textarea><div class="flex justify-end gap-2"><button type="button" onclick="closeResponseModal()" class="btn btn-secondary">Cancel</button><button type="submit" class="btn btn-primary">✉️ Submit Response</button></div></form></div></div>
+<div id="analyzeModal" class="modal"><div class="modal-content"><div class="modal-header">🔍 Feedback Analysis</div><div class="mb-3"><div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;"><span class="badge badge-info" id="analyzeSentimentBadge">Sentiment</span><span class="badge badge-warning" id="analyzeUrgencyBadge">Urgency</span></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎭 Emotion & Confidence</h4><div id="analyzeEmotion" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🧠 Sentiment Explanation</h4><div id="sentimentExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Urgency Explanation</h4><div id="urgencyExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeAnalyzeModal()" class="btn btn-secondary">Close</button></div></div></div>
+        <div id="solutionModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">💡 Solution Recommendations</div>
+                <div class="mb-3">
+                    <div id="solutionDepartment" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; margin-bottom: 0.75rem; border: 1px solid var(--border-color);"></div>
+                </div>
+                <div class="mb-3" id="solutionConfidenceWrap" style="display:none;">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎯 Match Confidence</h4>
+                    <div id="solutionConfidence" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🏷️ Matched Keywords</h4>
+                    <div id="solutionKeywords" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color); min-height: 50px;"></div>
+                </div>
+                <div class="mb-3" id="solutionSecondaryWrap" style="display:none;">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🔀 Might Also Involve</h4>
+                    <div id="solutionSecondary" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Immediate Action</h4>
+                    <div id="solutionShortTerm" style="background: rgba(59,130,246,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(59,130,246,0.2);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Resolution Steps</h4>
+                    <div id="solutionLongTerm" style="background: rgba(16,185,129,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(16,185,129,0.2);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">📋 SRC Follow-up Tasks</h4>
+                    <div id="solutionActions" style="background: rgba(245,158,11,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(245,158,11,0.2);"></div>
+                </div>
+                <div class="mb-3">
+                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🗳️ Was this recommendation helpful?</h4>
+                    <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" id="solutionHelpfulBtn" onclick="rateSolution(true)">👍 Helpful</button>
+                        <button type="button" class="btn btn-secondary btn-sm" id="solutionUnhelpfulBtn" onclick="rateSolution(false)">👎 Not Helpful</button>
+                        <span id="solutionHelpfulTally" style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;"></span>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="regenerateSolution()" class="btn btn-secondary" id="solutionRegenerateBtn">🔄 Regenerate</button>
+                    <button type="button" onclick="closeSolutionModal()" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+        <script>
+        var explanationsById = {{ explanations_by_id | default({}) | tojson }};
+        var recommendationsById = {{ recommendations_by_id | default({}) | tojson }};
+        var trendData = {
+            labels: {{ trend_data|map(attribute='month')|list|tojson }},
+            positive: {{ trend_data|map(attribute='positive')|list|tojson }},
+            negative: {{ trend_data|map(attribute='negative')|list|tojson }},
+            neutral: {{ trend_data|map(attribute='neutral')|list|tojson }}
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+            var trendCtx = document.getElementById('trendChart');
+            if (trendCtx) {
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: trendData.labels,
+                        datasets: [
+                            { label: 'Positive', data: trendData.positive, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
+                            { label: 'Negative', data: trendData.negative, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
+                            { label: 'Neutral', data: trendData.neutral, borderColor: '#6b7280', backgroundColor: 'rgba(107,114,128,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, weight: '600' } } },
+                            tooltip: { backgroundColor: 'var(--card-bg)', titleColor: 'var(--text-primary)', bodyColor: 'var(--text-secondary)', borderColor: 'var(--border-color)', borderWidth: 1, cornerRadius: 8 }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, stepSize: 1 } }
+                        }
+                    }
+                });
+            }
+            var donutCtx = document.getElementById('sentimentDonutChart');
+            if (donutCtx) {
+                new Chart(donutCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['Positive', 'Negative', 'Neutral'], datasets: [{ data: [{{ stats.positive }}, {{ stats.negative }}, {{ stats.neutral }}], backgroundColor: ['#10b981', '#ef4444', '#6b7280'], borderWidth: 0, hoverOffset: 8 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: true, cutout: '65%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'var(--card-bg)', titleColor: 'var(--text-primary)', bodyColor: 'var(--text-secondary)', borderColor: 'var(--border-color)', borderWidth: 1, cornerRadius: 8,
+                                callbacks: { label: function(ctx) { var t = ctx.dataset.data.reduce(function(a,b){return a+b;},0); var p = t > 0 ? Math.round(ctx.parsed / t * 100) : 0; return ctx.label + ': ' + ctx.parsed + ' (' + p + '%)'; } }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        function filterTable() {
+            var s = document.getElementById('searchInput').value.toLowerCase();
+            var c = document.getElementById('categoryFilter').value;
+            var t = document.getElementById('statusFilter').value;
+            var u = document.getElementById('urgencyFilter').value;
+document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
+                var text = row.cells[1]?.innerText.toLowerCase() || '';
+                var cat = row.cells[3]?.innerText || '';
+                var stat = row.cells[6]?.querySelector('select')?.value || row.cells[6]?.innerText || '';
+                var urgMatch = (row.cells[5]?.innerText || '').match(/(\d+)\/5/);
+                var urgScore = urgMatch ? parseInt(urgMatch[1]) : 0;
+                var match = text.includes(s);
+                if (c && cat !== c) match = false;
+                if (t && stat !== t) match = false;
+                if (u === '4' && urgScore < 4) match = false;
+                if (u === '5' && urgScore < 5) match = false;
+                row.style.display = match ? '' : 'none';
+            });
+        }
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('urgencyFilter').value = '';
+            filterTable();
+        }
+        document.getElementById('searchInput').addEventListener('keyup', filterTable);
+        document.getElementById('categoryFilter').addEventListener('change', filterTable);
+        document.getElementById('statusFilter').addEventListener('change', filterTable);
+        document.getElementById('urgencyFilter').addEventListener('change', filterTable);
+        function renderEmotionBlock(eb, data) {
+            if (!eb) return;
+            if (!data || (!data.dominant_emotion && data.confidence_score === undefined && data.confidence_score === null && (!data.emotion_intensities || Object.keys(data.emotion_intensities).length === 0))) {
+                eb.innerHTML = '<em style="color:var(--text-secondary);">No emotion data available.</em>';
+                return;
+            }
+            var emotion = (data.dominant_emotion || 'neutral').toLowerCase();
+            var emoji = data.emotion_emoji || '😐';
+            var label = emotion.charAt(0).toUpperCase() + emotion.slice(1);
+            var html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:0.6rem;">';
+            html += '<span class="emotion-badge emotion-' + emotion + '">' + emoji + ' ' + label + '</span>';
+            if (data.compound_mood) {
+                html += '<span class="emotion-badge emotion-neutral">🌗 ' + data.compound_mood.replace(/_/g, ' ').replace(/\b\w/g, function(c){return c.toUpperCase();}) + '</span>';
+            }
+            if (data.confidence_score !== undefined && data.confidence_score !== null) {
+                var conf = Math.round(data.confidence_score);
+                var confBadge = conf >= 75 ? 'badge-success' : (conf >= 50 ? 'badge-warning' : 'badge-danger');
+                html += '<span class="badge ' + confBadge + '">🎯 ' + conf + '% confidence</span>';
+            }
+            html += '</div>';
+            if (data.confidence_score !== undefined && data.confidence_score !== null) {
+                var conf = Math.round(data.confidence_score);
+                var confClass = conf >= 75 ? 'confidence-high' : (conf >= 50 ? 'confidence-medium' : 'confidence-low');
+                html += '<div class="confidence-bar" style="margin-bottom:0.6rem;"><div class="confidence-bar-fill ' + confClass + '" style="width:' + conf + '%;"></div></div>';
+            }
+            var intensities = data.emotion_intensities || {};
+            var entries = Object.keys(intensities).filter(function(k) { return intensities[k] > 0; }).map(function(k) { return [k, intensities[k]]; });
+            entries.sort(function(a, b) { return b[1] - a[1]; });
+            if (entries.length) {
+                var negEmotions = ['anger', 'fear', 'sadness', 'disgust'];
+                var posEmotions = ['joy', 'trust', 'love', 'gratitude', 'optimism'];
+                html += '<div>';
+                entries.forEach(function(e) {
+                    var name = e[0];
+                    var val = Math.round(e[1] * 100);
+                    var color = negEmotions.indexOf(name) !== -1 ? '#ef4444' : (posEmotions.indexOf(name) !== -1 ? '#10b981' : '#3b82f6');
+                    var label = name.charAt(0).toUpperCase() + name.slice(1);
+                    html += '<div class="emotion-intensity-item"><span class="emotion-intensity-label">' + label + '</span>';
+                    html += '<div class="emotion-intensity-bar"><div class="emotion-intensity-fill" style="width:' + val + '%;background:' + color + ';"></div></div>';
+                    html += '<span class="emotion-intensity-value">' + val + '%</span></div>';
+                });
+                html += '</div>';
+            }
+            eb.innerHTML = html;
+        }
+
+        function showAnalyzeModal(id) {
+            var modal = document.getElementById('analyzeModal');
+            var sb = document.getElementById('sentimentExplanation');
+            var ub = document.getElementById('urgencyExplanation');
+            var eb = document.getElementById('analyzeEmotion');
+            var sbg = document.getElementById('analyzeSentimentBadge');
+            var ubg = document.getElementById('analyzeUrgencyBadge');
+            if (!modal || !sb || !ub) return;
+            var data = explanationsById && explanationsById[id] ? explanationsById[id] : null;
+            renderEmotionBlock(eb, data);
+            if (!data) {
+                sb.innerHTML = '<em style="color:var(--text-secondary);">No analysis available.</em>';
+                ub.innerHTML = '<em style="color:var(--text-secondary);">No analysis available.</em>';
+                if (sbg) sbg.textContent = 'N/A';
+                if (ubg) ubg.textContent = 'N/A';
+            } else {
+                if (data.sentiment_explanation && data.sentiment_explanation.length) {
+                    sb.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + data.sentiment_explanation.map(function(x) {
+                        return '<span class="keyword-chip">' + x.word + ' <span class="keyword-chip-impact">(' + x.impact + ')</span></span>';
+                    }).join('') + '</div>';
+                } else {
+                    sb.innerHTML = '<em style="color:var(--text-secondary);">No sentiment influencers detected.</em>';
+                }
+                var ue = data.urgency_explanation || {};
+                var urgHtml = '<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">';
+                urgHtml += '<div><strong>Final urgency:</strong> <span class="urgency-badge ' + (ue.final_urgency >= 4 ? 'urgency-high' : ue.final_urgency >= 3 ? 'urgency-medium' : 'urgency-low') + '" style="font-size:0.85rem;">' + (ue.final_urgency || 'N/A') + '/5</span></div>';
+                urgHtml += '<div><strong>Base:</strong> ' + (ue.base_urgency_from_keywords || 'N/A') + '/5</div></div>';
+                if (ue.sentiment_boost_applied) {
+                    urgHtml += '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:0.5rem;padding:0.5rem 0.75rem;margin-bottom:0.75rem;font-size:0.85rem;font-weight:600;color:var(--danger);">⚠️ Sentiment boost applied</div>';
+                }
+                urgHtml += '<div style="margin-top:0.5rem;"><strong>Keywords:</strong></div>';
+                if (ue.urgency_keywords_detected && ue.urgency_keywords_detected.length) {
+                    urgHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.35rem;">' + ue.urgency_keywords_detected.map(function(k) {
+                        return '<span class="keyword-chip">' + k + '</span>';
+                    }).join('') + '</div>';
+                } else {
+                    urgHtml += '<em style="color:var(--text-secondary);">None</em>';
+                }
+                ub.innerHTML = urgHtml;
+                if (sbg) sbg.textContent = '🔍 ' + (data.sentiment_explanation && data.sentiment_explanation.length > 0 ? 'Analyzed' : 'N/A');
+                if (ubg) {
+                    var v = ue.final_urgency || 'N/A';
+                    ubg.textContent = '⚡ ' + v + '/5';
+                    ubg.className = 'badge ' + (ue.final_urgency >= 4 ? 'badge-danger' : ue.final_urgency >= 3 ? 'badge-warning' : 'badge-neutral');
+                }
+            }
+            modal.classList.add('active');
+        }
+        function closeAnalyzeModal() { document.getElementById('analyzeModal').classList.remove('active'); }
+        var currentSolutionFeedbackId = null;
+
+        function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
+
+        function renderSolutionModal(id, rec) {
+            var db = document.getElementById('solutionDepartment');
+            var kb = document.getElementById('solutionKeywords');
+            var stb = document.getElementById('solutionShortTerm');
+            var ltb = document.getElementById('solutionLongTerm');
+            var confWrap = document.getElementById('solutionConfidenceWrap');
+            var confBox = document.getElementById('solutionConfidence');
+            var secWrap = document.getElementById('solutionSecondaryWrap');
+            var secBox = document.getElementById('solutionSecondary');
+            var tally = document.getElementById('solutionHelpfulTally');
+
+            if (!rec) {
+                db.innerHTML = '<em style="color:var(--text-secondary);">No recommendations available.</em>';
+                kb.innerHTML = ''; stb.innerHTML = ''; ltb.innerHTML = '';
+                confWrap.style.display = 'none';
+                secWrap.style.display = 'none';
+                tally.textContent = '';
+                return;
+            }
+
+            var dept = rec.responsible_department || 'N/A';
+            var eta = rec.estimated_time || 'N/A';
+            var st = rec.short_term_solution || '';
+            var lt = rec.long_term_solution || '';
+            var kws = (rec.recommended_keywords || '').split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+
+            db.innerHTML = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;"><div><span class="dept-badge">🏢 ' + esc(dept) + '</span></div><div><span style="font-weight:600;font-size:0.85rem;">⏱️ Est:</span> <strong>' + esc(eta) + '</strong></div></div>';
+            kb.innerHTML = kws.length ? '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + kws.map(function(k) { return '<span class="keyword-chip">' + esc(k) + '</span>'; }).join('') + '</div>' : '<em style="color:var(--text-secondary);">None</em>';
+            stb.innerHTML = st ? '<div style="color:var(--text-primary);line-height:1.6;font-weight:500;">' + esc(st) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+            ltb.innerHTML = lt ? '<div style="color:var(--text-primary);line-height:1.6;font-weight:500;">' + esc(lt) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
+            
+            // Generate SRC action tasks based on the solutions
+            var actions = [];
+            if (st) actions.push('✓ ' + st);
+            if (lt) actions.push('✓ ' + lt);
+            if (actions.length === 0) actions.push('No specific actions recommended');
+            var actionsHtml = '<div style="color:var(--text-primary);line-height:1.8;font-weight:500;"><ul style="margin:0;padding-left:1.2rem;">' + actions.map(function(a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></div>';
+            document.getElementById('solutionActions').innerHTML = actionsHtml;
+
+            if (typeof rec.confidence === 'number') {
+                var pct = Math.round(rec.confidence * 100);
+                var level = pct >= 70 ? 'High' : (pct >= 40 ? 'Moderate' : 'Low');
+                var color = pct >= 70 ? 'var(--success)' : (pct >= 40 ? 'var(--warning)' : 'var(--danger)');
+                confWrap.style.display = 'block';
+                confBox.innerHTML = '<div style="display:flex;align-items:center;gap:0.6rem;">' +
+                    '<div style="flex:1;height:8px;border-radius:99px;background:var(--border-color);overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:' + color + ';"></div></div>' +
+                    '<strong style="font-size:0.82rem;color:' + color + ';">' + pct + '% (' + level + ')</strong></div>';
+            } else {
+                confWrap.style.display = 'none';
+            }
+
+            if (rec.secondary_categories && rec.secondary_categories.length) {
+                secWrap.style.display = 'block';
+                secBox.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + rec.secondary_categories.map(function(sc) {
+                    var label = typeof sc === 'string' ? sc : (sc.category || JSON.stringify(sc));
+                    return '<span class="keyword-chip">' + esc(label) + '</span>';
+                }).join('') + '</div>';
+            } else {
+                secWrap.style.display = 'none';
+            }
+
+            var helpfulCount = rec.helpful_count || 0;
+            var unhelpfulCount = rec.unhelpful_count || 0;
+            tally.textContent = (helpfulCount || unhelpfulCount) ? (helpfulCount + ' found this helpful · ' + unhelpfulCount + ' did not') : 'No feedback yet on this recommendation';
+        }
+
+        function showSolutionModal(id) {
+            var modal = document.getElementById('solutionModal');
+            if (!modal) return;
+            currentSolutionFeedbackId = id;
+            var rec = recommendationsById && recommendationsById[id] ? recommendationsById[id] : null;
+            renderSolutionModal(id, rec);
+            modal.classList.add('active');
+        }
+
+        function regenerateSolution() {
+            if (!currentSolutionFeedbackId) return;
+            var btn = document.getElementById('solutionRegenerateBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Regenerating…';
+            fetch('/admin/feedback/' + currentSolutionFeedbackId + '/regenerate-recommendation', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': getCsrfToken() }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                btn.disabled = false;
+                btn.textContent = '🔄 Regenerate';
+                if (!data.success) return;
+                var existing = recommendationsById[currentSolutionFeedbackId] || {};
+                var updated = Object.assign({}, existing, data);
+                recommendationsById[currentSolutionFeedbackId] = updated;
+                renderSolutionModal(currentSolutionFeedbackId, updated);
+                if (typeof showToast === 'function') showToast('✅ Recommendation refreshed', 'success');
+            })
+            .catch(function() {
+                btn.disabled = false;
+                btn.textContent = '🔄 Regenerate';
+            });
+        }
+
+        function rateSolution(wasHelpful) {
+            if (!currentSolutionFeedbackId) return;
+            fetch('/admin/feedback/' + currentSolutionFeedbackId + '/solution-feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+                body: JSON.stringify({ was_helpful: wasHelpful })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) return;
+                var existing = recommendationsById[currentSolutionFeedbackId] || {};
+                existing.helpful_count = data.helpful_count;
+                existing.unhelpful_count = data.unhelpful_count;
+                recommendationsById[currentSolutionFeedbackId] = existing;
+                var tally = document.getElementById('solutionHelpfulTally');
+                if (tally) tally.textContent = data.helpful_count + ' found this helpful · ' + data.unhelpful_count + ' did not';
+                if (typeof showToast === 'function') showToast(wasHelpful ? '👍 Thanks for the feedback!' : '👎 Noted, thanks!', 'success');
+            });
+        }
+
+        function closeSolutionModal() { document.getElementById('solutionModal').classList.remove('active'); }
+        function showResponseModal(id, response) {
+            var modal = document.getElementById('responseModal');
+            var form = document.getElementById('responseForm');
+            if (modal && form) {
+                form.action = '/admin/update/' + id;
+                var ta = form.querySelector('textarea');
+                if (ta) ta.value = response || '';
+                modal.classList.add('active');
+            }
+        }
+        function closeResponseModal() { document.getElementById('responseModal').classList.remove('active'); }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') { closeResponseModal(); closeAnalyzeModal(); closeSolutionModal(); }
+        });
+        document.getElementById('trendPeriod')?.addEventListener('change', function() {
+            this.style.borderColor = 'var(--primary)';
+            setTimeout(function() { document.getElementById('trendPeriod').style.borderColor = 'var(--border-color)'; }, 500);
+        });
+        </script>
+    </section>
+</div>
 {% endblock %}
