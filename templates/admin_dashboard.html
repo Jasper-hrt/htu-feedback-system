@@ -62,7 +62,8 @@
                 <div class="notification-empty">No notifications yet</div>
             </div>
         </div>
-        </div>
+
+        <!-- Quick Actions Section -->
         <div class="quick-actions-label"><span class="quick-actions-icon">⚡</span> Quick Actions</div>
         <div class="phase3-action-grid" aria-label="Admin quick actions">
             <a class="phase3-action-card" href="/admin/analytics"><span class="phase3-action-icon">📈</span><span class="phase3-action-copy"><span class="phase3-action-title">Analytics</span><span class="phase3-action-desc">Trends, patterns and early warnings</span></span></a>
@@ -228,7 +229,7 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <td class="col-category"><span class="cat-badge cat-{{ f.category|lower|replace(' ', '-') }}">{{ f.category }}</span></td>
+                            <td class="col-category"><span class="cat-badge">{{ f.category }}</span></td>
                             <td class="col-sentiment">
                                 <span class="sentiment-badge sentiment-{{ f.sentiment.lower() }}">
                                     {% if f.sentiment == 'Positive' %}😊{% elif f.sentiment == 'Negative' %}😞{% else %}😐{% endif %}
@@ -268,6 +269,7 @@
                             <td class="col-actions">
                                 <div class="action-buttons">
                                     <button onclick="showAnalyzeModal({{ f.id }})" class="action-btn action-analyze" title="Analyze">🔍</button>
+                                    <button onclick="showCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" class="action-btn action-correct" title="Correct Sentiment">🔄</button>
                                     <button onclick="showSolutionModal({{ f.id }})" class="action-btn action-solution" title="Solutions">💡</button>
                                     <button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn action-response" title="Response">💬</button>
                                     <form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Delete?')" style="display:inline;">{{ csrf_field() }}
@@ -762,7 +764,81 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
         loadAdminNotifications();
         // Refresh every 30 seconds
         setInterval(loadAdminNotifications, 30000);
+
+        // ==================== SENTIMENT CORRECTION ====================
+        var correctionModal = document.getElementById('correctionModal');
+        var currentCorrectionId = null;
+
+        function showCorrectionModal(feedbackId, currentSentiment) {
+            currentCorrectionId = feedbackId;
+            document.getElementById('correctionFeedbackId').value = feedbackId;
+            document.getElementById('correctionOriginal').textContent = currentSentiment;
+            document.getElementById('correctionSelect').value = currentSentiment;
+            document.getElementById('correctionModal').style.display = 'flex';
+        }
+
+        function closeCorrectionModal() {
+            document.getElementById('correctionModal').style.display = 'none';
+            currentCorrectionId = null;
+        }
+
+        function submitCorrection() {
+            var feedbackId = document.getElementById('correctionFeedbackId').value;
+            var original = document.getElementById('correctionOriginal').textContent;
+            var corrected = document.getElementById('correctionSelect').value;
+
+            if (original === corrected) {
+                closeCorrectionModal();
+                return;
+            }
+
+            fetch('/api/admin/sentiment/record-correction', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+                body: JSON.stringify({
+                    feedback_id: parseInt(feedbackId),
+                    original_sentiment: original,
+                    corrected_sentiment: corrected,
+                    confidence: 0.0
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof showToast === 'function') {
+                        showToast('Correction recorded! The system will learn from this.', 'success');
+                    }
+                    setTimeout(() => location.reload(), 1000);
+                }
+            })
+            .catch(err => console.error('Error:', err));
+
+            closeCorrectionModal();
+        }
         </script>
+
+        <!-- Correction Modal -->
+        <div class="modal" id="correctionModal" style="display:none;">
+            <div class="modal-content" style="max-width: 400px;">
+                <div class="modal-header">🔄 Correct Sentiment</div>
+                <div style="padding: 1rem;">
+                    <input type="hidden" id="correctionFeedbackId">
+                    <p style="margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">
+                        Current AI prediction: <strong id="correctionOriginal"></strong>
+                    </p>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Corrected Sentiment:</label>
+                    <select id="correctionSelect" style="width: 100%; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color);">
+                        <option value="Positive">😊 Positive</option>
+                        <option value="Neutral">😐 Neutral</option>
+                        <option value="Negative">😞 Negative</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2" style="padding: 0 1rem 1rem;">
+                    <button onclick="closeCorrectionModal()" class="btn btn-secondary">Cancel</button>
+                    <button onclick="submitCorrection()" class="btn btn-primary">✓ Save Correction</button>
+                </div>
+            </div>
+        </div>
     </section>
 </div>
 {% endblock %}

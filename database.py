@@ -680,6 +680,32 @@ class Notification(db.Model):
         }
 
 
+# ==================== SENTIMENT CORRECTION MODEL ====================
+
+class SentimentCorrection(db.Model):
+    """Stores admin corrections to sentiment analysis for active learning"""
+    __tablename__ = 'sentiment_corrections'
+
+    id = db.Column(db.Integer, primary_key=True)
+    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'), nullable=False, index=True)
+    original_sentiment = db.Column(db.String(20), nullable=False)
+    corrected_sentiment = db.Column(db.String(20), nullable=False)
+    admin_name = db.Column(db.String(100), nullable=False)
+    confidence_before = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'feedback_id': self.feedback_id,
+            'original_sentiment': self.original_sentiment,
+            'corrected_sentiment': self.corrected_sentiment,
+            'admin_name': self.admin_name,
+            'confidence_before': self.confidence_before,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+        }
+
+
 # ==================== HELPER FUNCTIONS ====================
 
 def is_valid_htu_email(email):

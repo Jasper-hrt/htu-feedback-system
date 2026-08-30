@@ -181,5 +181,61 @@ function quickReject(id) {
         }
     });
 }
+
+// ==================== ACTIVE LEARNING ====================
+// Track original sentiments and record corrections
+var originalSentiments = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Store original sentiments when page loads
+    document.querySelectorAll('.review-card').forEach(function(card) {
+        var select = card.querySelector('select[name="sentiment"]');
+        if (select) {
+            var feedbackId = select.closest('form').action.split('/').pop();
+            originalSentiments[feedbackId] = select.value;
+        }
+    });
+});
+
+// Record correction when form is submitted
+document.querySelectorAll('form[action*="/admin/ai-review/"]').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+        var action = form.action;
+        if (action.includes('add-to-lexicon')) return; // Skip lexicon form
+        
+        var feedbackId = action.split('/').pop();
+        var sentimentSelect = form.querySelector('select[name="sentiment"]');
+        
+        if (sentimentSelect && originalSentiments[feedbackId]) {
+            var original = originalSentiments[feedbackId];
+            var corrected = sentimentSelect.value;
+            
+            // Only record if sentiment was changed
+            if (original !== corrected) {
+                recordSentimentCorrection(feedbackId, original, corrected);
+            }
+        }
+    });
+});
+
+function recordSentimentCorrection(feedbackId, original, corrected) {
+    fetch('/api/admin/sentiment/record-correction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({
+            feedback_id: parseInt(feedbackId),
+            original_sentiment: original,
+            corrected_sentiment: corrected,
+            confidence: 0.0
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && typeof showToast === 'function') {
+            showToast('Correction recorded - system will learn from this!', 'success');
+        }
+    })
+    .catch(err => console.error('Error recording correction:', err));
+}
 </script>
 {% endblock %}

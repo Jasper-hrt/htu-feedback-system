@@ -14,7 +14,7 @@ from database import is_valid_htu_email, extract_student_id_from_email
 from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_topic, get_room_sentiment_summary, get_forum_sentiment_summary, censor_text, get_sentiment_explanation, get_urgency_explanation, build_ai_explanation
 from sentiment.topic_extractor import extract_topics
 from solution_recommender import recommend_solutions
-from enhanced_recommender import recommend_enhanced, get_trending_issues, get_department_workload, get_engine, record_assignment
+from enhanced_recommender import get_trending_issues, get_department_workload, get_engine
 from security_manager import SecurityManager, require_2fa, get_client_ip, get_user_agent
 from recommendation_learning import RecommendationLearner
 import logging
@@ -2303,6 +2303,22 @@ def review_ai_feedback(feedback_id):
                 )
         except Exception:
             pass
+    
+    # Record correction in SentimentCorrection table for active learning stats
+    if old[0] != new_sentiment:
+        try:
+            from database import SentimentCorrection
+            correction = SentimentCorrection(
+                feedback_id=feedback.id,
+                original_sentiment=old[0],
+                corrected_sentiment=new_sentiment,
+                admin_name=session.get('admin_name', 'admin'),
+                confidence_before=feedback.confidence_score or 0.0,
+            )
+            db.session.add(correction)
+        except Exception:
+            pass
+    
     db.session.commit()
     log_admin_action(session['admin_name'], 'AI Review', f'Feedback ID {feedback.id}: {action}')
 
@@ -2669,6 +2685,80 @@ def api_admin_unread_count():
     """Get unread notification count for admin."""
     count = Notification.query.filter_by(recipient_type='admin', is_read=False).count()
     return jsonify({'success': True, 'unread_count': count})
+
+# ==================== ACTIVE LEARNING API ROUTES ====================
+
+@app.route('/api/admin/sentiment/record-correction', methods=['POST'])
+@src_required
+def api_record_sentiment_correction():
+    """Record an admin correction to sentiment for active learning"""
+    data = request.get_json()
+    feedback_id = data.get('feedback_id')
+    original = data.get('original_sentiment')
+    corrected = data.get('corrected_sentiment')
+    confidence = data.get('confidence', 0.0)
+
+    if not feedback_id or not original or not corrected:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+    try:
+        from database import db, SentimentCorrection, Feedback
+        
+        # Record the correction
+        correction = SentimentCorrection(
+            feedback_id=feedback_id,
+            original_sentiment=original,
+            corrected_sentiment=corrected,
+            admin_name=session.get('admin_name', 'Admin'),
+            confidence_before=confidence,
+        )
+        db.session.add(correction)
+        
+        # Update the feedback record
+        feedback = Feedback.query.get(feedback_id)
+        if feedback:
+            feedback.sentiment = corrected.lower()
+            feedback.confidence_score = 100.0
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/sentiment/correction-stats')
+@src_required
+def api_sentiment_correction_stats():
+    """Get sentiment correction statistics"""
+    try:
+        from database import SentimentCorrection
+        total = SentimentCorrection.query.count()
+        changed = SentimentCorrection.query.filter(
+            SentimentCorrection.original_sentiment != SentimentCorrection.corrected_sentiment
+        ).count()
+        return jsonify({
+            'success': True,
+            'total_corrections': total,
+            'changed': changed,
+            'accuracy_improvement': round(changed / total * 100, 1) if total > 0 else 0,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/admin/sentiment/analyze')
+@src_required
+def api_analyze_sentiment():
+    """Enhanced sentiment analysis with aspects and emotions"""
+    text = request.args.get('text', '')
+    if not text:
+        return jsonify({'success': False, 'error': 'No text provided'}), 400
+
+    try:
+        from sentiment_analyzer import process_feedback
+        result = process_feedback(text)
+        return jsonify({'success': True, **result})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/logs')
 @src_required

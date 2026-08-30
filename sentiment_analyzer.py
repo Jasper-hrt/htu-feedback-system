@@ -11,10 +11,11 @@ from sentiment.safety_vocabulary import (
     is_discussion_context,
 )
 
-from sentiment.hybrid_engine import HybridSentimentEngine
 from sentiment import context_analyzer as semantic_context
 
-hybrid_engine = HybridSentimentEngine()
+# NOTE: hybrid_engine is no longer used - replaced by unified VADER + custom lexicon approach
+# from sentiment.hybrid_engine import HybridSentimentEngine
+# hybrid_engine = HybridSentimentEngine()
 
 # ==================== TEXT PREPROCESSING ====================
 # Unified preprocessing pipeline lives in cleaning.py.
@@ -75,46 +76,107 @@ def analyze_sentiment(text):
     return sentiment, round(compound, 3)
 
 def get_sentiment_explanation(text, top_n=6):
-    """Return explanation evidence from the authoritative hybrid analysis."""
+    """Return explanation evidence using the new analyzer."""
     if not text:
         return {"sentiment_explanation": [], "compound": 0.0, "confidence": 0.0}
 
-    result = hybrid_engine.analyze(text)
-    reasons = result.get("decision_reasons", [])
-    context = result.get("context", {}) or {}
-    phrases = context.get("phrases", []) or []
+    # Use the new analyzer for consistent results
     explanation = []
-
-    for phrase in phrases:
-        explanation.append({"word": phrase, "impact": round(float(context.get("score", 0.0)), 3), "source": "context"})
-
-    for reason in reasons:
-        if reason not in {x.get("word") for x in explanation}:
-            explanation.append({"word": reason, "impact": round(result.get("final_score", 0.0), 3), "source": "decision"})
-
-    # Add the strongest custom-lexicon influencers for transparency.
-    custom = result.get("custom_score")
-    if custom is not None and abs(custom) >= 0.05:
-        explanation.append({"word": "custom domain lexicon", "impact": round(custom, 3), "source": "custom"})
-
+    
+    # Get custom lexicon matches
+    from sentiment.custom_lexicon import CustomLexiconManager
+    custom = CustomLexiconManager()
+    text_lower = text.lower().strip()
+    text_underscores = text_lower.replace(' ', '_')
+    
+    # Find matching phrases
+    for phrase, score in custom.lexicon.items():
+        if '_' in phrase and phrase in text_underscores:
+            explanation.append({
+                "word": phrase.replace('_', ' '),
+                "impact": round(score, 3),
+                "source": "custom"
+            })
+    
+    # Find matching words
+    words = text_lower.split()
+    for word in words:
+        clean_word = word.strip('.,!?;:\"\'()[]{}')
+        if clean_word in custom.lexicon and abs(custom.lexicon[clean_word]) >= 0.3:
+            explanation.append({
+                "word": clean_word,
+                "impact": round(custom.lexicon[clean_word], 3),
+                "source": "custom"
+            })
+    
+    # Sort by impact and limit
+    explanation.sort(key=lambda x: abs(x['impact']), reverse=True)
+    explanation = explanation[:top_n]
+    
+    # Calculate overall score
+    sentiment, score, confidence = _analyze_sentiment_internal(text)
+    
     return {
-        "sentiment_explanation": explanation[:top_n],
-        "compound": result.get("final_score", 0.0),
-        "confidence": result.get("confidence", 0.0),
-        "review_required": result.get("review_required", False),
-        "model_version": result.get("model_version"),
+        "sentiment_explanation": explanation,
+        "compound": score,
+        "confidence": confidence,
     }
+
+
+def _analyze_sentiment_internal(text):
+    """Internal sentiment analysis using VADER + custom lexicon"""
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    from sentiment.custom_lexicon import CustomLexiconManager
+
+    analyzer = SentimentIntensityAnalyzer()
+    custom_lexicon = CustomLexiconManager()
+    
+    for word, score in custom_lexicon.lexicon.items():
+        analyzer.lexicon[word] = score
+    
+    vs = analyzer.polarity_scores(text)
+    compound = vs['compound']
+    custom_score = custom_lexicon.calculate_score(text)
+    
+    # Combine scores (same logic as process_feedback)
+    if abs(compound - custom_score) > 0.3:
+        compound = custom_score
+    elif abs(compound) < 0.05 and abs(custom_score) >= 0.05:
+        compound = custom_score
+    elif compound > 0.05 and custom_score < -0.05:
+        compound = custom_score
+    elif compound < -0.05 and custom_score > 0.05:
+        compound = custom_score
+    
+    if compound >= 0.05:
+        sentiment = 'Positive'
+    elif compound <= -0.05:
+        sentiment = 'Negative'
+    else:
+        sentiment = 'Neutral'
+    
+    confidence = min(100, abs(compound) * 100 + 50)
+    return sentiment, round(compound, 3), confidence
 
 
 def build_ai_explanation(text, analysis=None, category=None, recommendation=None, max_chars=260, final_sentiment=None, final_confidence=None):
     """Create a short, student-friendly explanation from the AI analysis.
 
-    This is intentionally generated from the structured hybrid-analysis result
-    rather than hard-coded per feedback item. It keeps the mobile UI concise
-    while making the classification understandable in everyday English.
+    Uses the new unified analyzer for consistent results across the system.
     """
     if analysis is None:
-        analysis = hybrid_engine.analyze(text or "")
+        # Use the new analyzer instead of hybrid_engine
+        sentiment, score, confidence = _analyze_sentiment_internal(text or "")
+        analysis = {
+            "sentiment": sentiment,
+            "final_score": score,
+            "confidence": confidence,
+            "safety_mode": "none",
+            "context": {},
+            "decision_reasons": [],
+            "model_version": "HTU-Sentiment-v4-unified",
+            "review_required": False,
+        }
 
     # When a feedback item already has a persisted final classification, that
     # result is authoritative. The explanation must describe it, not silently
@@ -400,53 +462,46 @@ def analyze_chat_message(message):
         sentiment = 'Neutral'
     
     return sentiment, round(compound, 3)
-    urgency = calculate_urgency(result.get("normalized_text") or result.get("cleaned_text") or message, sentiment)
-    is_flagged = (sentiment == "Negative" and urgency >= 3) or result.get("safety_mode") == "critical_incident"
-    return {
-        "sentiment": sentiment,
-        "sentiment_score": round(result["final_score"], 3),
-        "urgency_score": urgency,
-        "cleaned_message": result["cleaned_text"],
-        "is_flagged": is_flagged,
-        "confidence": result.get("confidence", 0.0),
-        "review_required": result.get("review_required", False),
-        "model_version": result.get("model_version"),
-    }
+
 
 def analyze_topic(content, replies=[]):
-    main = hybrid_engine.analyze(content)
-    main_sentiment = main["sentiment"]
-    main_score = main["final_score"]
-    main_urgency = calculate_urgency(main.get("normalized_text") or content, main_sentiment)
+    """Analyze topic sentiment using the new unified analyzer."""
+    # Use the new analyzer for consistent results
+    main_sentiment, main_score, main_confidence = _analyze_sentiment_internal(content)
+    main_urgency = calculate_urgency(content, main_sentiment)
 
     reply_results = []
     for reply in replies:
         reply_text = reply.content if hasattr(reply, "content") else str(reply)
-        r = hybrid_engine.analyze(reply_text)
-        reply_results.append(r)
+        r_sentiment, r_score, r_confidence = _analyze_sentiment_internal(reply_text)
+        reply_results.append({
+            'sentiment': r_sentiment,
+            'score': r_score,
+            'confidence': r_confidence,
+        })
 
-    all_results = [main] + reply_results
-    positive = sum(1 for r in all_results if r["sentiment"] == "Positive")
-    negative = sum(1 for r in all_results if r["sentiment"] == "Negative")
+    all_results = [{'sentiment': main_sentiment, 'score': main_score, 'confidence': main_confidence}] + reply_results
+    positive = sum(1 for r in all_results if r['sentiment'] == 'Positive')
+    negative = sum(1 for r in all_results if r['sentiment'] == 'Negative')
     if positive > negative:
-        topic_sentiment = "Positive"
+        topic_sentiment = 'Positive'
     elif negative > positive:
-        topic_sentiment = "Negative"
+        topic_sentiment = 'Negative'
     else:
-        topic_sentiment = "Neutral"
+        topic_sentiment = 'Neutral'
 
-    scores = [main_score * 2] + [r["final_score"] for r in reply_results]
+    scores = [main_score * 2] + [r['score'] for r in reply_results]
     weighted_score = sum(scores) / (2 + len(reply_results)) if reply_results else main_score
-    max_urgency = max([main_urgency] + [calculate_urgency(r.get("normalized_text", ""), r["sentiment"]) for r in reply_results])
-    avg_confidence = sum(r.get("confidence", 0.0) for r in all_results) / len(all_results)
+    max_urgency = max([main_urgency] + [calculate_urgency('', r['sentiment']) for r in reply_results])
+    avg_confidence = sum(r.get('confidence', 0.0) for r in all_results) / len(all_results)
 
     return {
-        "sentiment": topic_sentiment,
-        "sentiment_score": round(weighted_score, 3),
-        "urgency_score": max_urgency,
-        "confidence": round(avg_confidence, 2),
-        "review_required": any(r.get("review_required") for r in all_results),
-        "model_version": "HTU-Sentiment-v3-context-fusion",
+        'sentiment': topic_sentiment,
+        'sentiment_score': round(weighted_score, 3),
+        'urgency_score': max_urgency,
+        'confidence': round(avg_confidence, 2),
+        'review_required': False,
+        'model_version': 'HTU-Sentiment-v4-unified',
     }
 
 def get_room_sentiment_summary(messages):
