@@ -60,7 +60,7 @@ def analyze_sentiment(text):
     
     analyzer = SentimentIntensityAnalyzer()
     custom_lexicon = CustomLexiconManager()
-    for word, score in custom_lexicon.get_lexicon().items():
+    for word, score in custom_lexicon.get_lexicon(text).items():
         analyzer.lexicon[word] = score
     
     vs = analyzer.polarity_scores(text)
@@ -131,7 +131,7 @@ def _analyze_sentiment_internal(text):
     analyzer = SentimentIntensityAnalyzer()
     custom_lexicon = CustomLexiconManager()
     
-    for word, score in custom_lexicon.lexicon.items():
+    for word, score in custom_lexicon.get_lexicon(text).items():
         analyzer.lexicon[word] = score
     
     vs = analyzer.polarity_scores(text)
@@ -139,7 +139,7 @@ def _analyze_sentiment_internal(text):
     custom_score = custom_lexicon.calculate_score(text)
     
     # Combine scores (same logic as process_feedback)
-    if abs(compound - custom_score) > 0.3:
+    if custom_score != 0.0 and abs(compound - custom_score) > 0.3:
         compound = custom_score
     elif abs(compound) < 0.05 and abs(custom_score) >= 0.05:
         compound = custom_score
@@ -147,7 +147,31 @@ def _analyze_sentiment_internal(text):
         compound = custom_score
     elif compound < -0.05 and custom_score > 0.05:
         compound = custom_score
-    
+
+    context_evidence = semantic_context.analyze_context(text)
+    if context_evidence.get('resolutions') and context_evidence.get('score', 0) > 0:
+        compound = context_evidence['score']
+    elif abs(compound) < 0.05:
+        # BUGFIX: sentiment_from_context() (confident phrase-level evidence
+        # such as "keeps crashing", "out of service", "ran out of") existed
+        # in context_analyzer.py but was never actually consulted here, so
+        # a genuine complaint with no VADER/custom *word* match (only a
+        # matched *phrase*) silently fell back to a false Neutral 0.0. Only
+        # step in when the word-level engines are themselves undecided, so
+        # a real word-level signal is never overridden by this.
+        context_sentiment = semantic_context.sentiment_from_context(context_evidence)
+        if context_sentiment is not None:
+            compound = context_evidence.get('score', compound)
+
+    # Forward-looking suggestions ("I recommend...", "it would be great
+    # if...") read as mildly Positive purely from their polite-request
+    # framing, not from a described experience. Only dampens a *mild*
+    # positive (never a negative, and never an overwhelming positive that
+    # likely reflects real praise embedded in the suggestion) toward
+    # Neutral. See is_suggestion_framing() for rationale.
+    if 0.05 <= compound <= 0.7 and semantic_context.is_suggestion_framing(text):
+        compound = min(compound, 0.03)
+
     if compound >= 0.05:
         sentiment = 'Positive'
     elif compound <= -0.05:
@@ -332,8 +356,30 @@ def detect_category(text):
     discussion = is_discussion_context(str(text))
     safety_vocab_terms = set(get_critical_terms()) | set(get_safety_concern_terms())
 
+    # BUGFIX (accuracy audit, Aug 2026): category scoring below counts one
+    # point per distinct keyword match, then `max(scores, key=scores.get)`
+    # silently breaks ties by picking whichever category happens to be
+    # declared FIRST in the dict below - Accommodation, then ICT/Wi-Fi,
+    # Academics, ... This meant e.g. "the wifi in the hostel is not working"
+    # (Accommodation:1 "hostel" vs ICT/Wi-Fi:1 "wifi") was always routed to
+    # Accommodation regardless of what the feedback was actually about,
+    # simply because Accommodation sorts first. A handful of keywords are
+    # mostly *location/scene-setting* words (a complaint about almost
+    # anything can mention "hostel" or "room" in passing) rather than the
+    # actual topic, so they get half weight; a tie between a scene-setting
+    # word and a genuinely topic-specific word (wifi, projector, elevator,
+    # food) now correctly favors the specific one.
+    weak_context_keywords = {
+        'hostel', 'dorm', 'dormitory', 'room', 'class', 'lecture',
+        # Genuinely cross-category words: "timetable" modifies exam/class
+        # schedules just as often as bus schedules; "lighting" appears in
+        # Safety, Facilities, and Transport (parking lot) contexts without
+        # being category-defining by itself.
+        'timetable', 'lighting',
+    }
+
     category_keywords = {
-        'Accommodation': ['hostel', 'dorm', 'room', 'bed', 'water', 'toilet', 'shower', 'accommodation', 'hall', 'bathroom', 'flood', 'leak'],
+        'Accommodation': ['hostel', 'dorm', 'room', 'bed', 'water', 'toilet', 'shower', 'accommodation', 'hostel hall', 'dormitory', 'bathroom', 'flood', 'leak'],
         'ICT/Wi-Fi': ['wifi', 'internet', 'network', 'connection', 'computer', 'lab', 'portal', 'slow', 'disconnect', 'server'],
         'Academics': ['lecturer', 'class', 'exam', 'course', 'assignment', 'timetable', 'curriculum', 'grade', 'result', 'lecture'],
         'Catering': ['food', 'canteen', 'cafeteria', 'meal', 'dining', 'hungry', 'price', 'restaurant', 'kitchen', 'cook'],
@@ -346,13 +392,18 @@ def detect_category(text):
         'Mental Health': ['stress', 'anxiety', 'counseling', 'mental', 'wellness', 'support', 'depression', 'pressure']
     }
     
-    scores = {cat: 0 for cat in category_keywords}
+    scores = {cat: 0.0 for cat in category_keywords}
     for category, keywords in category_keywords.items():
         for keyword in keywords:
             if category == 'Safety' and discussion and keyword in safety_vocab_terms:
                 continue
-            if keyword in text_lower:
-                scores[category] += 1
+            # Word-boundary match instead of bare substring search. A bare
+            # `keyword in text_lower` check meant short/common keywords like
+            # "ac", "room", or "class" silently matched inside unrelated words
+            # ("academic", "classroom", "bathroom"), which was the single
+            # biggest driver of category misclassification.
+            if re.search(r"(?<!\w)" + re.escape(keyword) + r"(?!\w)", text_lower):
+                scores[category] += 0.5 if keyword in weak_context_keywords else 1.0
     
     if max(scores.values()) > 0:
         best = max(scores, key=scores.get)
@@ -381,7 +432,7 @@ def process_feedback(text, user_category=None):
     custom_lexicon = CustomLexiconManager()
     
     # Add custom lexicon words to VADER
-    for word, score in custom_lexicon.lexicon.items():
+    for word, score in custom_lexicon.get_lexicon(cleaned_text).items():
         analyzer.lexicon[word] = score
     
     vs = analyzer.polarity_scores(cleaned_text)
@@ -391,8 +442,13 @@ def process_feedback(text, user_category=None):
     custom_score = custom_lexicon.calculate_score(cleaned_text)
     
     # 4. Combine scores - prioritize custom lexicon for sarcasm/phrase detection
-    # If VADER and custom disagree significantly, trust custom (it detects phrases)
-    if abs(compound - custom_score) > 0.3:
+    # If VADER and custom disagree significantly, trust custom (it detects phrases).
+    # IMPORTANT: custom_score == 0.0 means "no custom lexicon term matched", not
+    # "the custom lexicon actively disagrees". Only treat it as a real disagreement
+    # when the custom lexicon actually matched something (non-zero), otherwise a
+    # confident VADER read (e.g. -0.36 for "uncomfortable") was being silently
+    # zeroed out to Neutral any time the domain lexicon had no opinion.
+    if custom_score != 0.0 and abs(compound - custom_score) > 0.3:
         # Significant disagreement - trust custom lexicon (phrase-level analysis)
         compound = custom_score
     elif abs(compound) < 0.05 and abs(custom_score) >= 0.05:
@@ -404,7 +460,35 @@ def process_feedback(text, user_category=None):
     elif compound < -0.05 and custom_score > 0.05:
         # VADER negative, custom positive - understatement detected
         compound = custom_score
-    
+
+    # 4b. Resolution/recovery language ("fixed now", "back to normal", "no
+    # longer") is already detected by the semantic context analyzer and used
+    # to soften urgency below, but it was never applied to the sentiment
+    # score itself - so "there used to be a leak but it's fixed now" still
+    # scored Negative on the raw noun "leak" even though urgency correctly
+    # dropped. When the context analyzer finds explicit resolution phrasing
+    # with a net-positive context score, trust that reading.
+    context_evidence = semantic_context.analyze_context(cleaned_text)
+    if context_evidence.get('resolutions') and context_evidence.get('score', 0) > 0:
+        compound = context_evidence['score']
+    elif abs(compound) < 0.05:
+        # See matching fix + rationale in _analyze_sentiment_internal() above:
+        # sentiment_from_context() was fully implemented but never wired in,
+        # so phrase-only complaints ("ran out of", "keeps crashing", "out of
+        # service") with no matching lexicon word fell through to a false
+        # Neutral. Only applies when word-level engines are undecided.
+        context_sentiment = semantic_context.sentiment_from_context(context_evidence)
+        if context_sentiment is not None:
+            compound = context_evidence.get('score', compound)
+
+    # 4c. See is_suggestion_framing() in context_analyzer.py: forward-looking
+    # suggestions/requests read as mildly Positive purely from polite
+    # request framing ("I recommend...", "it would be great if..."), not
+    # from a described experience. Only dampens mild positives so genuine
+    # praise (which typically scores higher) is left untouched.
+    if 0.05 <= compound <= 0.7 and semantic_context.is_suggestion_framing(text):
+        compound = min(compound, 0.03)
+
     # 5. Determine sentiment
     if compound >= 0.05:
         sentiment = 'Positive'

@@ -15,6 +15,7 @@ from sentiment_analyzer import process_feedback, analyze_chat_message, analyze_t
 from sentiment.topic_extractor import extract_topics
 from solution_recommender import recommend_solutions
 from enhanced_recommender import get_trending_issues, get_department_workload, get_engine
+from recommender import generate_recommendation
 from security_manager import SecurityManager, require_2fa, get_client_ip, get_user_agent
 from recommendation_learning import RecommendationLearner
 import logging
@@ -247,6 +248,51 @@ def _apply_recommendation(feedback, rec):
         if tmpl:
             tmpl.usage_count = (tmpl.usage_count or 0) + 1
     feedback.used_template_id = rec.source_template_id
+
+
+def _apply_enhanced_recommendation(feedback, result):
+    """Persist an enhanced RecommendationResult onto a Feedback row.
+    
+    Stores separate student recommendation and admin action plan data.
+    """
+    # Store the student recommendation
+    feedback.student_recommendation_summary = result.student_recommendation.summary
+    feedback.student_recommendation_action = result.student_recommendation.immediate_action
+    feedback.student_recommendation_contact = result.student_recommendation.who_to_contact
+    feedback.student_recommendation_timeline = result.student_recommendation.expected_timeline
+    
+    # Store the admin action plan
+    feedback.admin_action_investigation = json.dumps(result.admin_action_plan.investigation_steps)
+    feedback.admin_action_corrective = json.dumps(result.admin_action_plan.corrective_actions)
+    feedback.admin_action_preventive = json.dumps(result.admin_action_plan.preventive_actions)
+    feedback.admin_action_department = result.admin_action_plan.responsible_department
+    feedback.admin_action_priority = result.admin_action_plan.priority_level
+    feedback.admin_action_escalation = result.admin_action_plan.escalation_path
+    
+    # Store metadata
+    feedback.recommendation_sentiment_type = result.sentiment
+    feedback.recommendation_urgency_level = result.urgency
+    feedback.recommendation_fallback_used = result.fallback_used
+    feedback.recommendation_fallback_message = result.fallback_message
+    feedback.recommendation_multi_issue = result.multi_issue
+    
+    # Also store legacy fields for backward compatibility
+    feedback.short_term_solution = result.student_recommendation.summary + " " + result.student_recommendation.immediate_action
+    feedback.long_term_solution = result.admin_action_plan.corrective_actions[0] if result.admin_action_plan.corrective_actions else ""
+    feedback.responsible_department = result.admin_action_plan.responsible_department
+    feedback.estimated_time = result.admin_action_plan.estimated_resolution_time
+    feedback.recommendation_confidence = result.confidence
+    feedback.recommended_keywords = ','.join(result.all_categories[0].evidence) if result.all_categories else None
+    
+    # Store secondary categories
+    secondary = []
+    for cat in result.all_categories[1:]:
+        secondary.append({
+            "category": cat.name,
+            "keywords": cat.evidence[:5],
+            "confidence": cat.confidence,
+        })
+    feedback.secondary_categories = json.dumps(secondary) if secondary else None
 
 
 
@@ -1035,15 +1081,51 @@ def submit_feedback():
         sentiment_label = analysis.get('sentiment', None)
         sentiment_val = analysis.get('sentiment_score', None)
 
-        rec = recommend_solutions(
-            text=text,
-            category=detected_category,
-            urgency_score=final_urgency,
-            sentiment=sentiment_label,
-            sentiment_score=sentiment_val,
-            emotion=emotion_data,
-            db_templates=_get_db_templates_for_category(detected_category),
-        )
+        # Use the new enhanced recommender with fallback to old recommender
+        try:
+            rec_result = generate_recommendation(
+                text=text,
+                category=detected_category,
+                urgency_score=final_urgency,
+                sentiment=sentiment_label,
+                sentiment_score=sentiment_val,
+                emotion=emotion_data,
+            )
+        except Exception as e:
+            logger.error(f"Enhanced recommender failed: {e}, falling back to legacy recommender")
+            rec = recommend_solutions(
+                text=text,
+                category=detected_category,
+                urgency_score=final_urgency,
+                sentiment=sentiment_label,
+                sentiment_score=sentiment_val,
+                emotion=emotion_data,
+                db_templates=_get_db_templates_for_category(detected_category),
+            )
+            # Convert legacy recommendation to enhanced format
+            from recommender import RecommendationResult, StudentRecommendation, AdminActionPlan, CategoryMatch
+            rec_result = RecommendationResult(
+                primary_category=detected_category,
+                all_categories=[CategoryMatch(name=detected_category, confidence=rec.confidence, evidence=rec.matched_keywords)],
+                sentiment=sentiment_label or "neutral",
+                urgency="medium",
+                student_recommendation=StudentRecommendation(
+                    summary=rec.short_term_solution or "",
+                    immediate_action="",
+                    who_to_contact=rec.responsible_department or "SRC Secretariat",
+                    expected_timeline=rec.estimated_time or "3-7 days",
+                ),
+                admin_action_plan=AdminActionPlan(
+                    investigation_steps=[],
+                    corrective_actions=[rec.long_term_solution] if rec.long_term_solution else [],
+                    preventive_actions=[],
+                    responsible_department=rec.responsible_department or "SRC Secretariat",
+                    priority_level="medium",
+                    estimated_resolution_time=rec.estimated_time or "3-7 days",
+                    escalation_path="SRC Secretariat",
+                ),
+                confidence=rec.confidence,
+            )
 
         # Persist confidence score and emotion data from hybrid analysis
         emotion_data = analysis.get('emotion', {})
@@ -1067,7 +1149,7 @@ def submit_feedback():
             emotion_intensities=json.dumps(emotion_data.get('emotion_intensities')) if emotion_data and emotion_data.get('emotion_intensities') else None,
             secondary_emotions=json.dumps(emotion_data.get('secondary_emotions')) if emotion_data and emotion_data.get('secondary_emotions') else None,
         )
-        _apply_recommendation(feedback, rec)
+        _apply_enhanced_recommendation(feedback, rec_result)
 
         db.session.add(feedback)
         db.session.commit()
@@ -1120,16 +1202,15 @@ def edit_feedback(feedback_id):
 
         # Recompute the solution recommendation too -- the category or
         # wording may have changed enough to point at a different fix.
-        rec = recommend_solutions(
+        rec_result = generate_recommendation(
             text=new_text,
             category=feedback.category,
             urgency_score=feedback.urgency_score,
             sentiment=feedback.sentiment,
             sentiment_score=feedback.sentiment_score,
             emotion=emotion_data,
-            db_templates=_get_db_templates_for_category(feedback.category),
         )
-        _apply_recommendation(feedback, rec)
+        _apply_enhanced_recommendation(feedback, rec_result)
 
         db.session.commit()
         log_feedback_action(feedback.id, session['student_id'], 'Edit', 'Feedback edited')
@@ -1993,16 +2074,15 @@ def regenerate_recommendation(feedback_id):
         'compound_mood': feedback.compound_mood,
     }
 
-    rec = recommend_solutions(
+    rec_result = generate_recommendation(
         text=base_text,
         category=feedback.category,
         urgency_score=feedback.urgency_score,
         sentiment=feedback.sentiment,
         sentiment_score=feedback.sentiment_score,
         emotion=emotion_data,
-        db_templates=_get_db_templates_for_category(feedback.category),
     )
-    _apply_recommendation(feedback, rec)
+    _apply_enhanced_recommendation(feedback, rec_result)
     db.session.commit()
 
     log_admin_action(session['admin_name'], 'Recommendation Regenerated', f'Feedback ID: {feedback_id}')
@@ -2261,19 +2341,14 @@ def review_ai_feedback(feedback_id):
         # Regenerate solution recommendation if sentiment changed to Negative
         if new_sentiment == 'negative' and old[0] != 'negative':
             try:
-                rec = recommend_solutions(
+                rec_result = generate_recommendation(
                     text=feedback.feedback_text,
                     category=new_category,
                     urgency_score=new_urgency,
                     sentiment=new_sentiment,
                     sentiment_score=-0.5,
-                    db_templates=_get_db_templates_for_category(new_category),
                 )
-                feedback.short_term_solution = rec.short_term_solution
-                feedback.long_term_solution = rec.long_term_solution
-                feedback.responsible_department = rec.responsible_department
-                feedback.estimated_time = rec.estimated_time
-                feedback.recommended_keywords = ','.join(rec.matched_keywords) if rec.matched_keywords else ''
+                _apply_enhanced_recommendation(feedback, rec_result)
                 feedback.secondary_categories = json.dumps(rec.secondary_categories) if rec.secondary_categories else '[]'
                 feedback.recommendation_confidence = rec.confidence
             except Exception:

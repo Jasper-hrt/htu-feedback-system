@@ -65,7 +65,24 @@ class Feedback(db.Model):
     secondary_categories = db.Column(db.Text)             # JSON list of other plausible categories
     used_template_id = db.Column(db.Integer, db.ForeignKey('solution_templates.id'), nullable=True)
 
-    # === Confidence & Emotion Analysis (from HybridSentimentEngine) ===
+    # === Enhanced Recommendation System (separate student/admin layers) ===
+    student_recommendation_summary = db.Column(db.Text)
+    student_recommendation_action = db.Column(db.Text)
+    student_recommendation_contact = db.Column(db.String(200))
+    student_recommendation_timeline = db.Column(db.String(100))
+    admin_action_investigation = db.Column(db.Text)  # JSON list
+    admin_action_corrective = db.Column(db.Text)  # JSON list
+    admin_action_preventive = db.Column(db.Text)  # JSON list
+    admin_action_department = db.Column(db.String(200))
+    admin_action_priority = db.Column(db.String(20))
+    admin_action_escalation = db.Column(db.String(200))
+    recommendation_sentiment_type = db.Column(db.String(20))
+    recommendation_urgency_level = db.Column(db.String(20))
+    recommendation_fallback_used = db.Column(db.Boolean, default=False)
+    recommendation_fallback_message = db.Column(db.Text)
+    recommendation_multi_issue = db.Column(db.Boolean, default=False)
+
+    # === Confidence & Emotion Analysis ===
     confidence_score = db.Column(db.Float)                # 0-100 agreement confidence
     dominant_emotion = db.Column(db.String(50))           # e.g. 'anger', 'joy', 'neutral'
     compound_mood = db.Column(db.String(50))              # e.g. 'frustrated_resignation', 'cheerful'
@@ -111,9 +128,23 @@ class Feedback(db.Model):
             'compound_mood': self.compound_mood,
             'emotion_intensities': self.emotion_intensities,
             'secondary_emotions': self.secondary_emotions,
+            'student_recommendation_summary': self.student_recommendation_summary,
+            'student_recommendation_action': self.student_recommendation_action,
+            'student_recommendation_contact': self.student_recommendation_contact,
+            'student_recommendation_timeline': self.student_recommendation_timeline,
+            'admin_action_investigation': self.admin_action_investigation,
+            'admin_action_corrective': self.admin_action_corrective,
+            'admin_action_preventive': self.admin_action_preventive,
+            'admin_action_department': self.admin_action_department,
+            'admin_action_priority': self.admin_action_priority,
+            'admin_action_escalation': self.admin_action_escalation,
+            'recommendation_sentiment_type': self.recommendation_sentiment_type,
+            'recommendation_urgency_level': self.recommendation_urgency_level,
+            'recommendation_fallback_used': self.recommendation_fallback_used,
+            'recommendation_fallback_message': self.recommendation_fallback_message,
+            'recommendation_multi_issue': self.recommendation_multi_issue,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M'),
             'vote_count': self.vote_count
-
         }
         if include_student and not self.anonymous:
             data['student_id'] = self.student_id

@@ -282,7 +282,10 @@ def _build_obfuscated_regex(token: str) -> re.Pattern:
 
     sep = r"(?:[\W_]*?)"
     pattern = sep.join(out)
-    return re.compile(rf"(?i)(?<!\w){pattern}(?!\w)")
+    # Allow common inflectional suffixes (fucking, fucked, shitty, bitchy...)
+    # so profanity isn't missed just because it's not in its bare root form.
+    suffix = r"(?:s|ed|ing|in|er|y)?"
+    return re.compile(rf"(?i)(?<!\w){pattern}{suffix}(?!\w)")
 
 
 # Profanity regexes are static, so compile them once and reuse. Building them

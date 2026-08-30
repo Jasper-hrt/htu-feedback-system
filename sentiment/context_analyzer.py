@@ -59,6 +59,25 @@ PHRASE_SCORES: Tuple[Tuple[str, float, str], ...] = (
     ("no electricity", -0.60, "complaint:no_electricity"),
     ("too slow", -0.55, "complaint:too_slow"),
     ("very slow", -0.58, "complaint:very_slow"),
+    # Additional common HTU-SRC complaint phrasings found during the Aug 2026
+    # accuracy audit: these described real problems but matched no lexicon
+    # word at all, so they silently scored a false Neutral 0.0.
+    ("out of service", -0.55, "complaint:out_of_service"),
+    ("out of order", -0.55, "complaint:out_of_order"),
+    ("ran out of", -0.45, "complaint:ran_out_of"),
+    ("run out of", -0.45, "complaint:run_out_of"),
+    ("broke down", -0.55, "complaint:broke_down"),
+    ("breaks down", -0.5, "complaint:breaks_down"),
+    ("keeps going off", -0.45, "complaint:keeps_going_off"),
+    ("keeps breaking down", -0.55, "complaint:keeps_breaking_down"),
+    ("without prior notice", -0.35, "complaint:without_prior_notice"),
+    ("without notice", -0.32, "complaint:without_notice"),
+    ("without any improvement", -0.4, "complaint:without_improvement"),
+    ("not been uploaded", -0.5, "complaint:not_uploaded"),
+    ("has not been uploaded", -0.5, "complaint:not_uploaded"),
+    ("have not been uploaded", -0.5, "complaint:not_uploaded"),
+    ("keeps logging me out", -0.45, "complaint:keeps_logging_out"),
+    ("deadline has passed", -0.45, "complaint:deadline_passed"),
     ("not good", -0.45, "negation:not_good"),
     ("not great", -0.42, "negation:not_great"),
     ("not bad", 0.35, "negation:not_bad"),
@@ -74,6 +93,10 @@ PHRASE_SCORES: Tuple[Tuple[str, float, str], ...] = (
     ("issue resolved", 0.60, "resolution:issue_resolved"),
     ("problem has been resolved", 0.62, "resolution:problem_resolved"),
     ("issue has been resolved", 0.62, "resolution:issue_resolved"),
+    ("has been resolved", 0.55, "resolution:has_been_resolved"),
+    ("have been resolved", 0.55, "resolution:have_been_resolved"),
+    ("finally resolved", 0.58, "resolution:finally_resolved"),
+    ("finally been resolved", 0.58, "resolution:finally_been_resolved"),
     ("back to normal", 0.55, "resolution:back_to_normal"),
     ("no longer", 0.38, "resolution:no_longer"),
     ("no more", 0.34, "resolution:no_more"),
@@ -215,6 +238,37 @@ def _negation_adjustments(text: str) -> Tuple[float, List[str]]:
     return score, adjustments
 
 
+# The exact-phrase PHRASE_SCORES templates above ("fixed now", "working
+# again", "problem solved"...) only catch a narrow set of rigid wordings.
+# In practice students describe a resolved issue with much more varied,
+# free-form "before vs after" phrasing - e.g. "used to leak but maintenance
+# fixed it last week and it's fine now", "was unreliable last semester but
+# has become very punctual now". This general pattern catches that broader
+# family: a past-tense marker + a contrast word + a recency/completion
+# marker, combined with a nearby fix/improvement word.
+_PAST_MARKER_RE = re.compile(
+    r"(?<!\w)(used to|usedto|before|previously|earlier|initially|was|were|"
+    r"last (semester|month|week|year|time))(?!\w)",
+    re.IGNORECASE,
+)
+_RECENCY_MARKER_RE = re.compile(r"(?<!\w)(now|since then|recently|these days|nowadays)(?!\w)", re.IGNORECASE)
+_FIX_WORD_RE = re.compile(
+    r"(?<!\w)(fixed|resolved|improved|tightened|cleared|punctual|better|"
+    r"smoother|safer|settled|extended|fine|perfectly|working|functioning|"
+    r"stable|great|good)(?!\w)",
+    re.IGNORECASE,
+)
+
+
+def _general_resolution_pattern(text: str) -> bool:
+    """True if the sentence has a 'used to be bad, but is fine now' shape."""
+    if not (_PAST_MARKER_RE.search(text) and any(w in text for w in (" but ", " however ", " although "))):
+        return False
+    if not _RECENCY_MARKER_RE.search(text):
+        return False
+    return bool(_FIX_WORD_RE.search(text))
+
+
 def analyze_context(text: str) -> Dict:
     """Return auditable semantic evidence and a context score in [-1, 1]."""
     if not text or not str(text).strip():
@@ -223,6 +277,9 @@ def analyze_context(text: str) -> Dict:
     normalized, slang = normalize_domain_language(text)
     phrase_hits = _find_phrases(normalized)
     neg_score, negations = _negation_adjustments(normalized)
+
+    if _general_resolution_pattern(normalized):
+        phrase_hits = list(phrase_hits) + [("used to ... but ... now", 0.55, "resolution:general_before_after_pattern")]
 
     contrast_hits = [w for w in CONTRAST_WORDS if re.search(r"(?<!\w)" + re.escape(w) + r"(?!\w)", normalized)]
     uncertainty_hits = [w for w in UNCERTAINTY_WORDS if re.search(r"(?<!\w)" + re.escape(w) + r"(?!\w)", normalized)]
@@ -275,6 +332,38 @@ def analyze_context(text: str) -> Dict:
         uncertainty_markers=uncertainty_hits,
         reasons=reasons,
     ).to_dict()
+
+
+# Forward-looking suggestions/requests ("I recommend...", "it would be
+# great if...", "the school should...") routinely contain inherently
+# positive-valence words (recommend, great, suggest, consider) purely as
+# part of the polite request framing, not because the student is
+# describing a positive experience. A lexicon model has no way to tell
+# "I recommend extending library hours" (a neutral suggestion) apart from
+# "I recommend this canteen, the food is great" (genuine praise) except by
+# recognizing the suggestion framing itself. Audit found ~10 such cases
+# all misread as Positive feedback, which would silently inflate
+# "percent positive" satisfaction stats with content that isn't feedback
+# on an experience at all.
+SUGGESTION_MARKERS = (
+    "i suggest", "i'd suggest", "i would suggest", "my suggestion is",
+    "i recommend", "we recommend", "i'd recommend", "i would recommend",
+    "please consider", "consider introducing", "consider adding",
+    "consider building", "consider partnering", "it would be great if",
+    "it would help if", "it would be helpful if", "it will help if",
+    "perhaps the school", "perhaps the university", "maybe the school",
+    "maybe the university", "maybe the src", "the school could",
+    "the university could", "the school should", "the university should",
+    "can the school", "can the university", "could the school",
+    "could the university", "suggestion:",
+)
+
+
+def is_suggestion_framing(text: str) -> bool:
+    """True when the text is phrased as a forward-looking suggestion/request
+    rather than a report of a lived positive or negative experience."""
+    t = str(text or "").lower()
+    return any(marker in t for marker in SUGGESTION_MARKERS)
 
 
 def sentiment_from_context(evidence: Dict) -> Optional[str]:

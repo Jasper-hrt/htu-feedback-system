@@ -42,6 +42,16 @@ class CustomLexiconManager:
             "wonderful": 0.8,
             "fantastic": 0.8,
             "helpful": 0.6,
+            # "fixed"/"resolved"/"repaired" as standalone words were missing
+            # entirely - only compound phrases like "fixed_now" or
+            # "finally_fixed" existed. That meant a plain sentence like "the
+            # water problem and the wifi problem were both fixed this week,
+            # thank you" had no positive word to counter the negative
+            # "problem" (-0.45) and scored Negative despite describing two
+            # resolved issues.
+            "fixed": 0.5,
+            "resolved": 0.55,
+            "repaired": 0.5,
             "smooth": 0.5,
             "satisfied": 0.7,
             "efficient": 0.6,
@@ -235,7 +245,6 @@ class CustomLexiconManager:
             "sensible": 0.45,
             "reasonable": 0.4,
             "fair": 0.4,
-            "just": 0.45,
             "equitable": 0.45,
             "impartial": 0.4,
             "unbiased": 0.4,
@@ -1078,7 +1087,6 @@ class CustomLexiconManager:
             "engineering": 0.0,
             "science_lab": 0.0,
             "computer_lab": 0.0,
-            "library": 0.2,
             "auditorium": 0.1,
             "cafeteria": -0.1,
             "dining_hall": -0.1,
@@ -1724,6 +1732,31 @@ class CustomLexiconManager:
 
         }
 
+    def get_lexicon(self, text: str = None) -> dict:
+        """Return the lexicon dict for merging into a general-purpose engine
+        (e.g. VADER's ``analyzer.lexicon``).
+
+        BUGFIX: callers throughout sentiment_analyzer.py used to merge the
+        raw ``self.lexicon`` dict straight into VADER. That silently bypassed
+        the discussion-context skip that ``calculate_score()`` already
+        applies to terms in ``_SAFETY_VOCAB_OVERLAP`` (kidnap, assault,
+        weapon, threat, attack, ...). The result: a sentence like "today's
+        seminar covered kidnapping warning signs" produced a confident
+        Neutral ``custom_score`` (correctly skipped) while the merged-in raw
+        VADER lexicon still saw "kidnapping": -0.95 and scored the whole
+        text strongly Negative anyway, so the two signals disagreed and the
+        context-blind one won by default. Passing ``text`` here keeps every
+        caller's VADER merge in sync with the same discussion-aware skip.
+
+        This also fixes a plain crash: ``analyze_sentiment()`` called
+        ``custom_lexicon.get_lexicon()``, a method that did not exist on
+        this class at all (only the ``.lexicon`` attribute did), so that
+        function raised ``AttributeError`` on every call.
+        """
+        if text and is_discussion_context(text):
+            return {w: s for w, s in self.lexicon.items() if w not in _SAFETY_VOCAB_OVERLAP}
+        return dict(self.lexicon)
+
     def calculate_score(self, text: str) -> float:
         """
         Calculate the average sentiment score from the custom lexicon.
@@ -1852,8 +1885,19 @@ class CustomLexiconManager:
             # Mixed sentiment - use the most extreme score (complaints prioritized)
             most_negative = min(negative_scores)
             most_positive = max(positive_scores)
-            # If there's a strong negative phrase, trust it
-            if abs(most_negative) >= 0.5:
+            # If there's a strong negative phrase, trust it - but only when it
+            # actually dominates the strongest positive match, or there are
+            # simply more negative matches than positive ones. Previously any
+            # single match >= 0.5 in magnitude won outright even when a
+            # comparably strong positive match was also present, which forced
+            # genuinely balanced/contrastive feedback (e.g. paired negation
+            # like "neither happy nor sad", or "the hostel water problem AND
+            # the wifi problem were both fixed, thank you") to an
+            # exaggerated, overconfident Negative reading.
+            if abs(most_negative) >= 0.5 and (
+                len(negative_scores) > len(positive_scores)
+                or abs(most_negative) - most_positive >= 0.2
+            ):
                 final_score = most_negative
             else:
                 # Weight negative more heavily
