@@ -191,6 +191,7 @@
                 <div class="mobile-menu-divider"></div>
                 <div class="mobile-menu-label">Admin Panel</div>
                 <a href="/admin/dashboard"><span class="mobile-menu-link-icon">📋</span> Dashboard</a>
+                <a href="/admin/feedback"><span class="mobile-menu-link-icon">📱</span> Feedback</a>
                 <a href="/admin/analytics"><span class="mobile-menu-link-icon">📈</span> Analytics</a>
                 <a href="/admin/templates"><span class="mobile-menu-link-icon">📝</span> Templates</a>
                 <a href="/admin/solution-templates"><span class="mobile-menu-link-icon">🧩</span> Solution Templates</a>
@@ -217,78 +218,7 @@
     </nav>
     
 <main class="main-container">
-        {% set is_student_page = request.path.startswith('/student/dashboard')
-            or request.path.startswith('/submit')
-            or request.path.startswith('/edit-feedback')
-            or request.path.startswith('/forum')
-            or request.path.startswith('/chat')
-            or request.path.startswith('/student/change-password') %}
-        {% if session.student_id and is_student_page %}
-        <div class="student-layout">
-            <aside class="student-side-menu" id="studentSideMenu">
-                <div class="student-side-menu-header">
-                    <div class="student-side-menu-avatar">{{ session.student_name.split()[0][0] }}</div>
-                    <div class="student-side-menu-user">
-                        <div class="student-side-menu-name">{{ session.student_name.split()[0] }}</div>
-                        <div class="student-side-menu-id">{{ session.student_id }}</div>
-                    </div>
-<button class="student-side-menu-toggle" id="sideMenuToggle" type="button" title="Toggle menu">
-                        <span class="toggle-icon-open">◀</span>
-                        <span class="toggle-icon-closed">▶</span>
-                    </button>
-                    <span class="student-side-menu-chevron" id="studentSideMenuChevron" aria-hidden="true">▾</span>
-                </div>
-                <div class="student-side-menu-label">Main Menu</div>
-                <nav class="student-side-menu-nav">
-                    <a href="/student/dashboard" class="student-side-menu-link" data-page="dashboard" data-tooltip="My Dashboard">
-                        <span class="student-side-menu-link-icon tile-blue">📋</span>
-                        <span class="student-side-menu-link-text">My Dashboard</span>
-                    </a>
-                    <a href="/submit" class="student-side-menu-link" data-page="submit" data-tooltip="Submit Feedback">
-                        <span class="student-side-menu-link-icon tile-green">✍️</span>
-                        <span class="student-side-menu-link-text">Submit Feedback</span>
-                    </a>
-                </nav>
-                <div class="student-side-menu-label">Explore</div>
-                <nav class="student-side-menu-nav">
-                    <a href="/forum" class="student-side-menu-link" data-page="forum" data-tooltip="Forum">
-                        <span class="student-side-menu-link-icon tile-purple">💬</span>
-                        <span class="student-side-menu-link-text">Forum</span>
-                    </a>
-                    <a href="/chat" class="student-side-menu-link" data-page="chat" data-tooltip="Chat">
-                        <span class="student-side-menu-link-icon tile-teal">💬</span>
-                        <span class="student-side-menu-link-text">Chat</span>
-                    </a>
-                    <a href="/announcements" class="student-side-menu-link" data-page="announcements" data-tooltip="Announcements">
-                        <span class="student-side-menu-link-icon tile-amber">📢</span>
-                        <span class="student-side-menu-link-text">Announcements</span>
-                    </a>
-                    <a href="/public" class="student-side-menu-link" data-page="public" data-tooltip="Public Board">
-                        <span class="student-side-menu-link-icon tile-pink">🧾</span>
-                        <span class="student-side-menu-link-text">Public Board</span>
-                    </a>
-                </nav>
-                <div class="student-side-menu-label">Account</div>
-                <nav class="student-side-menu-nav">
-                    <a href="/student/change-password" class="student-side-menu-link" data-page="change-password" data-tooltip="Change Password">
-                        <span class="student-side-menu-link-icon tile-blue">🔑</span>
-                        <span class="student-side-menu-link-text">Change Password</span>
-                    </a>
-                </nav>
-                <div class="student-side-menu-footer">
-                    <a href="/student/logout" class="student-side-menu-logout" data-tooltip="Logout">
-                        <span class="student-side-menu-logout-icon">⏻</span>
-                        <span class="student-side-menu-logout-text">Logout</span>
-                    </a>
-                </div>
-            </aside>
-            <section class="student-content">
-        {% endif %}
         {% block content %}{% endblock %}
-        {% if session.student_id and is_student_page %}
-            </section>
-        </div>
-        {% endif %}
 </main>
 
 <!-- Mobile App-Style Bottom Navigation -->
@@ -367,6 +297,10 @@
                 <span class="mobile-more-item-icon tile-teal">📊</span>
                 <span class="mobile-more-item-text">Admin Dashboard</span>
             </a>
+            <a href="/admin/feedback" class="mobile-more-item">
+                <span class="mobile-more-item-icon tile-blue">📱</span>
+                <span class="mobile-more-item-text">Feedback Manager</span>
+            </a>
             <a href="/admin/logout" class="mobile-more-item">
                 <span class="mobile-more-item-icon tile-amber">⏻</span>
                 <span class="mobile-more-item-text">Admin Logout</span>
@@ -391,6 +325,7 @@
         </div>
         <nav class="mobile-admin-drawer-nav">
             <a href="/admin/dashboard" class="mobile-admin-drawer-link" data-adminpage="dashboard">📋 Dashboard</a>
+            <a href="/admin/feedback" class="mobile-admin-drawer-link" data-adminpage="feedback">📱 Feedback</a>
             <a href="/admin/analytics" class="mobile-admin-drawer-link" data-adminpage="analytics">📈 Analytics</a>
             <a href="/admin/templates" class="mobile-admin-drawer-link" data-adminpage="templates">📝 Templates</a>
             <a href="/admin/solution-templates" class="mobile-admin-drawer-link" data-adminpage="solution-templates">🧩 Solution Templates</a>
@@ -466,5 +401,54 @@
             }
         });
     </script>
+    <script>
+        // Toast notification system
+        function showToast(message, type) {
+            type = type || 'info';
+            var container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.setAttribute('style', 'position:fixed;top:1rem;right:1rem;z-index:10000;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;');
+                document.body.appendChild(container);
+            }
+            var toast = document.createElement('div');
+            var colors = {
+                success: 'var(--success)',
+                error: 'var(--danger)',
+                warning: 'var(--warning)',
+                info: 'var(--info)'
+            };
+            var icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
+            var bg = colors[type] || colors.info;
+            toast.setAttribute('style', 'background:var(--card-bg);color:var(--text-primary);padding:0.75rem 1.25rem;border-radius:0.5rem;box-shadow:var(--shadow-lg);border-left:4px solid ' + bg + ';font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;pointer-events:auto;animation:toastSlideIn 0.3s ease;min-width:250px;max-width:400px;');
+            toast.innerHTML = '<span style="font-size:1.1rem;">' + (icons[type] || icons.info) + '</span><span>' + message + '</span>';
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 3000);
+        }
+        function getCsrfToken() {
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? meta.getAttribute('content') : '';
+        }
+        // Flash message to toast (for server-side redirects)
+        var flashMessage = '{{ request.args.get("msg", "") }}';
+        var flashType = '{{ request.args.get("msg_type", "info") }}';
+        if (flashMessage) {
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast(decodeURIComponent(flashMessage), flashType);
+            });
+        }
+    </script>
+    <style>
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
 </body>
 </html>

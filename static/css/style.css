@@ -860,8 +860,8 @@ html.theme-dark .footer {
 }
 
 .btn-lg {
-    padding: 0.85rem 1.75rem;
-    font-size: 1rem;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
     border-radius: var(--radius-lg);
 }
 
@@ -1424,6 +1424,16 @@ html.theme-dark .badge-info {
 html.theme-dark .badge-neutral {
     background: rgba(148, 163, 184, 0.15);
     color: #cbd5e1;
+}
+
+.badge-secondary {
+    background: var(--light);
+    color: var(--text-secondary);
+}
+
+html.theme-dark .badge-secondary {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
 }
 
 /* ============================================ */
@@ -7826,6 +7836,115 @@ html.theme-dark .announcement-card-new-badge-v2 {
     border-radius: var(--radius-lg);
 }
 
+/* ============================================ */
+/* 📄 Single-Page Feedback Sections
+/* ============================================ */
+.feedback-sections-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    padding: 1rem 0.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.section-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.section-nav-dot {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    border: 2.5px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    transition: all var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.section-nav-item.active .section-nav-dot {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(30, 64, 175, 0.25);
+    transform: scale(1.08);
+}
+
+.section-nav-item.completed .section-nav-dot {
+    border-color: var(--success);
+    background: var(--success);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.section-nav-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.section-nav-item.active .section-nav-label {
+    color: var(--primary);
+}
+
+.section-nav-item.completed .section-nav-label {
+    color: var(--success);
+}
+
+.section-nav-connector {
+    width: 3rem;
+    height: 3px;
+    border-radius: var(--radius-full);
+    background: var(--border-color);
+    transition: background var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.section-nav-item.completed + .section-nav-connector {
+    background: var(--success);
+}
+
+.feedback-section {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+    animation: sectionFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feedback-section:last-of-type {
+    border-bottom: none;
+}
+
+@keyframes sectionFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Form Validation States */
 .form-input-enhanced.error,
 .form-textarea-enhanced.error,
@@ -10494,12 +10613,12 @@ html.theme-dark .admin-hero-subtitle {
     min-width: 1.25rem;
     height: 1.25rem;
     border-radius: 9999px;
-    background: #ef4444;
+    background: var(--danger);
     color: #fff;
     font-size: 0.7rem;
     font-weight: 700;
     padding: 0 0.25rem;
-    border: 2px solid var(--primary);
+    border: 2px solid var(--card-bg);
 }
 
 /* ---- Notification Dropdown ---- */
@@ -10512,7 +10631,7 @@ html.theme-dark .admin-hero-subtitle {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-xl);
     z-index: 1000;
     overflow: hidden;
 }
@@ -10549,15 +10668,17 @@ html.theme-dark .admin-hero-subtitle {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: all 0.15s ease;
+    position: relative;
 }
 
 .notification-item:hover {
     background: var(--bg-color);
+    padding-left: 1.25rem;
 }
 
 .notification-item.unread {
-    background: rgba(59, 130, 246, 0.05);
+    background: var(--primary-50);
     border-left: 3px solid var(--primary);
 }
 

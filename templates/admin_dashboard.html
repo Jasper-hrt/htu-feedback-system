@@ -20,7 +20,8 @@
             <a href="/admin/lexicon-gaps" class="admin-sidebar-link">🧠 Lexicon Gaps</a>
             <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
             <a href="/admin/chat" class="admin-sidebar-link">💬 Chat Rooms</a>
-            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+            <a href="/admin/feedback" class="admin-sidebar-link">📋 Feedback</a>
+    <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
             <a href="/admin/change-password" class="admin-sidebar-link">🔑 Change Password</a>
         </nav>
         <div style="margin-top: 1.25rem;">
@@ -130,14 +131,14 @@
                 <div class="stat-card-trend stat-card-trend-up">📈 {{ stats.resolution_rate }}% rate</div>
             </div>
             <div class="stat-card">
-                <div class="stat-card-accent" style="background: #8b5cf6;"></div>
+                <div class="stat-card-accent" style="background: var(--info);"></div>
                 <div class="stat-card-icon stat-card-icon-purple">📊</div>
                 <div class="stat-card-value">{{ stats.resolution_rate }}%</div>
                 <div class="stat-card-label">Resolution Rate</div>
                 <div class="stat-card-trend stat-card-trend-up">⚡ System health</div>
             </div>
             <div class="stat-card">
-                <div class="stat-card-accent" style="background: #14b8a6;"></div>
+                <div class="stat-card-accent" style="background: var(--success);"></div>
                 <div class="stat-card-icon stat-card-icon-teal">👥</div>
                 <div class="stat-card-value">{{ stats.total_students }}</div>
                 <div class="stat-card-label">Students</div>
@@ -195,28 +196,39 @@
             <div class="section-title"><span class="section-title-icon">📋</span> All Feedback <span class="badge badge-neutral" style="margin-left: 0.5rem;">{{ pagination.total if pagination else feedbacks|length }} total</span></div>
             <div style="display: flex; gap: 0.5rem; align-items: center;">
                 <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600;">Showing {{ feedbacks|length }} items</span>
+                <a href="/admin/feedback" class="btn-hero btn-hero-primary view-all-btn" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">View All</a>
             </div>
         </div>
-        <div class="premium-table-container">
+        <!-- Feedback Manager Notice for Mobile -->
+        <div class="mobile-feedback-notice" style="display:none; margin-bottom: 1rem;">
+            <div class="chart-card" style="padding: 1.25rem; text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📱</div>
+                <div style="font-weight: 700; margin-bottom: 0.5rem;">Feedback Manager</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">View and manage all feedback on a mobile-optimized page.</div>
+                <a href="/admin/feedback" class="btn-hero btn-hero-primary" style="width: 100%; text-align: center;">Open Feedback Manager</a>
+            </div>
+        </div>
+
+        <div class="premium-table-container desktop-only-table">
             <div class="premium-table-wrapper">
                 <table class="premium-table">
                     <thead>
                         <tr>
                             <th class="col-check"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
-                            <th class="col-id">ID</th>
+                            <th class="col-id" onclick="sortTable('id')" style="cursor:pointer;">ID <span id="sort-id-icon" style="font-size:0.7rem;">↕</span></th>
                             <th class="col-feedback">Feedback</th>
-                            <th class="col-category">Category</th>
-                            <th class="col-sentiment">Sentiment</th>
-                            <th class="col-urgency">Urgency</th>
-                            <th class="col-status">Status</th>
-                            <th class="col-date">Date</th>
+                            <th class="col-category" onclick="sortTable('category')" style="cursor:pointer;">Category <span id="sort-category-icon" style="font-size:0.7rem;">↕</span></th>
+                            <th class="col-sentiment" onclick="sortTable('sentiment')" style="cursor:pointer;">Sentiment <span id="sort-sentiment-icon" style="font-size:0.7rem;">↕</span></th>
+                            <th class="col-urgency" onclick="sortTable('urgency')" style="cursor:pointer;">Urgency <span id="sort-urgency-icon" style="font-size:0.7rem;">↕</span></th>
+                            <th class="col-status" onclick="sortTable('status')" style="cursor:pointer;">Status <span id="sort-status-icon" style="font-size:0.7rem;">↕</span></th>
+                            <th class="col-date" onclick="sortTable('date')" style="cursor:pointer;">Date <span id="sort-date-icon" style="font-size:0.7rem;">↓</span></th>
                             <th class="col-assign">Assigned</th>
                             <th class="col-actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for f in feedbacks %}
-                        <tr class="premium-row" data-id="{{ f.id }}" data-status="{{ f.status }}" data-urgency="{{ f.urgency_score }}">
+                        <tr class="premium-row" data-id="{{ f.id }}" data-status="{{ f.status }}" data-urgency="{{ f.urgency_score }}" data-category="{{ f.category }}" data-sentiment="{{ f.sentiment }}" data-date="{{ f.created_at.strftime('%Y%m%d%H%M%S') if f.created_at else '0' }}">
                             <td class="col-check"><input type="checkbox" class="row-select" value="{{ f.id }}"></td>
                             <td class="col-id"><span class="id-badge">#{{ f.id }}</span></td>
                             <td class="col-feedback">
@@ -270,7 +282,7 @@
                                 <div class="action-buttons">
                                     <button onclick="showAnalyzeModal({{ f.id }})" class="action-btn action-analyze" title="Analyze">🔍</button>
                                     <button onclick="showCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" class="action-btn action-correct" title="Correct Sentiment">🔄</button>
-                                    <button onclick="showSolutionModal({{ f.id }})" class="action-btn action-solution" title="Solutions">💡</button>
+                                    <button onclick="showAdminInsightsModal({{ f.id }})" class="action-btn action-insights" title="Admin Insights">📋</button>
                                     <button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn action-response" title="Response">💬</button>
                                     <form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Delete?')" style="display:inline;">{{ csrf_field() }}
                                         <button type="submit" class="action-btn action-delete" title="Delete">🗑️</button>
@@ -313,53 +325,43 @@
         </script>
         <div id="responseModal" class="modal"><div class="modal-content"><div class="modal-header">💬 Add SRC Response</div><form method="POST" id="responseForm">{{ csrf_field() }}<textarea name="src_response" rows="4" class="form-textarea mb-3" placeholder="Write your official response here..."></textarea><div class="flex justify-end gap-2"><button type="button" onclick="closeResponseModal()" class="btn btn-secondary">Cancel</button><button type="submit" class="btn btn-primary">✉️ Submit Response</button></div></form></div></div>
 <div id="analyzeModal" class="modal"><div class="modal-content"><div class="modal-header">🔍 Feedback Analysis</div><div class="mb-3"><div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;"><span class="badge badge-info" id="analyzeSentimentBadge">Sentiment</span><span class="badge badge-warning" id="analyzeUrgencyBadge">Urgency</span></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎭 Emotion & Confidence</h4><div id="analyzeEmotion" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🧠 Sentiment Explanation</h4><div id="sentimentExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Urgency Explanation</h4><div id="urgencyExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeAnalyzeModal()" class="btn btn-secondary">Close</button></div></div></div>
-        <div id="solutionModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">💡 Solution Recommendations</div>
-                <div class="mb-3">
-                    <div id="solutionDepartment" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; margin-bottom: 0.75rem; border: 1px solid var(--border-color);"></div>
-                </div>
-                <div class="mb-3" id="solutionConfidenceWrap" style="display:none;">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎯 Match Confidence</h4>
-                    <div id="solutionConfidence" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
-                </div>
-                <div class="mb-3">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🏷️ Matched Keywords</h4>
-                    <div id="solutionKeywords" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color); min-height: 50px;"></div>
-                </div>
-                <div class="mb-3" id="solutionSecondaryWrap" style="display:none;">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🔀 Might Also Involve</h4>
-                    <div id="solutionSecondary" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
-                </div>
-                <div class="mb-3">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Immediate Action</h4>
-                    <div id="solutionShortTerm" style="background: rgba(59,130,246,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(59,130,246,0.2);"></div>
-                </div>
-                <div class="mb-3">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Resolution Steps</h4>
-                    <div id="solutionLongTerm" style="background: rgba(16,185,129,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(16,185,129,0.2);"></div>
-                </div>
-                <div class="mb-3">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">📋 SRC Follow-up Tasks</h4>
-                    <div id="solutionActions" style="background: rgba(245,158,11,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(245,158,11,0.2);"></div>
-                </div>
-                <div class="mb-3">
-                    <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🗳️ Was this recommendation helpful?</h4>
-                    <div style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
-                        <button type="button" class="btn btn-secondary btn-sm" id="solutionHelpfulBtn" onclick="rateSolution(true)">👍 Helpful</button>
-                        <button type="button" class="btn btn-secondary btn-sm" id="solutionUnhelpfulBtn" onclick="rateSolution(false)">👎 Not Helpful</button>
-                        <span id="solutionHelpfulTally" style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600;"></span>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-2">
-                    <button type="button" onclick="regenerateSolution()" class="btn btn-secondary" id="solutionRegenerateBtn">🔄 Regenerate</button>
-                    <button type="button" onclick="closeSolutionModal()" class="btn btn-secondary">Close</button>
-                </div>
-            </div>
+<div id="adminInsightsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">📋 Administrative Insights</div>
+        <div class="mb-3">
+            <div id="insightsPriority" style="margin-bottom: 0.75rem;"></div>
         </div>
+        <div class="mb-3">
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🏢 Responsible Department</h4>
+            <div id="insightsDepartment" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+        </div>
+        <div class="mb-3">
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🔎 Investigation Steps</h4>
+            <div id="insightsInvestigation" style="background: rgba(59,130,246,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(59,130,246,0.2); min-height: 50px;"></div>
+        </div>
+        <div class="mb-3">
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛠️ Corrective Actions</h4>
+            <div id="insightsCorrective" style="background: rgba(16,185,129,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(16,185,129,0.2); min-height: 50px;"></div>
+        </div>
+        <div class="mb-3">
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🛡️ Preventive Measures</h4>
+            <div id="insightsPreventive" style="background: rgba(245,158,11,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(245,158,11,0.2); min-height: 50px;"></div>
+        </div>
+        <div class="mb-3" id="insightsEscalationWrap" style="display:none;">
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚠️ Escalation Path</h4>
+            <div id="insightsEscalation" style="background: rgba(239,68,68,0.05); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid rgba(239,68,68,0.2);"></div>
+        </div>
+        <div class="mb-3">
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">📊 Current Status</h4>
+            <div id="insightsStatus" style="background: var(--bg-color); border-radius: 0.6rem; padding: 0.85rem 1rem; border: 1px solid var(--border-color);"></div>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeAdminInsightsModal()" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+</div>
         <script>
         var explanationsById = {{ explanations_by_id | default({}) | tojson }};
-        var recommendationsById = {{ recommendations_by_id | default({}) | tojson }};
         var trendData = {
             labels: {{ trend_data|map(attribute='month')|list|tojson }},
             positive: {{ trend_data|map(attribute='positive')|list|tojson }},
@@ -367,6 +369,13 @@
             neutral: {{ trend_data|map(attribute='neutral')|list|tojson }}
         };
         document.addEventListener('DOMContentLoaded', function() {
+            // Read CSS variables for chart colors
+            var styles = getComputedStyle(document.documentElement);
+            var successColor = styles.getPropertyValue('--success').trim() || '#10b981';
+            var dangerColor = styles.getPropertyValue('--danger').trim() || '#ef4444';
+            var secondaryColor = styles.getPropertyValue('--secondary').trim() || '#6b7280';
+            var textColor = styles.getPropertyValue('--text-secondary').trim() || '#475569';
+            
             var trendCtx = document.getElementById('trendChart');
             if (trendCtx) {
                 new Chart(trendCtx, {
@@ -374,9 +383,9 @@
                     data: {
                         labels: trendData.labels,
                         datasets: [
-                            { label: 'Positive', data: trendData.positive, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
-                            { label: 'Negative', data: trendData.negative, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
-                            { label: 'Neutral', data: trendData.neutral, borderColor: '#6b7280', backgroundColor: 'rgba(107,114,128,0.08)', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 }
+                            { label: 'Positive', data: trendData.positive, borderColor: successColor, backgroundColor: successColor + '14', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
+                            { label: 'Negative', data: trendData.negative, borderColor: dangerColor, backgroundColor: dangerColor + '14', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 },
+                            { label: 'Neutral', data: trendData.neutral, borderColor: secondaryColor, backgroundColor: secondaryColor + '14', fill: true, tension: 0.3, pointRadius: 4, borderWidth: 2 }
                         ]
                     },
                     options: {
@@ -387,7 +396,7 @@
                         },
                         scales: {
                             x: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 }, stepSize: 1 } }
+                            y: { beginAtZero: true, grid: { color: textColor + '14' }, ticks: { font: { size: 11 }, stepSize: 1 } }
                         }
                     }
                 });
@@ -396,7 +405,7 @@
             if (donutCtx) {
                 new Chart(donutCtx, {
                     type: 'doughnut',
-                    data: { labels: ['Positive', 'Negative', 'Neutral'], datasets: [{ data: [{{ stats.positive }}, {{ stats.negative }}, {{ stats.neutral }}], backgroundColor: ['#10b981', '#ef4444', '#6b7280'], borderWidth: 0, hoverOffset: 8 }] },
+                    data: { labels: ['Positive', 'Negative', 'Neutral'], datasets: [{ data: [{{ stats.positive }}, {{ stats.negative }}, {{ stats.neutral }}], backgroundColor: [successColor, dangerColor, secondaryColor], borderWidth: 0, hoverOffset: 8 }] },
                     options: {
                         responsive: true, maintainAspectRatio: true, cutout: '65%',
                         plugins: {
@@ -435,6 +444,69 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
             document.getElementById('statusFilter').value = '';
             document.getElementById('urgencyFilter').value = '';
             filterTable();
+        }
+
+        // ==================== TABLE SORTING ====================
+        var sortState = { column: 'date', direction: 'desc' };
+
+        function sortTable(column) {
+            var tbody = document.getElementById('feedbackTableBody');
+            if (!tbody) return;
+            var rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Toggle direction if same column
+            if (sortState.column === column) {
+                sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.column = column;
+                sortState.direction = 'asc';
+            }
+            
+            // Update sort icons
+            ['id', 'category', 'sentiment', 'urgency', 'status', 'date'].forEach(function(col) {
+                var icon = document.getElementById('sort-' + col + '-icon');
+                if (icon) icon.textContent = (col === column) ? (sortState.direction === 'asc' ? '↑' : '↓') : '↕';
+            });
+            
+            // Sort rows
+            rows.sort(function(a, b) {
+                var aVal, bVal;
+                switch(column) {
+                    case 'id':
+                        aVal = parseInt(a.dataset.id) || 0;
+                        bVal = parseInt(b.dataset.id) || 0;
+                        break;
+                    case 'category':
+                        aVal = a.dataset.category || '';
+                        bVal = b.dataset.category || '';
+                        break;
+                    case 'sentiment':
+                        aVal = a.dataset.sentiment || '';
+                        bVal = b.dataset.sentiment || '';
+                        break;
+                    case 'urgency':
+                        aVal = parseInt(a.dataset.urgency) || 0;
+                        bVal = parseInt(b.dataset.urgency) || 0;
+                        break;
+                    case 'status':
+                        aVal = a.dataset.status || '';
+                        bVal = b.dataset.status || '';
+                        break;
+                    case 'date':
+                        aVal = a.dataset.date || '';
+                        bVal = b.dataset.date || '';
+                        break;
+                    default:
+                        return 0;
+                }
+                
+                if (aVal < bVal) return sortState.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortState.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            // Re-append sorted rows
+            rows.forEach(function(row) { tbody.appendChild(row); });
         }
         document.getElementById('searchInput').addEventListener('keyup', filterTable);
         document.getElementById('categoryFilter').addEventListener('change', filterTable);
@@ -475,7 +547,7 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
                 entries.forEach(function(e) {
                     var name = e[0];
                     var val = Math.round(e[1] * 100);
-                    var color = negEmotions.indexOf(name) !== -1 ? '#ef4444' : (posEmotions.indexOf(name) !== -1 ? '#10b981' : '#3b82f6');
+                    var color = negEmotions.indexOf(name) !== -1 ? 'var(--danger)' : (posEmotions.indexOf(name) !== -1 ? 'var(--success)' : 'var(--info)');
                     var label = name.charAt(0).toUpperCase() + name.slice(1);
                     html += '<div class="emotion-intensity-item"><span class="emotion-intensity-label">' + label + '</span>';
                     html += '<div class="emotion-intensity-bar"><div class="emotion-intensity-fill" style="width:' + val + '%;background:' + color + ';"></div></div>';
@@ -535,132 +607,73 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
             modal.classList.add('active');
         }
         function closeAnalyzeModal() { document.getElementById('analyzeModal').classList.remove('active'); }
-        var currentSolutionFeedbackId = null;
 
-        function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
+        var adminInsightsById = {{ admin_insights_by_id | default({}) | tojson }};
 
-        function renderSolutionModal(id, rec) {
-            var db = document.getElementById('solutionDepartment');
-            var kb = document.getElementById('solutionKeywords');
-            var stb = document.getElementById('solutionShortTerm');
-            var ltb = document.getElementById('solutionLongTerm');
-            var confWrap = document.getElementById('solutionConfidenceWrap');
-            var confBox = document.getElementById('solutionConfidence');
-            var secWrap = document.getElementById('solutionSecondaryWrap');
-            var secBox = document.getElementById('solutionSecondary');
-            var tally = document.getElementById('solutionHelpfulTally');
+        function renderAdminInsightsModal(id, data) {
+            var prioBox = document.getElementById('insightsPriority');
+            var deptBox = document.getElementById('insightsDepartment');
+            var invBox = document.getElementById('insightsInvestigation');
+            var corBox = document.getElementById('insightsCorrective');
+            var prevBox = document.getElementById('insightsPreventive');
+            var escWrap = document.getElementById('insightsEscalationWrap');
+            var escBox = document.getElementById('insightsEscalation');
+            var statusBox = document.getElementById('insightsStatus');
 
-            if (!rec) {
-                db.innerHTML = '<em style="color:var(--text-secondary);">No recommendations available.</em>';
-                kb.innerHTML = ''; stb.innerHTML = ''; ltb.innerHTML = '';
-                confWrap.style.display = 'none';
-                secWrap.style.display = 'none';
-                tally.textContent = '';
+            if (!data) {
+                prioBox.innerHTML = '';
+                deptBox.innerHTML = '<em style="color:var(--text-secondary);">No administrative insights available.</em>';
+                invBox.innerHTML = ''; corBox.innerHTML = ''; prevBox.innerHTML = '';
+                escWrap.style.display = 'none';
+                statusBox.innerHTML = '';
                 return;
             }
 
-            var dept = rec.responsible_department || 'N/A';
-            var eta = rec.estimated_time || 'N/A';
-            var st = rec.short_term_solution || '';
-            var lt = rec.long_term_solution || '';
-            var kws = (rec.recommended_keywords || '').split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+            var priority = data.priority || 'Not Set';
+            var priorityColor = priority === 'High' ? 'var(--danger)' : priority === 'Medium' ? 'var(--warning)' : priority === 'Low' ? 'var(--success)' : 'var(--text-secondary)';
+            var urgencyScore = data.urgency_score || 0;
+            prioBox.innerHTML = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">' +
+                '<span class="badge" style="background:' + priorityColor + ';color:#fff;font-size:0.85rem;padding:0.4rem 0.8rem;">📊 Priority: ' + priority + '</span>' +
+                '<span class="badge badge-warning" style="font-size:0.85rem;">⚡ Urgency: ' + urgencyScore + '/5</span>' +
+                '<span class="badge badge-info" style="font-size:0.85rem;">🏷️ ' + (data.category || 'Uncategorized') + '</span>' +
+                '<span class="badge" style="background:var(--secondary);color:var(--text-primary);font-size:0.85rem;">' + (data.sentiment || 'N/A') + '</span>' +
+                '</div>';
 
-            db.innerHTML = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;"><div><span class="dept-badge">🏢 ' + esc(dept) + '</span></div><div><span style="font-weight:600;font-size:0.85rem;">⏱️ Est:</span> <strong>' + esc(eta) + '</strong></div></div>';
-            kb.innerHTML = kws.length ? '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + kws.map(function(k) { return '<span class="keyword-chip">' + esc(k) + '</span>'; }).join('') + '</div>' : '<em style="color:var(--text-secondary);">None</em>';
-            stb.innerHTML = st ? '<div style="color:var(--text-primary);line-height:1.6;font-weight:500;">' + esc(st) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
-            ltb.innerHTML = lt ? '<div style="color:var(--text-primary);line-height:1.6;font-weight:500;">' + esc(lt) + '</div>' : '<em style="color:var(--text-secondary);">Not available</em>';
-            
-            // Generate SRC action tasks based on the solutions
-            var actions = [];
-            if (st) actions.push('✓ ' + st);
-            if (lt) actions.push('✓ ' + lt);
-            if (actions.length === 0) actions.push('No specific actions recommended');
-            var actionsHtml = '<div style="color:var(--text-primary);line-height:1.8;font-weight:500;"><ul style="margin:0;padding-left:1.2rem;">' + actions.map(function(a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></div>';
-            document.getElementById('solutionActions').innerHTML = actionsHtml;
+            deptBox.innerHTML = data.department ? '<span class="dept-badge" style="font-size:0.9rem;padding:0.5rem 1rem;">🏢 ' + data.department + '</span>' : '<em style="color:var(--text-secondary);">No department assigned</em>';
 
-            if (typeof rec.confidence === 'number') {
-                var pct = Math.round(rec.confidence * 100);
-                var level = pct >= 70 ? 'High' : (pct >= 40 ? 'Moderate' : 'Low');
-                var color = pct >= 70 ? 'var(--success)' : (pct >= 40 ? 'var(--warning)' : 'var(--danger)');
-                confWrap.style.display = 'block';
-                confBox.innerHTML = '<div style="display:flex;align-items:center;gap:0.6rem;">' +
-                    '<div style="flex:1;height:8px;border-radius:99px;background:var(--border-color);overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:' + color + ';"></div></div>' +
-                    '<strong style="font-size:0.82rem;color:' + color + ';">' + pct + '% (' + level + ')</strong></div>';
+            var invSteps = Array.isArray(data.investigation) ? data.investigation : [];
+            invBox.innerHTML = invSteps.length ? '<ul style="margin:0;padding-left:1.2rem;line-height:1.8;">' + invSteps.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' : '<em style="color:var(--text-secondary);">No investigation steps defined</em>';
+
+            var corSteps = Array.isArray(data.corrective) ? data.corrective : [];
+            corBox.innerHTML = corSteps.length ? '<ul style="margin:0;padding-left:1.2rem;line-height:1.8;">' + corSteps.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' : '<em style="color:var(--text-secondary);">No corrective actions defined</em>';
+
+            var prevSteps = Array.isArray(data.preventive) ? data.preventive : [];
+            prevBox.innerHTML = prevSteps.length ? '<ul style="margin:0;padding-left:1.2rem;line-height:1.8;">' + prevSteps.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' : '<em style="color:var(--text-secondary);">No preventive measures defined</em>';
+
+            if (data.escalation) {
+                escWrap.style.display = 'block';
+                escBox.innerHTML = '<span style="font-weight:600;color:var(--danger);">⬆️ ' + data.escalation + '</span>';
             } else {
-                confWrap.style.display = 'none';
+                escWrap.style.display = 'none';
             }
 
-            if (rec.secondary_categories && rec.secondary_categories.length) {
-                secWrap.style.display = 'block';
-                secBox.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">' + rec.secondary_categories.map(function(sc) {
-                    var label = typeof sc === 'string' ? sc : (sc.category || JSON.stringify(sc));
-                    return '<span class="keyword-chip">' + esc(label) + '</span>';
-                }).join('') + '</div>';
-            } else {
-                secWrap.style.display = 'none';
-            }
-
-            var helpfulCount = rec.helpful_count || 0;
-            var unhelpfulCount = rec.unhelpful_count || 0;
-            tally.textContent = (helpfulCount || unhelpfulCount) ? (helpfulCount + ' found this helpful · ' + unhelpfulCount + ' did not') : 'No feedback yet on this recommendation';
+            var statusColor = data.status === 'Resolved' ? 'var(--success)' : data.status === 'In Progress' ? 'var(--warning)' : data.status === 'Pending' ? 'var(--text-secondary)' : 'var(--primary)';
+            statusBox.innerHTML = '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">' +
+                '<span style="font-weight:700;color:' + statusColor + ';font-size:0.95rem;">📌 ' + (data.status || 'Pending') + '</span>' +
+                (data.assigned_to ? '<span style="font-size:0.85rem;">👤 Assigned to: <strong>' + data.assigned_to + '</strong></span>' : '<span style="font-size:0.85rem;color:var(--text-secondary);">👤 Unassigned</span>') +
+                '</div>';
         }
 
-        function showSolutionModal(id) {
-            var modal = document.getElementById('solutionModal');
+        function showAdminInsightsModal(id) {
+            var modal = document.getElementById('adminInsightsModal');
             if (!modal) return;
-            currentSolutionFeedbackId = id;
-            var rec = recommendationsById && recommendationsById[id] ? recommendationsById[id] : null;
-            renderSolutionModal(id, rec);
+            var data = adminInsightsById && adminInsightsById[id] ? adminInsightsById[id] : null;
+            renderAdminInsightsModal(id, data);
             modal.classList.add('active');
         }
 
-        function regenerateSolution() {
-            if (!currentSolutionFeedbackId) return;
-            var btn = document.getElementById('solutionRegenerateBtn');
-            btn.disabled = true;
-            btn.textContent = '🔄 Regenerating…';
-            fetch('/admin/feedback/' + currentSolutionFeedbackId + '/regenerate-recommendation', {
-                method: 'POST',
-                headers: { 'X-CSRF-Token': getCsrfToken() }
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                btn.disabled = false;
-                btn.textContent = '🔄 Regenerate';
-                if (!data.success) return;
-                var existing = recommendationsById[currentSolutionFeedbackId] || {};
-                var updated = Object.assign({}, existing, data);
-                recommendationsById[currentSolutionFeedbackId] = updated;
-                renderSolutionModal(currentSolutionFeedbackId, updated);
-                if (typeof showToast === 'function') showToast('✅ Recommendation refreshed', 'success');
-            })
-            .catch(function() {
-                btn.disabled = false;
-                btn.textContent = '🔄 Regenerate';
-            });
-        }
+        function closeAdminInsightsModal() { document.getElementById('adminInsightsModal').classList.remove('active'); }
 
-        function rateSolution(wasHelpful) {
-            if (!currentSolutionFeedbackId) return;
-            fetch('/admin/feedback/' + currentSolutionFeedbackId + '/solution-feedback', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
-                body: JSON.stringify({ was_helpful: wasHelpful })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (!data.success) return;
-                var existing = recommendationsById[currentSolutionFeedbackId] || {};
-                existing.helpful_count = data.helpful_count;
-                existing.unhelpful_count = data.unhelpful_count;
-                recommendationsById[currentSolutionFeedbackId] = existing;
-                var tally = document.getElementById('solutionHelpfulTally');
-                if (tally) tally.textContent = data.helpful_count + ' found this helpful · ' + data.unhelpful_count + ' did not';
-                if (typeof showToast === 'function') showToast(wasHelpful ? '👍 Thanks for the feedback!' : '👎 Noted, thanks!', 'success');
-            });
-        }
-
-        function closeSolutionModal() { document.getElementById('solutionModal').classList.remove('active'); }
         function showResponseModal(id, response) {
             var modal = document.getElementById('responseModal');
             var form = document.getElementById('responseForm');
@@ -673,7 +686,7 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
         }
         function closeResponseModal() { document.getElementById('responseModal').classList.remove('active'); }
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') { closeResponseModal(); closeAnalyzeModal(); closeSolutionModal(); }
+            if (e.key === 'Escape') { closeResponseModal(); closeAnalyzeModal(); closeAdminInsightsModal(); }
         });
         document.getElementById('trendPeriod')?.addEventListener('change', function() {
             this.style.borderColor = 'var(--primary)';
@@ -714,12 +727,38 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
                 if (n.notification_type === 'new_feedback') icon = '📝';
                 else if (n.notification_type === 'unattended') icon = '⚠️';
                 else if (n.notification_type === 'status_change') icon = '📋';
-                return '<div class="notification-item ' + (n.is_read ? '' : 'unread') + '" onclick="markAdminNotificationRead(' + n.id + ')">' +
+                var feedbackId = n.feedback_id || n.feedback_id;
+                return '<div class="notification-item ' + (n.is_read ? '' : 'unread') + '" onclick="handleAdminNotificationClick(' + n.id + ', ' + feedbackId + ')">' +
                     '<div class="notification-item-title">' + icon + ' ' + n.title + '</div>' +
                     '<div class="notification-item-message">' + n.message + '</div>' +
-                    '<div class="notification-item-time">' + n.created_at + '</div>' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.25rem;">' +
+                    '<span class="notification-item-time">' + n.created_at + '</span>' +
+                    (feedbackId ? '<span style="font-size:0.7rem;color:var(--primary);font-weight:600;">View →</span>' : '') +
+                    '</div>' +
                     '</div>';
             }).join('');
+        }
+
+        function handleAdminNotificationClick(notifId, feedbackId) {
+            // Mark as read
+            markAdminNotificationRead(notifId);
+            // Close dropdown
+            document.getElementById('adminNotificationDropdown').style.display = 'none';
+            // Navigate to feedback
+            if (feedbackId) {
+                // Scroll to and highlight the feedback in the table
+                var row = document.querySelector('tr[data-id="' + feedbackId + '"]');
+                if (row) {
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    row.style.background = 'var(--warning-light)';
+                    row.style.transition = 'background 0.5s ease';
+                    setTimeout(function() { row.style.background = ''; }, 2000);
+                    showToast('Feedback #' + feedbackId + ' located', 'success');
+                } else {
+                    // Feedback not in current view - show toast
+                    showToast('Feedback #' + feedbackId + ' - scroll to find it', 'info');
+                }
+            }
         }
 
         function toggleAdminNotificationDropdown() {

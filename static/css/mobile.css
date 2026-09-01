@@ -3145,11 +3145,11 @@
 /* ✍️ STUDENT SUBMIT FEEDBACK → PREMIUM NATIVE MOBILE REDESIGN
 /* ============================================================ */
 /* Additive-only. Only activates on mobile widths. Elevates the
-   submit feedback wizard (submit_feedback.html) into a cohesive,
+   single-page submit feedback (submit_feedback.html) into a cohesive,
    native app-like experience:
      • Shell      → full-bleed glass card w/ gradient accent
      • Header     → compact hero w/ gradient icon badge
-     • Stepper    → native progress dots + gradient connectors
+     • Nav        → sticky section nav bar with progress dots
      • Categories → touch-optimized glass tiles w/ selection ring
      • Fields     → pill inputs, focus glow, char counter, toggle
      • Urgency    → big-thumb slider + live meter card
@@ -3218,8 +3218,8 @@
         display: flex;
         align-items: center;
         gap: 0.85rem;
-        margin-bottom: 1.1rem;
-        padding: 0.65rem 0.15rem 1rem;
+        margin-bottom: 0.5rem;
+        padding: 0.65rem 0.15rem 0.85rem;
         border-bottom: none;
         position: relative;
     }
@@ -3268,10 +3268,10 @@
 }
 
 /* ============================================================ */
-/* 3. STEPPER → NATIVE PROGRESS DOTS
+/* 3. SECTION NAV → STICKY PROGRESS BAR
 /* ============================================================ */
 @media (max-width: 768px) {
-    .step-wizard {
+    .feedback-sections-nav {
         gap: 0.3rem;
         margin-bottom: 1.4rem;
         padding: 0.85rem 0.4rem;
@@ -3279,13 +3279,16 @@
         border: 1px solid var(--border-color);
         border-radius: 1.15rem;
         box-shadow: var(--shadow-sm);
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
 
-    html.theme-dark .step-wizard {
+    html.theme-dark .feedback-sections-nav {
         background: rgba(148,163,184,0.06);
     }
 
-    .step-dot {
+    .section-nav-dot {
         width: 2.15rem;
         height: 2.15rem;
         font-size: 0.82rem;
@@ -3294,7 +3297,7 @@
         transition: all 0.3s var(--mob-fb-spring);
     }
 
-    .step-dot.active {
+    .section-nav-item.active .section-nav-dot {
         transform: scale(1.12);
         box-shadow: 0 0 0 4px rgba(59,130,246,0.18), 0 6px 18px rgba(30,64,175,0.35);
         animation: fbDotPop 0.4s var(--mob-fb-spring);
@@ -3306,23 +3309,32 @@
         100% { transform: scale(1.12); }
     }
 
-    .step-dot.completed {
+    .section-nav-item.completed .section-nav-dot {
         box-shadow: 0 0 0 4px rgba(16,185,129,0.15);
     }
 
-    .step-connector {
+    .section-nav-connector {
         width: 1.4rem;
         height: 3px;
         border-radius: var(--radius-full);
     }
 
-    .step-connector.completed {
+    .section-nav-item.completed + .section-nav-connector {
         background: linear-gradient(90deg, var(--success), #34d399);
     }
 
-    .step-label {
+    .section-nav-label {
         font-size: 0.62rem;
         letter-spacing: 0.03em;
+    }
+
+    .feedback-section {
+        padding: 1.15rem 0;
+    }
+
+    .feedback-section:not(:last-child) {
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 0.5rem;
     }
 }
 
@@ -3687,7 +3699,7 @@
 /* ============================================================ */
 @media (max-width: 768px) {
     .feedback-form-card,
-    .step-wizard,
+    .feedback-sections-nav,
     .category-card,
     .urgency-meter,
     .review-card,
@@ -3697,7 +3709,7 @@
 
     /* Ensure sections clear the sticky action bar + bottom nav */
     .feedback-form-card,
-    .step-panel,
+    .feedback-section,
     .step-actions {
         scroll-margin-bottom: 5.5rem;
     }
@@ -3773,11 +3785,11 @@
         right: 0.4rem;
     }
 
-    .step-connector {
+    .section-nav-connector {
         width: 1rem;
     }
 
-.step-actions {
+    .step-actions {
         bottom: calc(4.2rem + env(safe-area-inset-bottom, 0));
         padding: 0.5rem 0.5rem;
     }
@@ -5057,6 +5069,26 @@
 @media (max-width: 768px) {
     .admin-sidebar {
         display: none;
+    }
+
+    /* Hide feedback table on mobile */
+    .desktop-only-table {
+        display: none !important;
+    }
+
+    /* Hide filter bar on mobile (table is hidden) */
+    .filter-bar-enhanced {
+        display: none !important;
+    }
+
+    /* Mobile feedback notice */
+    .mobile-feedback-notice {
+        display: block !important;
+    }
+
+    /* Hide View All button on mobile (notice replaces it) */
+    .view-all-btn {
+        display: none !important;
     }
 
     /* Full-width content when sidebar is gone */

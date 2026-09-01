@@ -30,85 +30,115 @@
 </div>
 </aside>
 <section class="student-content">
-<div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;">
-<div style="position: relative; z-index: 1;"><div class="admin-hero-title" style="font-size: 1.5rem;">🔎 AI Review Queue</div>
-<div class="admin-hero-subtitle">Feedback with low AI confidence is held here for an administrator to verify before it is trusted.</div></div>
+
+<!-- Hero -->
+<div class="admin-hero" style="background: linear-gradient(135deg, var(--primary-dark) 0%, var(--dark) 50%, var(--primary-dark) 100%); position: relative; overflow: hidden;">
+<div style="position: relative; z-index: 1;">
+<div class="admin-hero-title" style="font-size: 1.5rem;">🔎 AI Review Queue</div>
+<div class="admin-hero-subtitle">Feedback with low AI confidence is held here for an administrator to verify before it is trusted.</div>
+</div>
 <div class="admin-hero-actions" style="position: relative; z-index: 1;">
-    <a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
-    <span class="btn-hero btn-hero-primary">{{ review_count }} items need review</span>
+<a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
+<span class="btn-hero btn-hero-primary" id="reviewCount">{{ review_count }} items need review</span>
 </div>
 </div>
 
-<!-- Filters -->
+<!-- Filters & Actions -->
 <div class="chart-card" style="margin-bottom: 1rem; padding: 1rem;">
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-        <label style="font-size: 0.8rem; font-weight: 600;">Filter:</label>
-        <select id="sentimentFilter" onchange="filterReviews()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
-            <option value="">All Sentiments</option>
-            <option value="positive">Positive</option>
-            <option value="neutral">Neutral</option>
-            <option value="negative">Negative</option>
-        </select>
-        <select id="urgencyFilter" onchange="filterReviews()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
-            <option value="">All Urgency</option>
-            <option value="5">Critical (5)</option>
-            <option value="4">High (4)</option>
-            <option value="3">Medium (3)</option>
-            <option value="1">Low (1-2)</option>
-        </select>
-        <button onclick="selectAllVisible()" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">Select All</button>
-        <button onclick="approveSelected()" class="btn-hero btn-hero-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">✓ Approve Selected</button>
-    </div>
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+<label style="font-size: 0.8rem; font-weight: 600;">Filter:</label>
+<select id="sentimentFilter" onchange="filterReviews()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
+<option value="">All Sentiments</option>
+<option value="positive">Positive</option>
+<option value="neutral">Neutral</option>
+<option value="negative">Negative</option>
+</select>
+<select id="urgencyFilter" onchange="filterReviews()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
+<option value="">All Urgency</option>
+<option value="5">Critical (5)</option>
+<option value="4">High (4)</option>
+<option value="3">Medium (3)</option>
+<option value="1">Low (1-2)</option>
+</select>
+<button onclick="selectAllVisible()" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">Select All</button>
+<button onclick="approveSelected()" class="btn-hero btn-hero-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">✓ Approve Selected</button>
+</div>
 </div>
 
 {% if reviews %}
 {% for f in reviews %}
-<div class="chart-card review-card" style="margin-bottom:1rem;" data-sentiment="{{ f.sentiment }}" data-urgency="{{ f.urgency_score }}">
+<div class="chart-card review-card" id="review-card-{{ f.id }}" style="margin-bottom:1rem;" data-sentiment="{{ f.sentiment }}" data-urgency="{{ f.urgency_score }}">
 <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:start;">
-    <div style="display: flex; gap: 0.75rem; align-items: start;">
-        <input type="checkbox" class="review-select" value="{{ f.id }}" style="width: 1.2rem; height: 1.2rem; margin-top: 0.2rem;">
-        <div>
-            <strong>#{{ f.id }} · {{ f.category or 'Uncategorized' }}</strong>
-            <div style="color:var(--text-secondary);font-size:.85rem;margin-top:.25rem;">{{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}</div>
-        </div>
-    </div>
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <span class="badge badge-{% if f.confidence_score < 30 %}danger{% elif f.confidence_score < 55 %}warning{% else %}info{% endif %}">Confidence: {{ f.confidence_score if f.confidence_score is not none else 'Unknown' }}%</span>
-        <span class="badge badge-{% if f.urgency_score >= 4 %}danger{% elif f.urgency_score >= 3 %}warning{% else %}info{% endif %}">Urgency {{ f.urgency_score }}/5</span>
-        <span class="badge badge-{% if f.sentiment == 'positive' %}success{% elif f.sentiment == 'negative' %}danger{% else %}secondary{% endif %}">{{ f.sentiment }}</span>
-    </div>
+<div style="display: flex; gap: 0.75rem; align-items: start;">
+<input type="checkbox" class="review-select" value="{{ f.id }}" style="width: 1.2rem; height: 1.2rem; margin-top: 0.2rem;">
+<div>
+<strong>#{{ f.id }} · {{ f.category or 'Uncategorized' }}</strong>
+<div style="color:var(--text-secondary);font-size:.85rem;margin-top:.25rem;">{{ f.created_at.strftime('%Y-%m-%d %H:%M') if f.created_at else '' }}</div>
 </div>
-<p style="margin:1rem 0;"><strong>Student feedback:</strong> {{ f.feedback_text }}</p>
+</div>
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+<span class="badge badge-{% if f.confidence_score < 30 %}danger{% elif f.confidence_score < 55 %}warning{% else %}info{% endif %}">Confidence: {{ f.confidence_score if f.confidence_score is not none else 'Unknown' }}%</span>
+<span class="badge badge-{% if f.urgency_score >= 4 %}danger{% elif f.urgency_score >= 3 %}warning{% else %}info{% endif %}">Urgency {{ f.urgency_score }}/5</span>
+<span class="badge badge-{% if f.sentiment == 'positive' %}success{% elif f.sentiment == 'negative' %}danger{% else %}secondary{% endif %}">{{ f.sentiment }}</span>
+</div>
+</div>
+<p style="margin:1rem 0;padding:0.75rem;background:var(--bg-color);border-radius:0.5rem;"><strong>Student feedback:</strong> {{ f.feedback_text }}</p>
 {% if f.phase2_ai_explanation %}
-<details style="margin-bottom:1rem;"><summary><strong>🤖 AI explanation</strong></summary>
-<div style="margin-top:.6rem;padding:.8rem;background:var(--surface-secondary,#f8fafc);border-radius:.6rem;">
+<details style="margin-bottom:1rem;">
+<summary style="cursor:pointer;font-weight:600;padding:0.5rem 0;">🤖 AI explanation</summary>
+<div style="margin-top:.6rem;padding:.8rem;background:var(--bg-color);border-radius:.6rem;font-size:0.9rem;line-height:1.5;">
 {% if f.phase2_ai_explanation is string %}{{ f.phase2_ai_explanation }}{% else %}{{ f.phase2_ai_explanation.get('summary', f.phase2_ai_explanation.get('explanation', 'The AI explanation is not available.')) }}{% endif %}
-</div></details>
+</div>
+</details>
 {% endif %}
 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-    <button onclick="quickApprove({{ f.id }})" class="btn-hero btn-hero-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">✓ Quick Approve</button>
-    <button onclick="quickReject({{ f.id }})" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">✗ Quick Reject</button>
+<button onclick="quickApprove({{ f.id }})" class="btn-hero btn-hero-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">✓ Quick Approve</button>
+<button onclick="quickReject({{ f.id }})" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">✗ Quick Reject</button>
 </div>
-<form method="POST" action="/admin/ai-review/{{ f.id }}" class="review-form-grid">
+<form id="review-form-{{ f.id }}" onsubmit="return saveReview(event, {{ f.id }})" class="review-form-grid">
 {{ csrf_field() }}
-<label>Sentiment<select name="sentiment"><option value="positive" {% if f.sentiment=='positive' %}selected{% endif %}>Positive</option><option value="neutral" {% if f.sentiment=='neutral' %}selected{% endif %}>Neutral</option><option value="negative" {% if f.sentiment=='negative' %}selected{% endif %}>Negative</option></select></label>
-<label>Category<input name="category" value="{{ f.category or 'general' }}"></label>
-<label>Urgency<select name="urgency">{% for n in range(1,6) %}<option value="{{n}}" {% if f.urgency_score==n %}selected{% endif %}>{{n}} / 5</option>{% endfor %}</select></label>
+<label>Sentiment
+<select name="sentiment" id="sentiment-{{ f.id }}">
+<option value="positive" {% if f.sentiment=='positive' %}selected{% endif %}>Positive</option>
+<option value="neutral" {% if f.sentiment=='neutral' %}selected{% endif %}>Neutral</option>
+<option value="negative" {% if f.sentiment=='negative' %}selected{% endif %}>Negative</option>
+</select>
+</label>
+<label>Category<input name="category" id="category-{{ f.id }}" value="{{ f.category or 'general' }}"></label>
+<label>Urgency
+<select name="urgency" id="urgency-{{ f.id }}">
+{% for n in range(1,6) %}<option value="{{n}}" {% if f.urgency_score==n %}selected{% endif %}>{{n}} / 5</option>{% endfor %}
+</select>
+</label>
 <label style="grid-column:1/-1;">Review note<textarea name="notes" rows="2" placeholder="Optional reason for approving or correcting the AI result"></textarea></label>
 <div style="grid-column:1/-1;display:flex;gap:.5rem;flex-wrap:wrap;">
-<button class="btn-hero btn-hero-primary" type="submit">✓ Save AI Review</button>
+<button class="btn-hero btn-hero-primary" type="submit" id="save-btn-{{ f.id }}">✓ Save AI Review</button>
 </div>
 </form>
-<details style="margin-top:.75rem;"><summary>Suggest a new lexicon term</summary>
-<form method="POST" action="/admin/ai-review/{{ f.id }}/add-to-lexicon" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;">
-{{ csrf_field() }}<input name="word" placeholder="word or phrase" required><input name="score" type="number" min="-1" max="1" step=".1" placeholder="score" required><input name="lexicon_category" placeholder="category" value="general"><button class="btn-hero" type="submit">Add term</button>
-</form></details>
+<details style="margin-top:.75rem;">
+<summary style="cursor:pointer;font-weight:600;padding:0.5rem 0;">Suggest a new lexicon term</summary>
+<form onsubmit="return addLexiconFromReview(event, {{ f.id }})" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;">
+{{ csrf_field() }}
+<input name="word" placeholder="word or phrase" required style="padding:0.4rem 0.6rem;border-radius:0.4rem;border:1px solid var(--border-color);">
+<input name="score" type="number" min="-1" max="1" step=".1" placeholder="score" required style="padding:0.4rem 0.6rem;border-radius:0.4rem;border:1px solid var(--border-color);width:100px;">
+<input name="lexicon_category" placeholder="category" value="general" style="padding:0.4rem 0.6rem;border-radius:0.4rem;border:1px solid var(--border-color);">
+<button class="btn-hero" type="submit">Add term</button>
+</form>
+</details>
 </div>
 {% endfor %}
 {% else %}
-<div class="chart-card"><div class="empty-state-premium"><div class="empty-state-premium-icon">✅</div><div class="empty-state-premium-title">No feedback waiting for review</div><div class="empty-state-premium-desc">The AI currently has no low-confidence cases in the queue.</div></div></div>
+<div class="chart-card">
+<div class="empty-state-premium">
+<div class="empty-state-premium-icon">✅</div>
+<div class="empty-state-premium-title">No feedback waiting for review</div>
+<div class="empty-state-premium-desc">The AI currently has no low-confidence cases in the queue.</div>
+</div>
+</div>
 {% endif %}
-</section></div>
+
+</section>
+</div>
 
 <script>
 function filterReviews() {
@@ -138,7 +168,10 @@ function approveSelected() {
     document.querySelectorAll('.review-select:checked').forEach(function(cb) {
         ids.push(cb.value);
     });
-    if (ids.length === 0) return;
+    if (ids.length === 0) {
+        showToast('No items selected', 'warning');
+        return;
+    }
     
     fetch('/admin/api/ai-review/bulk-approve', {
         method: 'POST',
@@ -147,8 +180,24 @@ function approveSelected() {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success && typeof showToast === 'function') showToast(data.count + ' items approved', 'success');
-        setTimeout(() => location.reload(), 1500);
+        if (data.success) {
+            showToast(data.count + ' items approved', 'success');
+            // Remove approved cards
+            ids.forEach(function(id) {
+                var card = document.getElementById('review-card-' + id);
+                if (card) {
+                    card.style.opacity = '0.3';
+                    card.style.transition = 'opacity 0.3s ease';
+                    setTimeout(function() { card.remove(); }, 300);
+                }
+            });
+            // Update count
+            var countEl = document.getElementById('reviewCount');
+            if (countEl) {
+                var current = parseInt(countEl.textContent);
+                countEl.textContent = Math.max(0, current - data.count) + ' items need review';
+            }
+        }
     });
 }
 
@@ -160,10 +209,14 @@ function quickApprove(id) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            var card = document.querySelector('.review-card:has(input[value="' + id + '"])');
-            if (card) { card.style.opacity = '0.5'; }
-            if (typeof showToast === 'function') showToast('Item #' + id + ' approved', 'success');
-            setTimeout(() => location.reload(), 1000);
+            var card = document.getElementById('review-card-' + id);
+            if (card) {
+                card.style.opacity = '0.3';
+                card.style.transition = 'opacity 0.3s ease';
+                setTimeout(function() { card.remove(); }, 300);
+            }
+            showToast('Item #' + id + ' approved', 'success');
+            updateReviewCount(-1);
         }
     });
 }
@@ -176,47 +229,115 @@ function quickReject(id) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            if (typeof showToast === 'function') showToast('Item #' + id + ' rejected', 'success');
-            setTimeout(() => location.reload(), 1000);
+            var card = document.getElementById('review-card-' + id);
+            if (card) {
+                card.style.opacity = '0.3';
+                card.style.transition = 'opacity 0.3s ease';
+                setTimeout(function() { card.remove(); }, 300);
+            }
+            showToast('Item #' + id + ' rejected', 'success');
+            updateReviewCount(-1);
         }
     });
 }
 
-// ==================== ACTIVE LEARNING ====================
-// Track original sentiments and record corrections
+function updateReviewCount(change) {
+    var countEl = document.getElementById('reviewCount');
+    if (countEl) {
+        var current = parseInt(countEl.textContent);
+        countEl.textContent = Math.max(0, current + change) + ' items need review';
+    }
+}
+
+// ==================== SAVE REVIEW (AJAX) ====================
 var originalSentiments = {};
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Store original sentiments when page loads
     document.querySelectorAll('.review-card').forEach(function(card) {
-        var select = card.querySelector('select[name="sentiment"]');
-        if (select) {
-            var feedbackId = select.closest('form').action.split('/').pop();
-            originalSentiments[feedbackId] = select.value;
-        }
+        var id = card.id.replace('review-card-', '');
+        var select = document.getElementById('sentiment-' + id);
+        if (select) originalSentiments[id] = select.value;
     });
 });
 
-// Record correction when form is submitted
-document.querySelectorAll('form[action*="/admin/ai-review/"]').forEach(function(form) {
-    form.addEventListener('submit', function(e) {
-        var action = form.action;
-        if (action.includes('add-to-lexicon')) return; // Skip lexicon form
-        
-        var feedbackId = action.split('/').pop();
-        var sentimentSelect = form.querySelector('select[name="sentiment"]');
-        
-        if (sentimentSelect && originalSentiments[feedbackId]) {
-            var original = originalSentiments[feedbackId];
-            var corrected = sentimentSelect.value;
-            
-            // Only record if sentiment was changed
-            if (original !== corrected) {
-                recordSentimentCorrection(feedbackId, original, corrected);
+function saveReview(event, id) {
+    event.preventDefault();
+    var btn = document.getElementById('save-btn-' + id);
+    var sentiment = document.getElementById('sentiment-' + id).value;
+    var category = document.getElementById('category-' + id).value;
+    var urgency = document.getElementById('urgency-' + id).value;
+    var notes = event.target.querySelector('textarea[name="notes"]').value;
+    
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    
+    fetch('/admin/api/ai-review/' + id + '/correct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({
+            sentiment: sentiment,
+            category: category,
+            urgency: parseInt(urgency),
+            notes: notes
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.textContent = '✓ Save AI Review';
+        if (data.success) {
+            showToast('Review #' + id + ' saved', 'success');
+            // Record correction for active learning
+            if (originalSentiments[id] && originalSentiments[id] !== sentiment) {
+                recordSentimentCorrection(id, originalSentiments[id], sentiment);
             }
+            // Fade out card
+            var card = document.getElementById('review-card-' + id);
+            if (card) {
+                card.style.opacity = '0.3';
+                card.style.transition = 'opacity 0.3s ease';
+                setTimeout(function() { card.remove(); }, 500);
+            }
+            updateReviewCount(-1);
+        } else {
+            showToast(data.error || 'Failed to save', 'error');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.textContent = '✓ Save AI Review';
+        showToast('Network error', 'error');
+    });
+    
+    return false;
+}
+
+function addLexiconFromReview(event, feedbackId) {
+    event.preventDefault();
+    var form = event.target;
+    var word = form.querySelector('input[name="word"]').value.trim();
+    var score = form.querySelector('input[name="score"]').value;
+    var category = form.querySelector('input[name="lexicon_category"]').value.trim();
+    
+    if (!word || !score) return false;
+    
+    fetch('/admin/api/lexicon/add-word', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ word: word, sentiment_score: parseFloat(score), category: category })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('"' + word + '" added to lexicon', 'success');
+            form.reset();
+        } else {
+            showToast(data.error || 'Failed to add', 'error');
         }
     });
-});
+    
+    return false;
+}
 
 function recordSentimentCorrection(feedbackId, original, corrected) {
     fetch('/api/admin/sentiment/record-correction', {
@@ -231,8 +352,8 @@ function recordSentimentCorrection(feedbackId, original, corrected) {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success && typeof showToast === 'function') {
-            showToast('Correction recorded - system will learn from this!', 'success');
+        if (data.success) {
+            showToast('Correction recorded - system learns from this!', 'success');
         }
     })
     .catch(err => console.error('Error recording correction:', err));

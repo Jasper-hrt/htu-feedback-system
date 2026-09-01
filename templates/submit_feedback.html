@@ -14,28 +14,29 @@
                 <p>Share your concerns, suggestions, or feedback with the SRC. Your voice matters!</p>
             </div>
 
-            <!-- Step Wizard -->
-            <div class="step-wizard" id="stepWizard">
-                <div class="step-indicator">
-                    <div class="step-dot active" data-step="1">1</div>
-                    <div class="step-label" data-step="1">Category</div>
-                </div>
-                <div class="step-connector" data-step="1"></div>
-                <div class="step-indicator">
-                    <div class="step-dot" data-step="2">2</div>
-                    <div class="step-label" data-step="2">Details</div>
-                </div>
-                <div class="step-connector" data-step="2"></div>
-                <div class="step-indicator">
-                    <div class="step-dot" data-step="3">3</div>
-                    <div class="step-label" data-step="3">Review</div>
-                </div>
+            <!-- Section Navigation -->
+            <div class="feedback-sections-nav">
+                <a href="#section-category" class="section-nav-item active" data-section="1">
+                    <span class="section-nav-dot">1</span>
+                    <span class="section-nav-label">Category</span>
+                </a>
+                <div class="section-nav-connector"></div>
+                <a href="#section-details" class="section-nav-item" data-section="2">
+                    <span class="section-nav-dot">2</span>
+                    <span class="section-nav-label">Details</span>
+                </a>
+                <div class="section-nav-connector"></div>
+                <a href="#section-review" class="section-nav-item" data-section="3">
+                    <span class="section-nav-dot">3</span>
+                    <span class="section-nav-label">Review</span>
+                </a>
             </div>
 
             <form method="POST" id="feedbackForm" novalidate>
                 {{ csrf_field() }}
-                <!-- STEP 1: Category -->
-                <div class="step-panel active" id="step1">
+
+                <!-- SECTION 1: Category -->
+                <div class="feedback-section" id="section-category">
                     <div class="step-title">📂 Select Category</div>
                     <div class="step-subtitle">Choose the category that best describes your feedback</div>
 
@@ -98,14 +99,10 @@
                         </div>
                         <div class="field-error" id="categoryError">⚠️ Please select a category</div>
                     </div>
-
-                    <div class="step-actions">
-                        <button type="button" class="btn btn-primary" onclick="goToStep(2)" id="step1Next">Next →</button>
-                    </div>
                 </div>
 
-                <!-- STEP 2: Details -->
-                <div class="step-panel" id="step2">
+                <!-- SECTION 2: Details -->
+                <div class="feedback-section" id="section-details">
                     <div class="step-title">📝 Provide Details</div>
                     <div class="step-subtitle">Describe your feedback in detail so we can take appropriate action</div>
 
@@ -153,15 +150,10 @@
                         </label>
                         <span class="form-label-hint" style="margin-top: 0.25rem; display: block;">Your identity will be hidden from public display but SRC admins will still see it.</span>
                     </div>
-
-                    <div class="step-actions">
-                        <button type="button" class="btn btn-ghost" onclick="goToStep(1)">← Back</button>
-                        <button type="button" class="btn btn-primary" onclick="goToStep(3)" id="step2Next">Review →</button>
-                    </div>
                 </div>
 
-                <!-- STEP 3: Review & Submit -->
-                <div class="step-panel" id="step3">
+                <!-- SECTION 3: Review & Submit -->
+                <div class="feedback-section" id="section-review">
                     <div class="step-title">✅ Review & Submit</div>
                     <div class="step-subtitle">Please review your feedback before submitting</div>
 
@@ -193,100 +185,47 @@
                     </div>
 
                     <div class="step-actions">
-                        <button type="button" class="btn btn-ghost" onclick="goToStep(2)">← Edit Details</button>
-                        <button type="submit" class="btn btn-success" id="submitBtn">🚀 Submit Feedback</button>
+                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn">🚀 Submit Feedback</button>
                     </div>
                 </div>
-
-                <!-- Hidden field to track current step -->
-                <input type="hidden" name="current_step" id="currentStep" value="1">
             </form>
         </div>
     </div>
 
 <script>
-// ==================== STEP WIZARD ====================
-let currentStep = 1;
-
-function goToStep(step) {
-    // Validate current step before moving forward
-    if (step > currentStep) {
-        if (!validateStep(currentStep)) {
-            return;
-        }
-    }
-
-    // Update step panels
-    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('step' + step).classList.add('active');
-
-    // Update step dots
-    document.querySelectorAll('.step-dot').forEach(d => {
-        d.classList.remove('active', 'completed');
-        const s = parseInt(d.dataset.step);
-        if (s === step) d.classList.add('active');
-        else if (s < step) d.classList.add('completed');
-    });
-
-    // Update step connectors
-    document.querySelectorAll('.step-connector').forEach(c => {
-        c.classList.remove('completed');
-        const s = parseInt(c.dataset.step);
-        if (s < step) c.classList.add('completed');
-    });
-
-    // Update hidden input
-    document.getElementById('currentStep').value = step;
-    currentStep = step;
-
-    // Update review if we're on step 3
-    if (step === 3) {
-        updateReview();
-    }
-
-    // Scroll to top of form
-    document.querySelector('.feedback-form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
 // ==================== VALIDATION ====================
-function validateStep(step) {
-    if (step === 1) {
-        const selected = document.querySelector('input[name="category"]:checked');
-        const errorEl = document.getElementById('categoryError');
-        if (!selected) {
-            errorEl.classList.add('visible');
-            return false;
-        }
+function validateForm() {
+    let valid = true;
+    const selected = document.querySelector('input[name="category"]:checked');
+    const errorEl = document.getElementById('categoryError');
+    if (!selected) {
+        errorEl.classList.add('visible');
+        valid = false;
+    } else {
         errorEl.classList.remove('visible');
-        return true;
     }
 
-    if (step === 2) {
-        const text = document.getElementById('feedbackText').value.trim();
-        const textError = document.getElementById('textError');
-        if (text.length < 10) {
-            textError.classList.add('visible');
-            document.getElementById('feedbackText').focus();
-            return false;
-        }
+    const text = document.getElementById('feedbackText').value.trim();
+    const textError = document.getElementById('textError');
+    if (text.length < 10) {
+        textError.classList.add('visible');
+        valid = false;
+    } else {
         textError.classList.remove('visible');
-        return true;
     }
 
-    return true;
+    return valid;
 }
 
 // ==================== CATEGORY SELECTION ====================
 document.querySelectorAll('.category-card').forEach(card => {
     card.addEventListener('click', function() {
-        // Remove selected from all
         document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
-        // Add selected to this one
         this.classList.add('selected');
-        // Check the radio
         this.querySelector('input[type="radio"]').checked = true;
-        // Hide error
         document.getElementById('categoryError').classList.remove('visible');
+        updateReview();
+        saveDraft();
     });
 });
 
@@ -325,6 +264,8 @@ function updateUrgency(value) {
 
 urgencySlider.addEventListener('input', function() {
     updateUrgency(this.value);
+    updateReview();
+    saveDraft();
 });
 
 // ==================== CHARACTER COUNTER ====================
@@ -343,7 +284,6 @@ feedbackText.addEventListener('input', function() {
         charCount.classList.add('danger');
     }
 
-    // Real-time validation
     const textError = document.getElementById('textError');
     if (len >= 10) {
         textError.classList.remove('visible');
@@ -355,22 +295,33 @@ feedbackText.addEventListener('input', function() {
     } else {
         this.classList.remove('error', 'valid');
     }
+
+    updateReview();
+    saveDraft();
+});
+
+// ==================== LOCATION & ANONYMOUS ====================
+document.getElementById('locationInput').addEventListener('input', function() {
+    updateReview();
+    saveDraft();
+});
+
+document.getElementById('anonymousCheck').addEventListener('change', function() {
+    updateReview();
+    saveDraft();
 });
 
 // ==================== REVIEW UPDATE ====================
 function updateReview() {
-    // Category
     const selectedCat = document.querySelector('input[name="category"]:checked');
     if (selectedCat) {
         document.getElementById('reviewCategory').textContent = selectedCat.value;
     }
 
-    // Location
     const location = document.getElementById('locationInput').value.trim();
     document.getElementById('reviewLocation').textContent = location || 'Not specified';
     document.getElementById('reviewLocation').style.color = location ? '' : 'var(--text-muted)';
 
-    // Urgency
     const urgencyVal = urgencySlider.value;
     let urgencyText = '';
     if (urgencyVal <= 2) urgencyText = 'Low (' + urgencyVal + '/5)';
@@ -379,34 +330,68 @@ function updateReview() {
     else urgencyText = 'Critical (' + urgencyVal + '/5)';
     document.getElementById('reviewUrgency').textContent = urgencyText;
 
-    // Anonymous
     document.getElementById('reviewAnonymous').textContent = document.getElementById('anonymousCheck').checked ? 'Yes' : 'No';
 
-    // Feedback text
     const text = feedbackText.value.trim();
     document.getElementById('reviewText').textContent = text || '—';
 }
 
-// ==================== FORM SUBMIT VALIDATION ====================
-document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-    if (!validateStep(1) || !validateStep(2)) {
+// ==================== SECTION NAVIGATION ====================
+const sections = ['section-category', 'section-details', 'section-review'];
+const navItems = document.querySelectorAll('.section-nav-item');
+
+function updateActiveNav() {
+    let activeSection = 0;
+    sections.forEach((id, index) => {
+        const el = document.getElementById(id);
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.top <= 200) {
+                activeSection = index;
+            }
+        }
+    });
+    navItems.forEach((item, index) => {
+        item.classList.remove('active', 'completed');
+        if (index === activeSection) item.classList.add('active');
+        else if (index < activeSection) item.classList.add('completed');
+    });
+}
+
+window.addEventListener('scroll', updateActiveNav);
+
+navItems.forEach(item => {
+    item.addEventListener('click', function(e) {
         e.preventDefault();
-        goToStep(1);
-        // Show error alert
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-error mb-4';
-        alertDiv.textContent = '⚠️ Please fix the errors above before submitting.';
-        document.querySelector('.feedback-form-header').after(alertDiv);
-        setTimeout(() => alertDiv.remove(), 4000);
-    }
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
 });
 
-// ==================== KEYBOARD SHORTCUTS ====================
-document.addEventListener('keydown', function(e) {
-    // Enter on step 1 or 2 goes to next step
-    if (e.key === 'Enter' && (currentStep === 1 || currentStep === 2)) {
-        const activeBtn = document.querySelector('.step-panel.active .step-actions .btn-primary');
-        if (activeBtn) activeBtn.click();
+// ==================== FORM SUBMIT ====================
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+    if (!validateForm()) {
+        e.preventDefault();
+        const firstError = document.querySelector('.field-error.visible');
+        if (firstError) {
+            firstError.closest('.feedback-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-error mb-4';
+        alertDiv.id = 'formErrorAlert';
+        alertDiv.textContent = '⚠️ Please fix the errors above before submitting.';
+        const existing = document.getElementById('formErrorAlert');
+        if (!existing) {
+            document.querySelector('.feedback-form-header').after(alertDiv);
+        }
+        setTimeout(() => {
+            const el = document.getElementById('formErrorAlert');
+            if (el) el.remove();
+        }, 4000);
+    } else {
+        clearDraft();
     }
 });
 
@@ -418,7 +403,6 @@ function saveDraft() {
         location: document.getElementById('locationInput')?.value || '',
         urgency: document.getElementById('urgencySlider')?.value || 3,
         anonymous: document.getElementById('anonymousCheck')?.checked || false,
-        step: currentStep,
         saved_at: new Date().toISOString()
     };
     localStorage.setItem('feedback_draft', JSON.stringify(draft));
@@ -431,16 +415,19 @@ function loadDraft() {
         var draft = JSON.parse(saved);
         if (draft.category) {
             var radio = document.querySelector('input[name="category"][value="' + draft.category + '"]');
-            if (radio) radio.checked = true;
+            if (radio) {
+                radio.checked = true;
+                document.querySelector('.category-card[data-category="' + draft.category + '"]')?.classList.add('selected');
+            }
         }
         if (draft.feedback_text) document.getElementById('feedbackText').value = draft.feedback_text;
-        if (draft.location && document.getElementById('locationInput')) document.getElementById('locationInput').value = draft.location;
+        if (draft.location) document.getElementById('locationInput').value = draft.location;
         if (draft.urgency) {
             document.getElementById('urgencySlider').value = draft.urgency;
             updateUrgency(parseInt(draft.urgency));
         }
-        if (draft.anonymous && document.getElementById('anonymousCheck')) document.getElementById('anonymousCheck').checked = true;
-        if (draft.step && draft.step > 1) goToStep(draft.step);
+        if (draft.anonymous) document.getElementById('anonymousCheck').checked = true;
+        updateReview();
     } catch(e) {}
 }
 
@@ -448,31 +435,10 @@ function clearDraft() {
     localStorage.removeItem('feedback_draft');
 }
 
-// Auto-save on input changes
-document.getElementById('feedbackText').addEventListener('input', function() {
-    saveDraft();
-    // Update char count
-    var len = this.value.length;
-    document.getElementById('charCount').textContent = len + '/1000';
-    if (len >= 10) document.getElementById('textError').classList.remove('visible');
-});
-
-document.querySelectorAll('input[name="category"]').forEach(function(radio) {
-    radio.addEventListener('change', saveDraft);
-});
-
-// Load draft on page load
-loadDraft();
-
-// Clear draft on successful submit
-document.getElementById('feedbackForm').addEventListener('submit', function(e) {
-    if (validateStep(1) && validateStep(2)) {
-        clearDraft();
-    }
-});
-
 // ==================== INIT ====================
+loadDraft();
 updateUrgency(3);
+updateActiveNav();
 </script>
 {% endblock %}
 

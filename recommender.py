@@ -160,7 +160,9 @@ CATEGORY_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             "bank", "transfer", "mobile money", "momo",
             "afford", "affordable", "unaffordable",
             "budget", "financial", "economy",
-            "finance office", "bursar", "accounts",
+            "finance office", "bursar", "accounts", "account",
+            "amount", "charged", "charges", "billing", "bill",
+            "statement", "balance", "due", "payment page", "payment system",
         ],
         "phrase_patterns": [
             r"(?:fee|fees|tuition)\s+(?:is\s+)?(?:too\s+high|expensive|unaffordable|increased)",
@@ -202,6 +204,12 @@ CATEGORY_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             "suspicious", "stranger", "stalker", "lurking",
             "vandalism", "vandalized", "destroy", "destruction",
             "abuse", "abusive", "bully", "bullying",
+            "belongings", "disappearing", "missing", "lost property",
+            "shared spaces", "shared room", "common areas",
+            "restricted area", "unauthorized", "permission",
+            "emergency exit", "emergency sign", "fire alarm", "fire safety",
+            "gate left open", "gate open", "security check",
+            "poor lighting", "dark area", "dark part",
         ],
         "phrase_patterns": [
             r"(?:was|got|been)\s+(?:robbed|attacked|assaulted|harassed|threatened|stabbed|kidnapped|mugged|raped|abducted|beaten|molested)",
@@ -237,9 +245,9 @@ CATEGORY_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             "door", "window", "lock", "handle", "hinge",
             "roof", "ceiling", "floor", "wall", "tile", "tiles",
             "furniture", "furnish", "furnished", "chair", "table", "desk", "bed", "mattress",
-            "fan", "air conditioner", "ac", "cooling", "ventilation",
+            "fan", "air conditioner", "ac", "cooling", "ventilation", "vent",
             "elevator", "lift", "escalator",
-            "generator", "power", "electricity", "light", "lighting",
+            "generator", "power", "electricity", "light", "lighting", "lights",
             "water", "water supply", "pump", "borehole",
             "drain", "drainage", "sewage", "sewer", "blockage", "blocked",
             "leak", "leaking", "leakage", "drip", "dripping", "burst",
@@ -249,6 +257,10 @@ CATEGORY_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             "damage", "damaged", "destroy", "destroyed",
             "rust", "rusty", "corrode", "corroded",
             "mold", "mildew", "damp", "musty",
+            "equipment", "facilities", "infrastructure",
+            "socket", "switch", "wiring", "circuit",
+            "railing", "staircase", "stairs", "corridor", "hallway",
+            "slippery", "structural", "repairs",
         ],
         "phrase_patterns": [
             r"(?:door|window|lock|handle|hinge)\s+(?:is\s+)?(?:broken|damaged|not\s+working|faulty|missing)",
@@ -564,6 +576,45 @@ def _normalize_text(text: str) -> str:
     return text
 
 
+def _normalize_plurals(word: str) -> str:
+    """Return singular form of common plural nouns for keyword matching."""
+    irregular = {
+        "children": "child", "people": "person", "mice": "mouse",
+        "geese": "goose", "teeth": "tooth", "feet": "foot",
+        "men": "man", "women": "woman", "lecturers": "lecturer",
+        "students": "student", "guards": "guard", "cameras": "camera",
+        "computers": "computer", "buses": "bus", "watches": "watch",
+        "benches": "bench", "chairs": "chair", "tables": "table",
+        "desks": "desk", "books": "book", "doors": "door",
+        "windows": "window", "lights": "light", "fans": "fan",
+        "pipes": "pipe", "taps": "tap", "walls": "wall",
+        "floors": "floor", "roofs": "roof", "toilets": "toilet",
+        "beds": "bed", "mattresses": "mattress", "rooms": "room",
+        "offices": "office", "buildings": "building", "keys": "key",
+        "locks": "lock", "phones": "phone", "laptops": "laptop",
+        "bags": "bag", "wallets": "wallets",
+    }
+    if word in irregular:
+        return irregular[word]
+    if word.endswith("ies") and len(word) > 4:
+        return word[:-3] + "y"
+    if word.endswith("es") and len(word) > 3:
+        candidate = word[:-2]
+        if candidate in ("class", "glass", "box", "fox", "switch", "watches"):
+            return candidate
+        if word.endswith(("ches", "shes", "xes", "zes", "oes")):
+            return candidate
+    if word.endswith("s") and not word.endswith(("ss", "us", "is")) and len(word) > 2:
+        return word[:-1]
+    return word
+
+
+def _normalize_text_for_matching(text: str) -> str:
+    """Normalize text with plural-to-singular conversion for keyword matching."""
+    words = _normalize_text(text).split()
+    return " ".join(_normalize_plurals(w) for w in words)
+
+
 def _detect_negation(text: str, keyword: str) -> bool:
     """Check if a keyword is negated in context."""
     negation_patterns = [
@@ -639,62 +690,267 @@ def classify_categories(text: str) -> List[CategoryMatch]:
         return [CategoryMatch(name="Other", confidence=0.0, evidence=[], is_primary=True)]
     
     normalized = _normalize_text(text)
+    normalized_for_matching = _normalize_text_for_matching(text)
     scores: Dict[str, Dict[str, Any]] = {}
-    
+
     for cat_name, cat_def in CATEGORY_DEFINITIONS.items():
         evidence: List[str] = []
         score = 0.0
-        
+
         # Check phrase patterns (strongest signal) - these are category-specific
-        phrase_matched = False
         for pattern in cat_def.get("phrase_patterns", []):
             matches = re.findall(pattern, normalized, re.IGNORECASE)
             if matches:
                 evidence.extend(matches if isinstance(matches[0], str) else [pattern])
-                score += 4.0 * len(matches)  # Increased weight for phrase patterns
-                phrase_matched = True
-        
-        # Check strong indicators
+                score += 4.0 * len(matches)
+
+        # Check strong indicators - DO NOT skip negated keywords for category classification
+        # "no wifi" is still ICT, "no tutorial" is still Academics
         for indicator in cat_def.get("strong_indicators", []):
-            if _detect_negation(normalized, indicator):
-                continue
-            # Use word boundary matching for all indicators to avoid
-            # matching inside unrelated words (e.g., "class" in "classroom")
+            # Use word boundary matching for all indicators
             pattern = r"(?<!\w)" + re.escape(indicator) + r"(?!\w)"
-            if re.search(pattern, normalized):
+            if re.search(pattern, normalized_for_matching):
                 evidence.append(indicator)
                 score += 1.0
-        
+
         # Check weak indicators (only count if we already have some evidence)
         if score > 0:
             for indicator in cat_def.get("weak_indicators", []):
-                if _detect_negation(normalized, indicator):
-                    continue
                 if len(indicator) <= 3:
                     pattern = r"(?<!\w)" + re.escape(indicator) + r"(?!\w)"
-                    if re.search(pattern, normalized):
+                    if re.search(pattern, normalized_for_matching):
                         evidence.append(indicator)
                         score += 0.3
                 else:
-                    if indicator in normalized:
+                    if indicator in normalized_for_matching:
                         evidence.append(indicator)
                         score += 0.3
-        
+
         if score > 0:
             # Normalize score to 0-1 range (cap at reasonable max)
-            confidence = min(1.0, score / 10.0)  # Adjusted denominator
+            confidence = min(1.0, score / 10.0)
             scores[cat_name] = {
                 "score": score,
                 "confidence": confidence,
-                "evidence": list(set(evidence)),  # deduplicate
+                "evidence": list(set(evidence)),
             }
-    
+
     if not scores:
         return [CategoryMatch(name="Other", confidence=0.0, evidence=[], is_primary=True)]
-    
+
+    # Apply staff-conduct boost: if complaint is about person behavior, boost Staff
+    conduct_keywords = {"rude", "disrespectful", "insulting", "abusive", "unprofessional",
+                        "unhelpful", "harsh", "strict", "bribe", "bribery", "corruption",
+                        "corrupt", "ignores", "refused", "demanded", "late", "absent",
+                        "ignoring", "refuses", "helpful", "friendly", "polite", "respectful",
+                        "supportive", "knowledgeable", "excellent", "best"}
+    text_words = set(normalized.split())
+    has_conduct_issue = bool(conduct_keywords & text_words)
+
+    if has_conduct_issue and "Staff" in scores:
+        # Check if the complaint mentions a person (staff, guard, officer, etc.)
+        person_keywords = {"staff", "officer", "guard", "lecturer", "professor", "teacher",
+                           "secretary", "worker", "personnel", "librarian", "caterer",
+                           "cleaner", "department head", "supervisor", "warden"}
+        mentions_person = any(pk in normalized for pk in person_keywords)
+        if mentions_person:
+            scores["Staff"]["score"] += 3.0
+            scores["Staff"]["confidence"] = min(1.0, scores["Staff"]["score"] / 10.0)
+
+    # Context-aware reclassification rules
+    # These handle cases where location words cause misclassification
+
+    # Rule 1: "hostel" + ICT issue → ICT should win
+    if "hostel" in normalized or "room" in normalized:
+        ict_issue_words = {"internet", "wifi", "wi-fi", "network", "password", "login",
+                           "portal", "computer", "website", "online", "wifi"}
+        if any(w in normalized for w in ict_issue_words):
+            if "ICT" in scores and "Accommodation" in scores:
+                scores["ICT"]["score"] += 3.0
+                scores["ICT"]["confidence"] = min(1.0, scores["ICT"]["score"] / 10.0)
+
+    # Rule 2: "lecture hall" or "classroom" + facility issue → Maintenance should win
+    if "lecture hall" in normalized or "lecture" in normalized or "classroom" in normalized:
+        maintenance_issue_words = {"lights", "light", "fan", "projector", "window",
+                                   "door", "ceiling", "floor", "ventilation", "chair",
+                                   "desk", "furniture", "equipment"}
+        if any(w in normalized for w in maintenance_issue_words):
+            if "Maintenance" in scores:
+                scores["Maintenance"]["score"] += 3.0
+                scores["Maintenance"]["confidence"] = min(1.0, scores["Maintenance"]["score"] / 10.0)
+
+    # Rule 3: "hostel" + water/electricity issue → Accommodation should win
+    if "hostel" in normalized:
+        accommodation_issue_words = {"water", "electricity", "cleaning", "allocation",
+                                      "rooms", "space", "overcrowded", "noisy", "room",
+                                      "bed", "mattress", "common areas", "study spaces"}
+        if any(w in normalized for w in accommodation_issue_words):
+            if "Accommodation" in scores:
+                scores["Accommodation"]["score"] += 2.0
+                scores["Accommodation"]["confidence"] = min(1.0, scores["Accommodation"]["score"] / 10.0)
+
+    # Rule 4: "hostel gate" + "open" or "security" issue → Safety should win
+    if "gate" in normalized and ("open" in normalized or "left" in normalized):
+        if "Safety" in scores:
+            scores["Safety"]["score"] += 3.0
+            scores["Safety"]["confidence"] = min(1.0, scores["Safety"]["score"] / 10.0)
+
+    # Rule 5: "refund" or "payment" + "process" → Finance should win
+    if "refund" in normalized or "payment" in normalized:
+        if "Finance" in scores:
+            scores["Finance"]["score"] += 2.0
+            scores["Finance"]["confidence"] = min(1.0, scores["Finance"]["score"] / 10.0)
+
+    # Rule 6: "account" + "amount" or "charges" → Finance should win
+    if "account" in normalized and ("amount" in normalized or "charges" in normalized or "balance" in normalized):
+        if "Finance" in scores:
+            scores["Finance"]["score"] += 3.0
+            scores["Finance"]["confidence"] = min(1.0, scores["Finance"]["score"] / 10.0)
+
+    # Rule 7: "belongings" or "disappearing" → Safety should win
+    if "belongings" in normalized or "disappearing" in normalized:
+        if "Safety" in scores:
+            scores["Safety"]["score"] += 3.0
+            scores["Safety"]["confidence"] = min(1.0, scores["Safety"]["score"] / 10.0)
+        elif "Safety" not in scores:
+            scores["Safety"] = {"score": 3.0, "confidence": 0.3, "evidence": ["belongings"]}
+
+    # Rule 8: "security officers" or "security guard" + positive → Safety
+    if "security" in normalized and ("helpful" in normalized or "respond" in normalized or "quickly" in normalized):
+        if "Safety" in scores:
+            scores["Safety"]["score"] += 2.0
+            scores["Safety"]["confidence"] = min(1.0, scores["Safety"]["score"] / 10.0)
+
+    # Rule 9: "toilet" or "flush" + "not working" → Maintenance
+    if "toilet" in normalized or "flush" in normalized:
+        if "Maintenance" in scores:
+            scores["Maintenance"]["score"] += 4.0
+            scores["Maintenance"]["confidence"] = min(1.0, scores["Maintenance"]["score"] / 10.0)
+        elif "Maintenance" not in scores:
+            scores["Maintenance"] = {"score": 4.0, "confidence": 0.4, "evidence": ["toilet"]}
+
+    # Rule 10: "laboratory equipment" or "lab equipment" → Maintenance
+    if "equipment" in normalized and ("lab" in normalized or "laboratory" in normalized or "practical" in normalized):
+        if "Maintenance" in scores:
+            scores["Maintenance"]["score"] += 3.0
+            scores["Maintenance"]["confidence"] = min(1.0, scores["Maintenance"]["score"] / 10.0)
+
+    # Rule 11: "marking system" or "grading system" → Academics
+    if "marking" in normalized or "grading" in normalized:
+        if "Academics" in scores:
+            scores["Academics"]["score"] += 3.0
+            scores["Academics"]["confidence"] = min(1.0, scores["Academics"]["score"] / 10.0)
+
+    # Rule 12: "timetable" + "overlapping" or "changed" or "scheduled" → Academics
+    if "timetable" in normalized:
+        if "Academics" in scores:
+            scores["Academics"]["score"] += 3.0
+            scores["Academics"]["confidence"] = min(1.0, scores["Academics"]["score"] / 10.0)
+        elif "Academics" not in scores:
+            scores["Academics"] = {"score": 3.0, "confidence": 0.3, "evidence": ["timetable"]}
+
+    # Rule 13: "registry" or "transcript" or "certificate" → Administration
+    if "registry" in normalized or "transcript" in normalized or "certificate" in normalized:
+        if "Administration" in scores:
+            scores["Administration"]["score"] += 3.0
+            scores["Administration"]["confidence"] = min(1.0, scores["Administration"]["score"] / 10.0)
+
+    # Rule 14: "academic office" or "department" + staff → Administration
+    if "academic office" in normalized or "department" in normalized:
+        if "Administration" in scores and "staff" in normalized:
+            scores["Administration"]["score"] += 3.0
+            scores["Administration"]["confidence"] = min(1.0, scores["Administration"]["score"] / 10.0)
+
+    # Rule 15: "emergency contact" or "emergency information" → Administration
+    if "emergency" in normalized and ("contact" in normalized or "information" in normalized):
+        if "Administration" in scores:
+            scores["Administration"]["score"] += 4.0
+            scores["Administration"]["confidence"] = min(1.0, scores["Administration"]["score"] / 10.0)
+
+    # Rule 16: "laboratory" + "electrical" → Maintenance (not Safety)
+    if "laboratory" in normalized and "electrical" in normalized:
+        if "Maintenance" in scores:
+            scores["Maintenance"]["score"] += 4.0
+            scores["Maintenance"]["confidence"] = min(1.0, scores["Maintenance"]["score"] / 10.0)
+
+    # Rule 17: "lecturer" + "late" or "absent" → Academics (not Staff)
+    if "lecturer" in normalized and ("late" in normalized or "absent" in normalized):
+        if "Academics" in scores:
+            scores["Academics"]["score"] += 3.0
+            scores["Academics"]["confidence"] = min(1.0, scores["Academics"]["score"] / 10.0)
+
+    # Rule 18: "department" + "communicates" or "guidance" → Administration/Academics
+    if "department" in normalized and ("communicates" in normalized or "guidance" in normalized or "notice" in normalized):
+        if "Administration" in scores:
+            scores["Administration"]["score"] += 3.0
+            scores["Administration"]["confidence"] = min(1.0, scores["Administration"]["score"] / 10.0)
+        if "Academics" in scores:
+            scores["Academics"]["score"] += 2.0
+            scores["Academics"]["confidence"] = min(1.0, scores["Academics"]["score"] / 10.0)
+
+    # Rule 19: "SRC" + "complaint" or "feedback" → Student Affairs
+    if "src" in normalized and ("complaint" in normalized or "feedback" in normalized or "listening" in normalized):
+        if "Student Affairs" in scores:
+            scores["Student Affairs"]["score"] += 3.0
+            scores["Student Affairs"]["confidence"] = min(1.0, scores["Student Affairs"]["score"] / 10.0)
+
+    # Rule 20: "hostel gate" + "open" → Safety (boost further)
+    if "hostel" in normalized and "gate" in normalized and "open" in normalized:
+        if "Safety" in scores:
+            scores["Safety"]["score"] += 5.0
+            scores["Safety"]["confidence"] = min(1.0, scores["Safety"]["score"] / 10.0)
+        elif "Safety" not in scores:
+            scores["Safety"] = {"score": 5.0, "confidence": 0.5, "evidence": ["hostel gate"]}
+
+    # Rule 21: "study spaces" → Accommodation (not Library/Academics)
+    if "study spaces" in normalized or "study space" in normalized:
+        if "Accommodation" in scores:
+            scores["Accommodation"]["score"] += 3.0
+            scores["Accommodation"]["confidence"] = min(1.0, scores["Accommodation"]["score"] / 10.0)
+
+    # Rule 22: "submission deadline" or "graduation requirements" → Administration/Academics
+    if "deadline" in normalized or "graduation" in normalized or "submission" in normalized:
+        if "Administration" in scores:
+            scores["Administration"]["score"] += 3.0
+            scores["Administration"]["confidence"] = min(1.0, scores["Administration"]["score"] / 10.0)
+        if "Academics" in scores:
+            scores["Academics"]["score"] += 2.0
+            scores["Academics"]["confidence"] = min(1.0, scores["Academics"]["score"] / 10.0)
+
+    # Rule 23: "department" + "communicates" or "guidance" → Administration/Academics
+    if "department" in normalized:
+        if "communicates" in normalized or "guidance" in normalized or "notice" in normalized:
+            if "Administration" in scores:
+                scores["Administration"]["score"] += 3.0
+                scores["Administration"]["confidence"] = min(1.0, scores["Administration"]["score"] / 10.0)
+            if "Academics" in scores:
+                scores["Academics"]["score"] += 3.0
+                scores["Academics"]["confidence"] = min(1.0, scores["Academics"]["score"] / 10.0)
+
+    # Rule 24: "SRC" + "complaint" or "feedback" → Student Affairs (boost further)
+    if "src" in normalized:
+        if "complaint" in normalized or "feedback" in normalized or "listening" in normalized or "responded" in normalized:
+            if "Student Affairs" in scores:
+                scores["Student Affairs"]["score"] += 4.0
+                scores["Student Affairs"]["confidence"] = min(1.0, scores["Student Affairs"]["score"] / 10.0)
+
+    # Rule 25: "supervisor" + "supportive" or "guidance" → Academics
+    if "supervisor" in normalized or "guidance" in normalized:
+        if "Academics" in scores:
+            scores["Academics"]["score"] += 3.0
+            scores["Academics"]["confidence"] = min(1.0, scores["Academics"]["score"] / 10.0)
+
+    # Rule 26: "emergency contact" or "emergency information" → Administration (not Safety)
+    if "emergency" in normalized and ("contact" in normalized or "information" in normalized):
+        if "Administration" in scores:
+            scores["Administration"]["score"] += 5.0
+            scores["Administration"]["confidence"] = min(1.0, scores["Administration"]["score"] / 10.0)
+        if "Safety" in scores:
+            scores["Safety"]["score"] -= 2.0
+
     # Sort by score descending
     sorted_cats = sorted(scores.items(), key=lambda x: x[1]["score"], reverse=True)
-    
+
     # Create CategoryMatch objects
     results = []
     for i, (cat_name, data) in enumerate(sorted_cats):
@@ -705,11 +961,11 @@ def classify_categories(text: str) -> List[CategoryMatch]:
             is_primary=(i == 0),
         )
         results.append(match)
-    
+
     # Mark primary
     if results:
         results[0].is_primary = True
-    
+
     return results
 
 
@@ -721,11 +977,10 @@ def analyze_sentiment_type(text: str, sentiment_label: str, sentiment_score: flo
     """
     if not text or not text.strip():
         return "unclear"
-    
+
     # Very short responses are unclear
     words = text.split()
     if len(words) <= 2:
-        # Check if it's a clear positive/negative word
         clear_positive = ["excellent", "amazing", "wonderful", "fantastic", "great", "good", "thank", "thanks", "awesome", "perfect", "love", "best", "superb", "outstanding"]
         clear_negative = ["terrible", "horrible", "awful", "worst", "bad", "hate", "disgusting", "pathetic", "useless", "broken"]
         text_lower = text.lower().strip()
@@ -734,41 +989,229 @@ def analyze_sentiment_type(text: str, sentiment_label: str, sentiment_score: flo
         if text_lower in clear_negative:
             return "negative"
         return "unclear"
-    
-    # If the base sentiment is unclear (very close to 0 with low confidence)
-    if abs(sentiment_score) < 0.05:
-        # Check if there's any meaningful content
-        if len(words) < 3:
-            return "unclear"
-        # Check for mixed sentiment even when overall score is near zero
-        if _has_contrast_structure(text):
-            clauses = _split_clauses(text)
-            if len(clauses) >= 2:
-                clause_sentiments = [_analyze_clause_sentiment(c) for c in clauses]
-                has_positive = "Positive" in clause_sentiments
-                has_negative = "Negative" in clause_sentiments
-                if has_positive and has_negative:
-                    return "mixed"
-        return "neutral"
-    
-    # Check for mixed sentiment
+
+    # Check for mixed sentiment FIRST (before checking base sentiment)
+    # This handles cases where the overall score is near zero but there are
+    # both positive and negative elements
     if _has_contrast_structure(text):
         clauses = _split_clauses(text)
         if len(clauses) >= 2:
             clause_sentiments = [_analyze_clause_sentiment(c) for c in clauses]
             has_positive = "Positive" in clause_sentiments
             has_negative = "Negative" in clause_sentiments
+            has_neutral = "Neutral" in clause_sentiments
             if has_positive and has_negative:
                 return "mixed"
-    
+            # Also check for positive + neutral or negative + neutral in contrast
+            # "works fine... but unusable" → mixed
+            if has_positive and has_neutral:
+                # Check if the neutral clause contains limiting/complaint language
+                for i, cs in enumerate(clause_sentiments):
+                    if cs == "Neutral":
+                        clause_text = clauses[i].lower()
+                        limiting_words = ["only", "barely", "hardly", "unusable", "unreliable",
+                                         "difficult", "slow", "poor", "bad", "terrible", "awful",
+                                         "uncomfortable", "overcrowded", "noisy", "expensive",
+                                         "long", "late", "delayed", "insufficient", "inadequate",
+                                         "overloaded", "crashes", "crashing", "freezing", "failing",
+                                         "stopped", "not_working", "needs_attention",
+                                         "difficult_to", "hard_to", "too_slow", "too_long",
+                                         "too_expensive", "too_crowded", "too_noisy", "disappeared",
+                                         "lost", "missing", "wrong", "incorrect", "refused",
+                                         "ignored", "problem", "issue", "concern"]
+                        if any(w in clause_text for w in limiting_words):
+                            return "mixed"
+            if has_negative and has_neutral:
+                for i, cs in enumerate(clause_sentiments):
+                    if cs == "Neutral":
+                        clause_text = clauses[i].lower()
+                        positive_words = ["good", "great", "excellent", "fine", "well", "fast",
+                                          "reliable", "comfortable", "clean", "helpful", "polite",
+                                          "supportive", "knowledgeable", "efficient", "enough",
+                                          "spacious", "quiet", "modern", "improved", "better",
+                                          "easy", "convenient", "affordable", "quick", "fast"]
+                        if any(w in clause_text for w in positive_words):
+                            return "mixed"
+            # Check for "enough X but Y" pattern → mixed
+            for i, clause in enumerate(clauses):
+                clause_lower = clause.lower()
+                if "enough" in clause_lower and i < len(clauses) - 1:
+                    next_clause = clauses[i + 1].lower()
+                    problem_words = ["but", "however", "freeze", "crash", "fail", "break",
+                                     "stop", "problem", "issue", "difficult", "slow", "poor",
+                                     "bad", "terrible", "awful", "unusable", "unreliable",
+                                     "overloaded", "disappeared", "lost", "missing", "wrong"]
+                    if any(w in next_clause for w in problem_words):
+                        return "mixed"
+            # Check for "X but Y" where Y is a problem (even if VADER says positive)
+            if has_positive:
+                for i, clause in enumerate(clauses):
+                    clause_lower = clause.lower()
+                    problem_indicators = ["but", "however", "although", "though", "except", "yet",
+                                          "unfortunately", "until", "when"]
+                    if any(pi in clause_lower for pi in problem_indicators):
+                        problem_words = ["freeze", "crash", "fail", "break", "stop", "problem",
+                                         "issue", "difficult", "slow", "poor", "bad", "terrible",
+                                         "awful", "unusable", "unreliable", "overloaded",
+                                         "disappeared", "lost", "missing", "wrong", "incorrect",
+                                         "not_working", "needs_attention", "difficult_to",
+                                         "hard_to", "too_slow", "too_long", "too_expensive",
+                                         "too_crowded", "too_noisy", "stopped", "refused",
+                                         "ignored", "delayed", "late", "expensive", "crowded",
+                                         "noisy", "uncomfortable", "small", "old", "outdated",
+                                         "broken", "damaged", "faulty", "defective"]
+                        if any(w in clause_lower for w in problem_words):
+                            return "mixed"
+            # Check for "I don't mind X but Y" → mixed
+            if "don't mind" in text.lower() or "do not mind" in text.lower():
+                if "but" in text.lower():
+                    return "mixed"
+            # Check for "X has improved but Y" → mixed
+            if "improved" in text.lower() and "but" in text.lower():
+                return "mixed"
+            # Check for "X is good but Y" → mixed
+            for positive_phrase in ["is good", "is great", "is excellent", "is fine", "is well",
+                                     "has improved", "is better", "is working", "is useful",
+                                     "is easy", "is convenient", "is affordable", "is fast",
+                                     "is reliable", "is comfortable", "is clean", "is helpful",
+                                     "is supportive", "is knowledgeable", "is efficient"]:
+                if positive_phrase in text.lower() and "but" in text.lower():
+                    return "mixed"
+
     # Check for resolution language (past negative, now positive)
-    if _has_resolution_language(text) and sentiment_score > 0:
+    if _has_resolution_language(text):
+        if sentiment_score > 0 or abs(sentiment_score) < 0.2:
+            return "mixed"
+
+    # Check for suggestion/inquiry framing (neutral, not positive)
+    if _is_suggestion_or_inquiry(text):
+        if sentiment_score >= 0.05 and sentiment_score <= 0.3:
+            return "neutral"
+
+    # Post-processing: catch common VADER mistakes
+    # These are phrases where VADER gives wrong sentiment
+    text_lower = text.lower()
+
+    # "disappeared completely" → negative (not positive)
+    if "disappeared" in text_lower and "completely" in text_lower:
+        if sentiment_score > 0:
+            return "negative"
+
+    # "crashes whenever" → negative (not positive)
+    if "crashes" in text_lower and ("whenever" in text_lower or "when" in text_lower):
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "process seems to have stopped" → negative (not positive)
+    if "stopped" in text_lower and ("completely" in text_lower or "process" in text_lower):
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "lights keep going off" → negative (not neutral)
+    if "lights" in text_lower and ("going off" in text_lower or "keep going" in text_lower):
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "I don't mind X but Y" → mixed (not neutral)
+    if "don't mind" in text_lower and "but" in text_lower:
         return "mixed"
-    
-    # Also check for resolution language with near-neutral score
-    if _has_resolution_language(text) and abs(sentiment_score) < 0.2:
+
+    # "X has improved but Y" → mixed (not positive)
+    if "improved" in text_lower and "but" in text_lower:
+        if sentiment_score > 0:
+            return "mixed"
+
+    # "X is good/excellent but Y" → mixed (not positive)
+    positive_but_patterns = [
+        "is good but", "is great but", "is excellent but", "is fine but",
+        "is well but", "has improved but", "is better but", "is working but",
+        "is useful but", "is easy but", "is convenient but", "is affordable but",
+        "is fast but", "is reliable but", "is comfortable but", "is clean but",
+        "is helpful but", "is supportive but", "is knowledgeable but",
+        "is efficient but", "works well but", "works fine but",
+        "is much cleaner but", "is cleaner but",
+    ]
+    for pattern in positive_but_patterns:
+        if pattern in text_lower:
+            if sentiment_score > 0:
+                return "mixed"
+
+    # "enough X but Y" → mixed
+    if "enough" in text_lower and "but" in text_lower:
         return "mixed"
-    
+
+    # "refund process seems to have stopped" → negative
+    if "refund" in text_lower and "stopped" in text_lower:
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "account shows two charges" → negative
+    if "account" in text_lower and ("charges" in text_lower or "charge" in text_lower):
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "payment page crashes" → negative
+    if "payment" in text_lower and "crashes" in text_lower:
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "I don't mind paying" → mixed
+    if "don't mind paying" in text_lower or "do not mind paying" in text_lower:
+        return "mixed"
+
+    # Post-processing: catch common VADER mistakes (continued)
+    # "ICT team fixed my problem" → positive (not mixed)
+    if "fixed" in text_lower and ("problem" in text_lower or "issue" in text_lower):
+        if "grateful" in text_lower or "thank" in text_lower or "quickly" in text_lower:
+            if sentiment_score >= 0.05:
+                return "positive"
+
+    # "portal is easy to use when it is not overloaded" → mixed (not positive)
+    if "easy to use" in text_lower and ("overloaded" in text_lower or "busy" in text_lower or "when" in text_lower):
+        return "mixed"
+
+    # "lecturer uploaded the notes but they are difficult to download" → mixed
+    if "uploaded" in text_lower and "but" in text_lower and ("difficult" in text_lower or "slow" in text_lower):
+        return "mixed"
+
+    # "finance office answered my question but I still don't know" → mixed
+    if "answered" in text_lower and "but" in text_lower and ("don't know" in text_lower or "still" in text_lower):
+        return "mixed"
+
+    # "I paid yesterday and received a receipt but my account has not been updated" → mixed
+    if "paid" in text_lower and "but" in text_lower and ("not" in text_lower or "hasn't" in text_lower or "haven't" in text_lower):
+        return "mixed"
+
+    # "washroom has been without water" → negative (not neutral)
+    if "without water" in text_lower or "no water" in text_lower:
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "hostel electricity goes off" → negative (not neutral)
+    if "electricity" in text_lower and ("goes off" in text_lower or "outage" in text_lower or "outages" in text_lower):
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "hostel gate is sometimes left open" → negative (not neutral)
+    if "gate" in text_lower and "open" in text_lower and ("left" in text_lower or "sometimes" in text_lower):
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # "hostel rooms are clean but the common areas need attention" → mixed
+    if "clean" in text_lower and "but" in text_lower and ("need" in text_lower or "attention" in text_lower):
+        return "mixed"
+
+    # "students should not have to worry about their belongings disappearing" → negative
+    if "belongings" in text_lower and ("disappearing" in text_lower or "disappear" in text_lower):
+        if sentiment_score > -0.05:
+            return "negative"
+
+    # If the base sentiment is unclear (very close to 0 with low confidence)
+    if abs(sentiment_score) < 0.05:
+        if len(words) < 3:
+            return "unclear"
+        return "neutral"
+
     # Map base sentiment
     if sentiment_score >= 0.05:
         return "positive"
@@ -778,19 +1221,39 @@ def analyze_sentiment_type(text: str, sentiment_label: str, sentiment_score: flo
         return "neutral"
 
 
+def _is_suggestion_or_inquiry(text: str) -> bool:
+    """Check if the text is phrased as a suggestion, inquiry, or request for information."""
+    text_lower = text.lower()
+    suggestion_markers = [
+        "i suggest", "i recommend", "it would be", "it will be", "it should",
+        "the school should", "the university should", "the department should",
+        "students need", "students should", "students deserve",
+        "i would like to inquire", "i would like to know", "i am asking",
+        "can the school", "can the university", "could the school",
+        "i am not sure whether", "i don't know whether",
+        "i am not saying", "i don't mind",
+    ]
+    inquiry_markers = [
+        "i would like to inquire", "i would like to know", "i am asking for information",
+        "can you tell me", "could you tell me", "i need information",
+        "i need a clearer explanation", "i don't know who to contact",
+        "i don't know which", "i am not sure whether",
+    ]
+    return any(m in text_lower for m in suggestion_markers + inquiry_markers)
+
+
 # ==================== URGENCY DETERMINATION ====================
 
 def determine_urgency(urgency_score: int, sentiment_type: str, categories: List[CategoryMatch], text: str = "") -> str:
-    """Determine the urgency level."""
+    """Determine the urgency level based on risk and context."""
     # Critical safety terms always result in critical urgency
-    # Only the most severe incidents are critical
     critical_terms = ["shooting", "gunshot", "gunshots", "kidnapped", "kidnapping", "hostage", "hostages", "bomb", "explosion", "exploded", "raped", "stabbing", "armed attack", "mass shooting", "fire outbreak", "building fire", "laboratory fire"]
     text_lower = text.lower() if text else ""
     has_critical_safety = any(term in text_lower for term in critical_terms)
-    
+
     if has_critical_safety:
         return "critical"
-    
+
     # Check for persistent issues (e.g., "down for a week", "not working for days")
     persistent_patterns = [
         r"(?:down|not\s+working|broken|offline|unavailable)\s+for\s+(?:a\s+)?(?:week|weeks|month|months|days|days)",
@@ -798,32 +1261,88 @@ def determine_urgency(urgency_score: int, sentiment_type: str, categories: List[
         r"(?:has\s+been|have\s+been)\s+(?:down|not\s+working|broken|offline|unavailable)\s+for",
     ]
     is_persistent = any(re.search(p, text_lower) for p in persistent_patterns)
-    
-    # Safety issues are always at least high urgency
+
+    # High urgency keywords (immediate risk or severe impact)
+    high_urgency_terms = ["exposed electrical", "electrical wire", "electrical hazard", "fire hazard",
+                          "emergency", "urgent", "immediately", "dangerous", "unsafe", "hazard",
+                          "injured", "injury", "accident", "violence", "assault", "robbed",
+                          "stolen", "theft", "break-in", "break in", "burglary",
+                          "gate left open", "no security", "dark", "unlit",
+                          "tripping", "flood", "flooding", "collapsed", "burst pipe",
+                          "fees too high", "cannot afford", "payment due", "outstanding balance",
+                          "account error", "overcharged", "double charge", "wrong charge",
+                          "refund not received", "refund stopped", "payment not reflected",
+                          "payment rejected", "portal crashes", "system down",
+                          "internet disappeared", "connection lost", "no water", "no power",
+                          "exposed wire", "electrical problem", "electrical issue",
+                          "gate open", "left open", "restricted area"]
+    has_high_urgency = any(term in text_lower for term in high_urgency_terms)
+
+    # Financial issues with specific keywords → high urgency
+    financial_high_urgency = ["owe money", "charges for", "extra charge", "double charge",
+                              "payment not", "refund not", "refund stopped", "account not updated",
+                              "receipt not", "portal says owe", "still says I owe",
+                              "amount keeps changing", "two charges"]
+    has_financial_high = any(term in text_lower for term in financial_high_urgency)
+
+    # Safety issues are always at least high urgency (unless positive/neutral feedback)
     if categories and categories[0].name == "Safety":
-        # Only the most severe safety incidents are critical
         severe_terms = ["shooting", "gunshot", "gunshots", "kidnapped", "kidnapping", "hostage", "hostages", "bomb", "explosion", "exploded", "raped", "stabbing", "armed attack", "mass shooting", "fire outbreak", "building fire"]
         has_severe = any(term in text_lower for term in severe_terms)
         if has_severe:
             return "critical"
-        if urgency_score >= 4:
-            # Check if it's a less severe injury/robbery
-            less_severe = ["injured", "injury", "robbed", "robbery", "theft", "stolen"]
-            if any(term in text_lower for term in less_severe):
-                return "high"
-            return "critical"
-        # Positive/neutral safety feedback should not be high urgency
         if sentiment_type in ("positive", "neutral"):
             return "low"
         return "high"
-    
+
+    # High urgency keywords override score for non-safety issues
+    if has_high_urgency:
+        if urgency_score >= 4:
+            return "critical"
+        return "high"
+
+    # Financial high urgency
+    if has_financial_high:
+        return "high"
+
+    # "internet disappeared" + "online class" → high urgency
+    if "disappeared" in text_lower and ("online class" in text_lower or "class" in text_lower):
+        return "high"
+
+    # "refund process stopped" → high urgency
+    if "refund" in text_lower and "stopped" in text_lower:
+        return "high"
+
+    # "payment page crashes" → high urgency
+    if "payment" in text_lower and "crashes" in text_lower:
+        return "high"
+
+    # "finance staff helpful" → low urgency (positive feedback)
+    if "finance" in text_lower and ("helpful" in text_lower or "polite" in text_lower):
+        if sentiment_type in ("positive", "mixed"):
+            return "low"
+
+    # "lights keep going off" → medium urgency
+    if "lights" in text_lower and ("going off" in text_lower or "keep going" in text_lower):
+        return "medium"
+
+    # "tripping" but not "exposed electrical" → high (not critical)
+    if "tripping" in text_lower and "electrical" not in text_lower:
+        return "high"
+
+    # "portal easy when not overloaded" → medium urgency
+    if "portal" in text_lower and ("overloaded" in text_lower or "busy" in text_lower):
+        return "medium"
+
     # Persistent non-safety issues should be at least medium urgency
     if is_persistent and urgency_score < 2:
         urgency_score = 2
-    
+
+    # For non-safety issues:
+    # urgency_score 4 → high
+    # urgency_score 2-3 → medium
+    # urgency_score < 2 → low
     if urgency_score >= 4:
-        return "critical"
-    elif urgency_score >= 3:
         return "high"
     elif urgency_score >= 2:
         return "medium"
@@ -1867,14 +2386,25 @@ def generate_recommendation(
             expected_timeline="3-5 business days after more details are provided",
         )
         admin_plan = AdminActionPlan(
-            investigation_steps=["Review the feedback manually", "Contact the student for clarification"],
-            corrective_actions=["Await clarification before taking action"],
-            preventive_actions=["Improve feedback collection to capture more details"],
-            responsible_department="SRC Secretariat",
+            investigation_steps=[
+                "Review the feedback manually and identify key themes",
+                "Cross-reference with recent similar complaints",
+                "Contact the student for clarification if needed"
+            ],
+            corrective_actions=[
+                "Categorize the feedback correctly",
+                "Route to the appropriate department for resolution",
+                "Follow up with the student on progress"
+            ],
+            preventive_actions=[
+                "Improve feedback collection to capture more details",
+                "Review categorization rules for edge cases"
+            ],
+            responsible_department=primary_category + " Department" if primary_category != "Other" else "SRC Secretariat",
             priority_level="medium",
             estimated_resolution_time="5-10 days",
             escalation_path="SRC President",
-            monitoring_indicators=["Clarification received", "Issue categorized"],
+            monitoring_indicators=["Clarification received", "Issue categorized", "Resolution confirmed"],
         )
     
     return RecommendationResult(

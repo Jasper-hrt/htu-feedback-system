@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="student-layout"><aside class="admin-sidebar" aria-label="Admin lexicon manager sidebar">
+<div class="student-layout">
+<aside class="admin-sidebar" aria-label="Admin lexicon manager sidebar">
 <div class="admin-sidebar-title">🛡️ SRC Admin<span class="sub">Control & review</span></div>
 <nav class="admin-sidebar-nav">
 <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
@@ -27,74 +28,371 @@
 </button>
 </form>
 </div>
-</aside><section class="student-content">
-<div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;"><div style="position: relative; z-index: 1;"><div class="admin-hero-title" style="font-size: 1.5rem;">🧠 Custom Lexicon Manager</div><div class="admin-hero-subtitle">Add or disable campus terms and phrases from the admin dashboard instead of editing Python code.</div></div><div class="admin-hero-actions" style="position: relative; z-index: 1;"><a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a></div></div>
+</aside>
+<section class="student-content">
+
+<!-- Hero -->
+<div class="admin-hero" style="background: linear-gradient(135deg, var(--primary-dark) 0%, var(--dark) 50%, var(--primary-dark) 100%); position: relative; overflow: hidden;">
+<div style="position: relative; z-index: 1;">
+<div class="admin-hero-title" style="font-size: 1.5rem;">🧠 Custom Lexicon Manager</div>
+<div class="admin-hero-subtitle">Add or disable campus terms and phrases from the admin dashboard instead of editing Python code.</div>
+</div>
+<div class="admin-hero-actions" style="position: relative; z-index: 1;">
+<a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
+</div>
+</div>
 
 <!-- Stats -->
 <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1rem;">
-    <div class="stat-card">
-        <div class="stat-card-accent" style="background: var(--primary);"></div>
-        <div class="stat-card-icon stat-card-icon-blue">📚</div>
-        <div class="stat-card-value" style="color: var(--primary);">{{ entries|length }}</div>
-        <div class="stat-card-label">Total Terms</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-card-accent" style="background: #10b981;"></div>
-        <div class="stat-card-icon" style="background: rgba(16,185,129,0.1); color: #10b981;">✓</div>
-        <div class="stat-card-value" style="color: #10b981;">{{ entries|selectattr('is_active')|list|length }}</div>
-        <div class="stat-card-label">Active Terms</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-card-accent" style="background: var(--warning);"></div>
-        <div class="stat-card-icon stat-card-icon-amber">⏸️</div>
-        <div class="stat-card-value" style="color: var(--warning);">{{ entries|rejectattr('is_active')|list|length }}</div>
-        <div class="stat-card-label">Disabled Terms</div>
-    </div>
+<div class="stat-card">
+<div class="stat-card-accent" style="background: var(--primary);"></div>
+<div class="stat-card-icon stat-card-icon-blue">📚</div>
+<div class="stat-card-value" style="color: var(--primary);">{{ entries|length }}</div>
+<div class="stat-card-label">Total Terms</div>
+</div>
+<div class="stat-card">
+<div class="stat-card-accent" style="background: var(--success);"></div>
+<div class="stat-card-icon" style="background: var(--success-light); color: var(--success);">✓</div>
+<div class="stat-card-value" style="color: var(--success);">{{ entries|selectattr('is_active')|list|length }}</div>
+<div class="stat-card-label">Active Terms</div>
+</div>
+<div class="stat-card">
+<div class="stat-card-accent" style="background: var(--warning);"></div>
+<div class="stat-card-icon stat-card-icon-amber">⏸️</div>
+<div class="stat-card-value" style="color: var(--warning);">{{ entries|rejectattr('is_active')|list|length }}</div>
+<div class="stat-card-label">Disabled Terms</div>
+</div>
 </div>
 
-<!-- Add/Import Section -->
+<!-- Add New Term -->
 <div class="chart-card" style="margin-bottom:1rem;">
-    <div class="chart-card-header">
-        <div class="chart-card-title">➕ Add or import terms</div>
-    </div>
-    <form method="POST" class="lexicon-form-grid" style="margin-bottom: 1rem;">{{ csrf_field() }}
-        <label>Word / phrase<input name="word" required placeholder="e.g. yawa"></label>
-        <label>Sentiment score<input name="sentiment_score" type="number" min="-1" max="1" step=".1" required placeholder="-0.6"></label>
-        <label>Category<input name="category" value="general"></label>
-        <button class="btn-hero btn-hero-primary" type="submit">Save term</button>
-    </form>
-    <p style="font-size:.8rem;color:var(--text-secondary);margin:.75rem 0 0;">Use -1 for strongly negative, 0 for neutral, and +1 for strongly positive. Review context before adding a term.</p>
-    
-    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button onclick="exportLexicon()" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📥 Export CSV</button>
-            <button onclick="document.getElementById('importFile').click()" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📤 Import CSV</button>
-            <input type="file" id="importFile" accept=".csv" style="display: none;" onchange="importLexicon(this)">
-            <a href="/admin/lexicon-gaps" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">🔍 View Gaps</a>
-        </div>
-    </div>
+<div class="chart-card-header">
+<div class="chart-card-title">➕ Add New Term</div>
+</div>
+<form id="addTermForm" onsubmit="return addTerm(event)" class="lexicon-form-grid" style="margin-bottom: 1rem;">
+{{ csrf_field() }}
+<label>Word / phrase<input id="termWord" name="word" required placeholder="e.g. yawa" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);"></label>
+<label>Sentiment score<input id="termScore" name="sentiment_score" type="number" min="-1" max="1" step=".1" required placeholder="-0.6" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);"></label>
+<label>Category<input id="termCategory" name="category" value="general" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);"></label>
+<button class="btn-hero btn-hero-primary" type="submit" id="addTermBtn">Save term</button>
+</form>
+<p style="font-size:.8rem;color:var(--text-secondary);margin:.75rem 0 0;">Use -1 for strongly negative, 0 for neutral, and +1 for strongly positive. Review context before adding a term.</p>
+
+<!-- Import/Export -->
+<div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+<button onclick="exportLexicon()" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📥 Export CSV</button>
+<button onclick="document.getElementById('importFile').click()" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">📤 Import CSV</button>
+<input type="file" id="importFile" accept=".csv" style="display: none;" onchange="importLexicon(this)">
+<a href="/admin/lexicon-gaps" class="btn-hero" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">🔍 View Gaps</a>
+</div>
+</div>
+</div>
+
+<!-- Search & Filter -->
+<div class="chart-card" style="margin-bottom:1rem;padding:1rem;">
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+<input id="searchInput" type="text" placeholder="Search terms..." oninput="filterTable()" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);flex:1;min-width:200px;">
+<select id="categoryFilter" onchange="filterTable()" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);">
+<option value="">All Categories</option>
+<option value="general">General</option>
+<option value="academic">Academic</option>
+<option value="facilities">Facilities</option>
+<option value="ict">ICT</option>
+</select>
+<select id="statusFilter" onchange="filterTable()" style="padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);">
+<option value="">All Status</option>
+<option value="active">Active</option>
+<option value="disabled">Disabled</option>
+</select>
+</div>
 </div>
 
 <!-- Terms Table -->
-<div class="chart-card"><div class="chart-card-header">
-    <div class="chart-card-title">📚 Managed terms ({{ entries|length }})</div>
-    <div style="display: flex; gap: 0.5rem;">
-        <select id="categoryFilter" onchange="filterByCategory()" style="padding: 0.35rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem;">
-            <option value="">All Categories</option>
-            <option value="general">General</option>
-            <option value="academic">Academic</option>
-            <option value="facilities">Facilities</option>
-            <option value="ict">ICT</option>
-        </select>
-    </div>
+<div class="chart-card">
+<div class="chart-card-header">
+<div class="chart-card-title">📚 Managed terms (<span id="termCount">{{ entries|length }}</span>)</div>
 </div>
-<div style="overflow-x:auto;"><table class="table-modern"><thead><tr><th>Term</th><th>Score</th><th>Category</th><th>Status</th><th>Frequency</th><th>Action</th></tr></thead><tbody id="lexiconTableBody">
-{% for e in entries %}<tr data-category="{{ e.category }}"><td><strong>{{e.word}}</strong></td><td>{{'%.2f'|format(e.sentiment_score)}}</td><td>{{e.category}}</td><td>{% if e.is_active %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-secondary">Disabled</span>{% endif %}</td><td>{{ e.frequency or 0 }}</td><td><form method="POST" action="/admin/lexicon-manager/{{e.id}}/toggle" style="display:inline;">{{csrf_field()}}<button class="btn-hero" type="submit" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">{% if e.is_active %}Disable{% else %}Enable{% endif %}</button></form> <form method="POST" action="/admin/lexicon-manager/{{e.id}}/delete" style="display:inline;">{{csrf_field()}}<button class="btn-hero" type="submit" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Delete</button></form></td></tr>{% endfor %}
-</tbody></table></div></div>
+<div style="overflow-x:auto;">
+<table class="table-modern">
+<thead>
+<tr>
+<th>Term</th>
+<th>Score</th>
+<th>Category</th>
+<th>Status</th>
+<th>Added By</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="lexiconTableBody">
+{% for e in entries %}
+<tr id="term-row-{{ e.id }}" data-category="{{ e.category }}" data-status="{% if e.is_active %}active{% else %}disabled{% endif %}" data-word="{{ e.word }}">
+<td><strong>{{ e.word }}</strong></td>
+<td id="score-{{ e.id }}">{{ '%.2f'|format(e.sentiment_score) }}</td>
+<td id="cat-{{ e.id }}">{{ e.category }}</td>
+<td>
+{% if e.is_active %}
+<span class="badge badge-success" id="status-{{ e.id }}">Active</span>
+{% else %}
+<span class="badge badge-secondary" id="status-{{ e.id }}">Disabled</span>
+{% endif %}
+</td>
+<td style="font-size:0.85rem;color:var(--text-secondary);">{{ e.added_by or 'System' }}</td>
+<td>
+<div style="display:flex;gap:0.3rem;">
+<button onclick="toggleTerm({{ e.id }})" class="btn-hero" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" id="toggle-btn-{{ e.id }}">
+{% if e.is_active %}Disable{% else %}Enable{% endif %}
+</button>
+<button onclick="editTerm({{ e.id }}, '{{ e.word }}', {{ e.sentiment_score }}, '{{ e.category }}')" class="btn-hero" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">Edit</button>
+<button onclick="deleteTerm({{ e.id }}, '{{ e.word }}')" class="btn-hero" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;color:var(--danger);">Delete</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</div>
 
-</section></div>
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+<div class="modal-content" style="max-width:400px;">
+<div class="modal-header">✏️ Edit Term</div>
+<form id="editForm" onsubmit="return saveEdit(event)">
+{{ csrf_field() }}
+<input type="hidden" id="editId" name="id">
+<label style="display:block;margin-bottom:0.75rem;">
+<div style="font-weight:600;margin-bottom:0.25rem;">Word / Phrase</div>
+<input id="editWord" name="word" readonly style="width:100%;padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);background:var(--bg-color);color:var(--text-secondary);">
+</label>
+<label style="display:block;margin-bottom:0.75rem;">
+<div style="font-weight:600;margin-bottom:0.25rem;">Sentiment Score</div>
+<input id="editScore" name="sentiment_score" type="number" min="-1" max="1" step=".01" required style="width:100%;padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);">
+</label>
+<label style="display:block;margin-bottom:1rem;">
+<div style="font-weight:600;margin-bottom:0.25rem;">Category</div>
+<input id="editCategory" name="category" style="width:100%;padding:0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);">
+</label>
+<div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+<button type="button" onclick="closeEditModal()" class="btn btn-secondary">Cancel</button>
+<button type="submit" class="btn btn-primary">Save Changes</button>
+</div>
+</form>
+</div>
+</div>
+
+</section>
+</div>
 
 <script>
+// Existing words set for duplicate detection
+var existingWords = new Set({{ entries|map(attribute='word')|list|tojson }});
+
+function addTerm(event) {
+    event.preventDefault();
+    var word = document.getElementById('termWord').value.trim().toLowerCase();
+    var score = document.getElementById('termScore').value;
+    var category = document.getElementById('termCategory').value.trim();
+    var btn = document.getElementById('addTermBtn');
+    
+    if (!word || score === '') return false;
+    
+    // Check for duplicate
+    if (existingWords.has(word)) {
+        showToast('"' + word + '" already exists. Use Edit to modify it.', 'warning');
+        // Highlight the existing row
+        var rows = document.querySelectorAll('#lexiconTableBody tr');
+        for (var i = 0; i < rows.length; i++) {
+            if (rows[i].dataset.word === word) {
+                rows[i].style.background = 'var(--warning-light)';
+                rows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(function() { rows[i].style.background = ''; }, 2000);
+                break;
+            }
+        }
+        return false;
+    }
+    
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    
+    fetch('/admin/api/lexicon/add-word', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ word: word, sentiment_score: parseFloat(score), category: category })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.textContent = 'Save term';
+        if (data.success) {
+            showToast('"' + word + '" added to lexicon', 'success');
+            existingWords.add(word);
+            // Add row to table
+            addRowToTable(data.id, word, score, category, true, 'You');
+            // Clear form
+            document.getElementById('termWord').value = '';
+            document.getElementById('termScore').value = '';
+            document.getElementById('termCategory').value = 'general';
+            // Update count
+            var count = parseInt(document.getElementById('termCount').textContent);
+            document.getElementById('termCount').textContent = count + 1;
+        } else {
+            showToast(data.error || 'Failed to add term', 'error');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Save term';
+        showToast('Network error. Please try again.', 'error');
+    });
+    
+    return false;
+}
+
+function addRowToTable(id, word, score, category, isActive, addedBy) {
+    var tbody = document.getElementById('lexiconTableBody');
+    var tr = document.createElement('tr');
+    tr.id = 'term-row-' + id;
+    tr.dataset.category = category;
+    tr.dataset.status = isActive ? 'active' : 'disabled';
+    tr.dataset.word = word;
+    tr.style.animation = 'fadeIn 0.3s ease';
+    
+    var statusBadge = isActive 
+        ? '<span class="badge badge-success" id="status-' + id + '">Active</span>'
+        : '<span class="badge badge-secondary" id="status-' + id + '">Disabled</span>';
+    
+    tr.innerHTML = 
+        '<td><strong>' + word + '</strong></td>' +
+        '<td id="score-' + id + '">' + parseFloat(score).toFixed(2) + '</td>' +
+        '<td id="cat-' + id + '">' + category + '</td>' +
+        '<td>' + statusBadge + '</td>' +
+        '<td style="font-size:0.85rem;color:var(--text-secondary);">' + addedBy + '</td>' +
+        '<td><div style="display:flex;gap:0.3rem;">' +
+        '<button onclick="toggleTerm(' + id + ')" class="btn-hero" style="padding:0.3rem 0.6rem;font-size:0.75rem;" id="toggle-btn-' + id + '">' + (isActive ? 'Disable' : 'Enable') + '</button>' +
+        '<button onclick="editTerm(' + id + ',\'' + word + '\',' + score + ',\'' + category + '\')" class="btn-hero" style="padding:0.3rem 0.6rem;font-size:0.75rem;">Edit</button>' +
+        '<button onclick="deleteTerm(' + id + ',\'' + word + '\')" class="btn-hero" style="padding:0.3rem 0.6rem;font-size:0.75rem;color:var(--danger);">Delete</button>' +
+        '</div></td>';
+    
+    tbody.insertBefore(tr, tbody.firstChild);
+}
+
+function toggleTerm(id) {
+    var btn = document.getElementById('toggle-btn-' + id);
+    btn.disabled = true;
+    
+    fetch('/admin/lexicon-manager/' + id + '/toggle', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            var statusEl = document.getElementById('status-' + id);
+            var row = document.getElementById('term-row-' + id);
+            if (data.is_active) {
+                statusEl.className = 'badge badge-success';
+                statusEl.textContent = 'Active';
+                btn.textContent = 'Disable';
+                row.dataset.status = 'active';
+            } else {
+                statusEl.className = 'badge badge-secondary';
+                statusEl.textContent = 'Disabled';
+                btn.textContent = 'Enable';
+                row.dataset.status = 'disabled';
+            }
+            showToast('Term ' + (data.is_active ? 'enabled' : 'disabled'), 'success');
+        }
+        btn.disabled = false;
+    })
+    .catch(function() { btn.disabled = false; });
+}
+
+function editTerm(id, word, score, category) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editWord').value = word;
+    document.getElementById('editScore').value = score;
+    document.getElementById('editCategory').value = category;
+    document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+function saveEdit(event) {
+    event.preventDefault();
+    var id = document.getElementById('editId').value;
+    var word = document.getElementById('editWord').value;
+    var score = document.getElementById('editScore').value;
+    var category = document.getElementById('editCategory').value;
+    
+    fetch('/admin/api/lexicon/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ id: parseInt(id), sentiment_score: parseFloat(score), category: category })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Update table row
+            document.getElementById('score-' + id).textContent = parseFloat(score).toFixed(2);
+            document.getElementById('cat-' + id).textContent = category;
+            showToast('"' + word + '" updated', 'success');
+            closeEditModal();
+        } else {
+            showToast(data.error || 'Failed to update', 'error');
+        }
+    })
+    .catch(function() { showToast('Network error', 'error'); });
+    
+    return false;
+}
+
+function deleteTerm(id, word) {
+    if (!confirm('Delete "' + word + '" from the lexicon?')) return;
+    
+    fetch('/admin/lexicon-manager/' + id + '/delete', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            var row = document.getElementById('term-row-' + id);
+            row.style.opacity = '0';
+            row.style.transition = 'opacity 0.3s ease';
+            setTimeout(function() { row.remove(); }, 300);
+            existingWords.delete(word.toLowerCase());
+            var count = parseInt(document.getElementById('termCount').textContent);
+            document.getElementById('termCount').textContent = count - 1;
+            showToast('"' + word + '" deleted', 'success');
+        }
+    });
+}
+
+function filterTable() {
+    var search = document.getElementById('searchInput').value.toLowerCase();
+    var category = document.getElementById('categoryFilter').value;
+    var status = document.getElementById('statusFilter').value;
+    var rows = document.querySelectorAll('#lexiconTableBody tr');
+    var count = 0;
+    rows.forEach(function(tr) {
+        var word = tr.dataset.word || '';
+        var cat = tr.dataset.category || '';
+        var stat = tr.dataset.status || '';
+        var matchSearch = !search || word.includes(search);
+        var matchCategory = !category || cat === category;
+        var matchStatus = !status || stat === status;
+        var show = matchSearch && matchCategory && matchStatus;
+        tr.style.display = show ? '' : 'none';
+        if (show) count++;
+    });
+    document.getElementById('termCount').textContent = count;
+}
+
 function exportLexicon() {
     var rows = [['word', 'sentiment_score', 'category']];
     document.querySelectorAll('#lexiconTableBody tr').forEach(function(tr) {
@@ -109,6 +407,7 @@ function exportLexicon() {
     link.href = URL.createObjectURL(blob);
     link.download = 'lexicon_' + new Date().toISOString().slice(0,10) + '.csv';
     link.click();
+    showToast('Lexicon exported', 'success');
 }
 
 function importLexicon(input) {
@@ -121,10 +420,16 @@ function importLexicon(input) {
         lines.forEach(function(line) {
             var parts = line.split(',');
             if (parts.length >= 2 && parts[0].trim()) {
-                words.push({ word: parts[0].trim(), sentiment_score: parseFloat(parts[1]) || 0, category: parts[2]?.trim() || 'general' });
+                var score = parseFloat(parts[1]);
+                if (score >= -1 && score <= 1) {
+                    words.push({ word: parts[0].trim(), sentiment_score: score, category: parts[2]?.trim() || 'general' });
+                }
             }
         });
-        if (words.length === 0) return;
+        if (words.length === 0) {
+            showToast('No valid words found in CSV', 'warning');
+            return;
+        }
         fetch('/admin/api/lexicon/add-words-bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
@@ -132,18 +437,13 @@ function importLexicon(input) {
         })
         .then(r => r.json())
         .then(data => {
-            if (data.success && typeof showToast === 'function') showToast(data.count + ' words imported', 'success');
-            setTimeout(() => location.reload(), 1500);
+            if (data.success) {
+                showToast(data.count + ' words imported', 'success');
+                setTimeout(() => location.reload(), 1500);
+            }
         });
     };
     reader.readAsText(file);
-}
-
-function filterByCategory() {
-    var cat = document.getElementById('categoryFilter').value;
-    document.querySelectorAll('#lexiconTableBody tr').forEach(function(tr) {
-        tr.style.display = (!cat || tr.dataset.category === cat) ? '' : 'none';
-    });
 }
 </script>
 {% endblock %}

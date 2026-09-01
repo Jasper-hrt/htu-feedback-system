@@ -134,7 +134,7 @@ def check_unattended_feedback():
             ).first()
             
             if not existing:
-                student_name = feedback.student.full_name if feedback.student else 'Anonymous'
+                student_name = feedback.student.full_name if hasattr(feedback, 'student') and feedback.student else 'Anonymous'
                 title = f'Unattended Feedback #{feedback.id}'
                 message = f'Feedback from {student_name} has been pending for over 24 hours. Category: {feedback.category or "General"}, Urgency: {feedback.urgency_score}/5'
                 
@@ -1031,6 +1031,8 @@ def student_dashboard():
             final_sentiment=f.sentiment,
             final_confidence=f.confidence_score,
         )
+        # Template uses phase2_ai_explanation to render the Analysis button
+        f.phase2_ai_explanation = f.ai_explanation
 
     stats = {
 
@@ -1961,7 +1963,7 @@ def admin_dashboard():
     # Precompute explanations for Analyze modal.
     # We use cleaned_text when available, fallback to feedback_text.
     explanations_by_id = {}
-    recommendations_by_id = {}
+    admin_insights_by_id = {}
 
     for f in paginated.items:
         base_text = (f.cleaned_text or '').strip() or (f.feedback_text or '').strip()
@@ -1979,20 +1981,18 @@ def admin_dashboard():
             'secondary_emotions': _parse_json_field(f.secondary_emotions, []),
         }
 
-        helpful_count = SolutionFeedback.query.filter_by(feedback_id=f.id, was_helpful=True).count()
-        unhelpful_count = SolutionFeedback.query.filter_by(feedback_id=f.id, was_helpful=False).count()
-
-        recommendations_by_id[f.id] = {
-            'recommended_keywords': f.recommended_keywords,
-            'short_term_solution': f.short_term_solution,
-            'long_term_solution': f.long_term_solution,
-            'responsible_department': f.responsible_department,
-            'estimated_time': f.estimated_time,
-            'confidence': f.recommendation_confidence,
-            'secondary_categories': _parse_json_field(f.secondary_categories, []),
-            'used_template_id': f.used_template_id,
-            'helpful_count': helpful_count,
-            'unhelpful_count': unhelpful_count,
+        admin_insights_by_id[f.id] = {
+            'investigation': _parse_json_field(f.admin_action_investigation, []),
+            'corrective': _parse_json_field(f.admin_action_corrective, []),
+            'preventive': _parse_json_field(f.admin_action_preventive, []),
+            'department': f.admin_action_department,
+            'priority': f.admin_action_priority,
+            'escalation': f.admin_action_escalation,
+            'status': f.status,
+            'assigned_to': f.assigned_to,
+            'category': f.category,
+            'urgency_score': f.urgency_score,
+            'sentiment': f.sentiment,
         }
 
     # Enhanced recommendation data
@@ -2004,10 +2004,67 @@ def admin_dashboard():
                          admin_name=session.get('admin_name'), current_category=category_filter,
                          current_status=status_filter, current_urgency=urgency_filter, current_search=search_query,
                          explanations_by_id=explanations_by_id,
-                         recommendations_by_id=recommendations_by_id,
+                         admin_insights_by_id=admin_insights_by_id,
                          topic_summary=topic_summary, duplicate_ids=duplicate_ids,
                          trending_issues=trending_issues, department_workload=department_workload)
 
+
+
+@app.route('/admin/feedback')
+@src_required
+def admin_feedback():
+    """Mobile-friendly feedback management page."""
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    category_filter = request.args.get('category', '')
+    status_filter = request.args.get('status', '')
+    urgency_filter = request.args.get('urgency', '')
+    search_query = request.args.get('search', '')
+    sort_by = request.args.get('sort', 'date')
+    sort_dir = request.args.get('dir', 'desc')
+    
+    query = Feedback.query
+    
+    if category_filter:
+        query = query.filter(Feedback.category == category_filter)
+    if status_filter:
+        query = query.filter(Feedback.status == status_filter)
+    if urgency_filter:
+        query = query.filter(Feedback.urgency_score >= int(urgency_filter))
+    if search_query:
+        query = query.filter(Feedback.feedback_text.ilike(f'%{search_query}%'))
+    
+    # Apply sorting
+    if sort_by == 'date':
+        order_col = Feedback.created_at
+    elif sort_by == 'urgency':
+        order_col = Feedback.urgency_score
+    elif sort_by == 'status':
+        order_col = Feedback.status
+    elif sort_by == 'category':
+        order_col = Feedback.category
+    else:
+        order_col = Feedback.created_at
+    
+    if sort_dir == 'asc':
+        query = query.order_by(order_col.asc())
+    else:
+        query = query.order_by(order_col.desc())
+    
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    categories = sorted({f.category for f in Feedback.query.with_entities(Feedback.category).distinct() if f.category})
+    
+    return render_template('admin_feedback_mobile.html', 
+                         feedbacks=paginated.items, 
+                         pagination=paginated,
+                         categories=categories,
+                         current_category=category_filter,
+                         current_status=status_filter,
+                         current_urgency=urgency_filter,
+                         current_search=search_query,
+                         sort_by=sort_by,
+                         sort_dir=sort_dir)
 
 
 @app.route('/admin/update/<int:feedback_id>', methods=['POST'])
@@ -2278,8 +2335,10 @@ def admin_delete_feedback(feedback_id):
     feedback = Feedback.query.get_or_404(feedback_id)
     db.session.delete(feedback)
     db.session.commit()
-    log_admin_action(session['admin_name'], 'Delete Feedback', f'Deleted feedback ID: {feedback_id}')
+    log_admin_action(session['admin_name'], 'Delete Feedback', f'Delete feedback ID: {feedback_id}')
     add_db_log('feedback', 'INFO', 'admin', session['admin_name'], 'Feedback Deleted', f'Feedback ID: {feedback_id}')
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True})
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/students')
@@ -2334,27 +2393,27 @@ def review_ai_feedback(feedback_id):
     if new_sentiment not in allowed:
         new_sentiment = feedback.sentiment or 'neutral'
 
-        feedback.sentiment = new_sentiment
-        feedback.category = new_category
-        feedback.urgency_score = new_urgency
+    feedback.sentiment = new_sentiment
+    feedback.category = new_category
+    feedback.urgency_score = new_urgency
 
-        # Regenerate solution recommendation if sentiment changed to Negative
-        if new_sentiment == 'negative' and old[0] != 'negative':
-            try:
-                rec_result = generate_recommendation(
-                    text=feedback.feedback_text,
-                    category=new_category,
-                    urgency_score=new_urgency,
-                    sentiment=new_sentiment,
-                    sentiment_score=-0.5,
-                )
-                _apply_enhanced_recommendation(feedback, rec_result)
-                feedback.secondary_categories = json.dumps(rec.secondary_categories) if rec.secondary_categories else '[]'
-                feedback.recommendation_confidence = rec.confidence
-            except Exception:
-                pass
+    # Regenerate solution recommendation if sentiment changed to Negative
+    if new_sentiment == 'negative' and old[0] != 'negative':
+        try:
+            rec_result = generate_recommendation(
+                text=feedback.feedback_text,
+                category=new_category,
+                urgency_score=new_urgency,
+                sentiment=new_sentiment,
+                sentiment_score=-0.5,
+            )
+            _apply_enhanced_recommendation(feedback, rec_result)
+            feedback.secondary_categories = json.dumps(rec_result.secondary_categories) if rec_result.secondary_categories else '[]'
+            feedback.recommendation_confidence = rec_result.confidence
+        except Exception:
+            pass
 
-        action = 'approved' if old == (new_sentiment, new_category, new_urgency) else 'corrected'
+    action = 'approved' if old == (new_sentiment, new_category, new_urgency) else 'corrected'
     db.session.add(AIReviewLog(
         feedback_id=feedback.id, admin_name=session.get('admin_name', 'admin'),
         action=action, old_sentiment=old[0], new_sentiment=new_sentiment,
@@ -2480,6 +2539,8 @@ def admin_lexicon_toggle(entry_id):
     db.session.commit()
     log_admin_action(session['admin_name'], 'Lexicon Toggle',
                      f'Word "{entry.word}" active={entry.is_active}')
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True, 'is_active': entry.is_active})
     return redirect(url_for('admin_lexicon_manager'))
 
 
@@ -2491,6 +2552,28 @@ def admin_lexicon_delete(entry_id):
     db.session.delete(entry)
     db.session.commit()
     log_admin_action(session['admin_name'], 'Lexicon Delete', f'Word "{word}"')
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': True})
+    return redirect(url_for('admin_lexicon_manager'))
+
+
+@app.route('/admin/lexicon-manager/edit', methods=['POST'])
+@src_required
+def admin_lexicon_edit():
+    """Edit an existing lexicon term."""
+    word = (request.form.get('word') or '').strip().lower()
+    score = request.form.get('sentiment_score', type=float)
+    category = (request.form.get('category') or 'general').strip()[:50]
+    if not word or score is None or not -1 <= score <= 1:
+        return redirect(url_for('admin_lexicon_manager', error='invalid'))
+    row = CustomLexicon.query.filter_by(word=word).first()
+    if row:
+        row.sentiment_score = score
+        row.category = category
+        row.is_active = True
+        row.added_by = session.get('admin_name')
+        db.session.commit()
+        log_admin_action(session['admin_name'], 'Lexicon Edit', f'Word "{word}" score {score}')
     return redirect(url_for('admin_lexicon_manager'))
 
 
@@ -2561,10 +2644,12 @@ def api_lexicon_add_word():
     
     # Check if word already exists
     existing = CustomLexicon.query.filter_by(word=word).first()
+    entry_id = None
     if existing:
         existing.sentiment_score = score
         existing.category = category
         existing.is_active = True
+        entry_id = existing.id
     else:
         entry = CustomLexicon(
             word=word,
@@ -2573,9 +2658,33 @@ def api_lexicon_add_word():
             is_active=True
         )
         db.session.add(entry)
+        db.session.flush()
+        entry_id = entry.id
     
     db.session.commit()
     log_admin_action(session['admin_name'], 'Lexicon Add', f'Word "{word}" score={score}')
+    return jsonify({'success': True, 'id': entry_id})
+
+@app.route('/admin/api/lexicon/update', methods=['POST'])
+@src_required
+def api_lexicon_update():
+    """Update an existing lexicon term's score and category."""
+    data = request.get_json()
+    entry_id = data.get('id')
+    score = data.get('sentiment_score')
+    category = data.get('category', 'general')
+    
+    if not entry_id or score is None:
+        return jsonify({'success': False, 'error': 'ID and score required'})
+    
+    entry = CustomLexicon.query.get(entry_id)
+    if not entry:
+        return jsonify({'success': False, 'error': 'Term not found'})
+    
+    entry.sentiment_score = float(score)
+    entry.category = category
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'Lexicon Edit', f'Word "{entry.word}" score={score}')
     return jsonify({'success': True})
 
 @app.route('/admin/api/lexicon/add-words-bulk', methods=['POST'])
@@ -2659,6 +2768,64 @@ def api_ai_review_bulk_approve():
     db.session.commit()
     log_admin_action(session['admin_name'], 'AI Review Bulk Approve', f'{count} items approved')
     return jsonify({'success': True, 'count': count})
+
+@app.route('/admin/api/ai-review/<int:feedback_id>/correct', methods=['POST'])
+@src_required
+def api_ai_review_correct(feedback_id):
+    """Save AI review correction via AJAX."""
+    feedback = Feedback.query.get_or_404(feedback_id)
+    data = request.get_json()
+    
+    old = (feedback.sentiment, feedback.category, feedback.urgency_score)
+    new_sentiment = data.get('sentiment', feedback.sentiment).strip().lower()
+    new_category = data.get('category', feedback.category).strip()
+    new_urgency = int(data.get('urgency', feedback.urgency_score))
+    notes = (data.get('notes') or '').strip()[:2000]
+    
+    allowed = {'positive', 'negative', 'neutral'}
+    if new_sentiment not in allowed:
+        new_sentiment = feedback.sentiment or 'neutral'
+    
+    feedback.sentiment = new_sentiment
+    feedback.category = new_category
+    feedback.urgency_score = max(1, min(5, new_urgency))
+    
+    # Regenerate recommendation if sentiment changed to negative
+    if new_sentiment == 'negative' and old[0] != 'negative':
+        try:
+            rec_result = generate_recommendation(
+                text=feedback.feedback_text,
+                category=new_category,
+                urgency_score=new_urgency,
+                sentiment=new_sentiment,
+                sentiment_score=-0.5,
+            )
+            _apply_enhanced_recommendation(feedback, rec_result)
+        except Exception:
+            pass
+    
+    action = 'approved' if old == (new_sentiment, new_category, new_urgency) else 'corrected'
+    db.session.add(AIReviewLog(
+        feedback_id=feedback.id, admin_name=session.get('admin_name', 'admin'),
+        action=action, old_sentiment=old[0], new_sentiment=new_sentiment,
+        old_category=old[1], new_category=new_category,
+        old_urgency=old[2], new_urgency=new_urgency, notes=notes
+    ))
+    
+    # Active learning
+    if new_sentiment in ('positive', 'negative'):
+        try:
+            from sentiment.custom_lexicon import CustomLexiconManager
+            CustomLexiconManager().learn_from_correction(
+                (feedback.feedback_text or ''), new_sentiment,
+                session.get('admin_name', 'admin'),
+            )
+        except Exception:
+            pass
+    
+    db.session.commit()
+    log_admin_action(session['admin_name'], 'AI Review', f'Feedback ID {feedback.id}: {action}')
+    return jsonify({'success': True})
 
 # ==================== NOTIFICATION API ROUTES ====================
 

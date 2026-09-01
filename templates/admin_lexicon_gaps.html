@@ -1,162 +1,191 @@
 {% extends "base.html" %}
-
 {% block content %}
 <div class="student-layout">
-    <aside class="admin-sidebar" aria-label="Admin lexicon gaps sidebar">
-        <div class="admin-sidebar-title">
-            🧠 Lexicon Gaps
-            <span class="sub">Sentiment accuracy tuning</span>
-        </div>
-        <nav class="admin-sidebar-nav">
-            <a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
-            <a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
-            <a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
-            <a href="/admin/solution-templates" class="admin-sidebar-link">🧩 Solution Templates</a>
-            <a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
-            <a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
-            <a href="/admin/ai-review" class="admin-sidebar-link">🔎 AI Review Queue</a>
-            <a href="/admin/lexicon-manager" class="admin-sidebar-link">🧠 Lexicon Manager</a>
-            <a href="/admin/ai-audit" class="admin-sidebar-link">🛡️ AI Audit Trail</a>
-            <a href="/admin/lexicon-gaps" class="admin-sidebar-link admin-sidebar-link-active">🧠 Lexicon Gaps</a>
-            <a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
-            <a href="/admin/chat" class="admin-sidebar-link">💬 Chat Rooms</a>
-            <a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
-            <a href="/admin/change-password" class="admin-sidebar-link">🔑 Change Password</a>
-        </nav>
-        <div style="margin-top: 1.25rem;">
-            <form method="POST" action="/admin/logout" style="margin:0;">
-                {{ csrf_field() }}
-                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
-                    <span class="btn-logout-icon">⏻</span>
-                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
-                </button>
-            </form>
-        </div>
-    </aside>
-    <section class="student-content">
+<aside class="admin-sidebar" aria-label="Admin lexicon gaps sidebar">
+<div class="admin-sidebar-title">🧠 Lexicon Gaps<span class="sub">Sentiment accuracy tuning</span></div>
+<nav class="admin-sidebar-nav">
+<a href="/admin/dashboard" class="admin-sidebar-link">📋 Dashboard</a>
+<a href="/admin/analytics" class="admin-sidebar-link">📈 Analytics</a>
+<a href="/admin/templates" class="admin-sidebar-link">📝 Templates</a>
+<a href="/admin/solution-templates" class="admin-sidebar-link">🧩 Solution Templates</a>
+<a href="/admin/students" class="admin-sidebar-link">👥 Students</a>
+<a href="/admin/announcements" class="admin-sidebar-link">📢 Announcements</a>
+<a href="/admin/ai-review" class="admin-sidebar-link">🔎 AI Review Queue</a>
+<a href="/admin/lexicon-manager" class="admin-sidebar-link">🧠 Lexicon Manager</a>
+<a href="/admin/ai-audit" class="admin-sidebar-link">🛡️ AI Audit Trail</a>
+<a href="/admin/lexicon-gaps" class="admin-sidebar-link admin-sidebar-link-active">🧠 Lexicon Gaps</a>
+<a href="/admin/logs" class="admin-sidebar-link">📋 Logs</a>
+<a href="/admin/chat" class="admin-sidebar-link">💬 Chat Rooms</a>
+<a href="/admin/export/excel" class="admin-sidebar-link">📊 Export Excel</a>
+<a href="/admin/change-password" class="admin-sidebar-link">🔑 Change Password</a>
+</nav>
+<div style="margin-top: 1.25rem;">
+<form method="POST" action="/admin/logout" style="margin:0;">
+{{ csrf_field() }}
+<button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
+<span class="btn-logout-icon">⏻</span>
+<span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Admin session</span></span>
+</button>
+</form>
+</div>
+</aside>
+<section class="student-content">
 
-        <!-- Hero -->
-        <div class="admin-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f1f3f 100%); position: relative; overflow: hidden;">
-            <div style="position: relative; z-index: 1;">
-                <div class="admin-hero-title" style="font-size: 1.5rem;">🧠 Sentiment Lexicon Gaps</div>
-                <div class="admin-hero-subtitle">Words that showed up in real feedback but aren't recognised by any sentiment engine yet — the evidence base for future lexicon tuning.</div>
-            </div>
-            <div class="admin-hero-actions" style="position: relative; z-index: 1;">
-                <a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
-            </div>
-        </div>
+<!-- Hero -->
+<div class="admin-hero" style="background: linear-gradient(135deg, var(--primary-dark) 0%, var(--dark) 50%, var(--primary-dark) 100%); position: relative; overflow: hidden;">
+<div style="position: relative; z-index: 1;">
+<div class="admin-hero-title" style="font-size: 1.5rem;">🧠 Sentiment Lexicon Gaps</div>
+<div class="admin-hero-subtitle">Words that showed up in real feedback but aren't recognised by any sentiment engine yet — the evidence base for future lexicon tuning.</div>
+</div>
+<div class="admin-hero-actions" style="position: relative; z-index: 1;">
+<a href="/admin/dashboard" class="btn-hero">← Back to Dashboard</a>
+<a href="/admin/lexicon-manager" class="btn-hero btn-hero-primary">🧠 Manage Lexicon</a>
+</div>
+</div>
 
-        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
-            <div class="stat-card">
-                <div class="stat-card-accent" style="background: var(--primary);"></div>
-                <div class="stat-card-icon stat-card-icon-blue">📄</div>
-                <div class="stat-card-value" style="color: var(--primary);">{{ scanned_count }}</div>
-                <div class="stat-card-label">Feedback Items Scanned</div>
-                <div class="stat-card-trend stat-card-trend-up">Most recent {{ total_feedback }} entries</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-card-accent" style="background: var(--warning);"></div>
-                <div class="stat-card-icon stat-card-icon-amber">🔍</div>
-                <div class="stat-card-value" style="color: var(--warning);">{{ neutral_gap_words|length }}</div>
-                <div class="stat-card-label">Candidate Gap Words</div>
-                <div class="stat-card-trend stat-card-trend-up">From Neutral-labeled feedback</div>
-            </div>
-        </div>
+<!-- Stats -->
+<div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+<div class="stat-card">
+<div class="stat-card-accent" style="background: var(--primary);"></div>
+<div class="stat-card-icon stat-card-icon-blue">📄</div>
+<div class="stat-card-value" style="color: var(--primary);">{{ scanned_count }}</div>
+<div class="stat-card-label">Feedback Items Scanned</div>
+<div class="stat-card-trend stat-card-trend-up">Most recent {{ total_feedback }} entries</div>
+</div>
+<div class="stat-card">
+<div class="stat-card-accent" style="background: var(--warning);"></div>
+<div class="stat-card-icon stat-card-icon-amber">🔍</div>
+<div class="stat-card-value" style="color: var(--warning);">{{ neutral_gap_words|length }}</div>
+<div class="stat-card-label">Candidate Gap Words</div>
+<div class="stat-card-trend stat-card-trend-up">From Neutral-labeled feedback</div>
+</div>
+</div>
 
-        <div class="alert alert-info" style="margin: 1rem 0; padding: 1rem 1.25rem; line-height: 1.6;">
-            <strong>💡 How to read this:</strong><br>
-            "Priority candidates" are words found in feedback that came out <strong>Neutral</strong> — a Neutral result is often exactly what happens when no engine recognised the text, so a word appearing here repeatedly is a real accuracy gap worth reviewing.<br><br>
-            <strong>Action:</strong> Click "➕ Add" to add words directly to the lexicon, or use "➕ Add All" to import all suggestions at once. Sentiment scores are auto-suggested based on context.
-        </div>
+<!-- Info Alert -->
+<div class="alert alert-info" style="margin: 1rem 0; padding: 1rem 1.25rem; line-height: 1.6;">
+<strong>💡 How to read this:</strong><br>
+"Priority candidates" are words found in feedback that came out <strong>Neutral</strong> — a Neutral result is often exactly what happens when no engine recognised the text, so a word appearing here repeatedly is a real accuracy gap worth reviewing.<br><br>
+<strong>Action:</strong> Click "➕ Add" to add words directly to the lexicon, or use "➕ Add All" to import all suggestions at once. Sentiment scores are auto-suggested based on context.
+</div>
 
-        <!-- Priority: Neutral-feedback gap words -->
-        <div class="chart-card">
-            <div class="chart-card-header">
-                <div class="chart-card-title">⚠️ Priority Candidates (from Neutral feedback)</div>
-                <button onclick="addAllGapWords()" class="btn-hero btn-hero-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">➕ Add All to Lexicon</button>
-            </div>
-            {% if neutral_gap_words %}
-            <div style="overflow-x: auto;">
-                <table class="table-modern">
-                    <thead>
-                        <tr>
-                            <th>Word</th>
-                            <th>Occurrences</th>
-                            <th>Suggested Score</th>
-                            <th>Context</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in neutral_gap_words %}
-                        <tr id="gap-row-{{ loop.index }}">
-                            <td><strong>{{ item.word }}</strong></td>
-                            <td><span class="badge badge-warning">{{ item.count }}</span></td>
-                            <td><span class="badge badge-info">{{ item.suggested_score }}</span></td>
-                            <td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
-                            <td>
-                                <button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="empty-state-premium" style="padding: 2rem 1rem;">
-                <span class="empty-state-premium-icon" style="font-size: 2.5rem;">✅</span>
-                <div class="empty-state-premium-title" style="font-size: 1rem;">No priority gaps found</div>
-                <div class="empty-state-premium-desc" style="font-size: 0.85rem;">Nothing stood out in the current batch of Neutral-labeled feedback.</div>
-            </div>
-            {% endif %}
-        </div>
+<!-- Priority: Neutral-feedback gap words -->
+<div class="chart-card">
+<div class="chart-card-header">
+<div class="chart-card-title">⚠️ Priority Candidates (from Neutral feedback) <span id="neutralCount" class="badge badge-warning">{{ neutral_gap_words|length }}</span></div>
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+<button onclick="addAllNeutralGaps()" class="btn-hero btn-hero-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">➕ Add All to Lexicon</button>
+</div>
+</div>
+{% if neutral_gap_words %}
+<div style="overflow-x: auto;">
+<table class="table-modern">
+<thead>
+<tr>
+<th>Word</th>
+<th>Occurrences</th>
+<th>Suggested Score</th>
+<th>Context</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="neutralGapTable">
+{% for item in neutral_gap_words %}
+<tr id="gap-row-{{ loop.index }}" data-word="{{ item.word }}">
+<td><strong>{{ item.word }}</strong></td>
+<td><span class="badge badge-warning">{{ item.count }}</span></td>
+<td>
+{% if item.suggested_score < 0 %}
+<span class="badge badge-danger">{{ item.suggested_score }}</span>
+{% elif item.suggested_score > 0 %}
+<span class="badge badge-success">{{ item.suggested_score }}</span>
+{% else %}
+<span class="badge badge-secondary">{{ item.suggested_score }}</span>
+{% endif %}
+</td>
+<td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
+<td>
+<div style="display:flex;gap:0.3rem;">
+<button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}', 'gap-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
+<button onclick="dismissGap('gap-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;color:var(--secondary);">✗ Dismiss</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state-premium" style="padding: 2rem 1rem;">
+<span class="empty-state-premium-icon" style="font-size: 2.5rem;">✅</span>
+<div class="empty-state-premium-title" style="font-size: 1rem;">No priority gaps found</div>
+<div class="empty-state-premium-desc" style="font-size: 0.85rem;">Nothing stood out in the current batch of Neutral-labeled feedback.</div>
+</div>
+{% endif %}
+</div>
 
-        <!-- Broader coverage: all feedback -->
-        <div class="chart-card">
-            <div class="chart-card-header">
-                <div class="chart-card-title">📚 Broader Vocabulary Gaps (all feedback)</div>
-            </div>
-            {% if all_gap_words %}
-            <div style="overflow-x: auto;">
-                <table class="table-modern">
-                    <thead>
-                        <tr>
-                            <th>Word</th>
-                            <th>Occurrences</th>
-                            <th>Suggested Score</th>
-                            <th>Context</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in all_gap_words %}
-                        <tr id="gap-all-row-{{ loop.index }}">
-                            <td>{{ item.word }}</td>
-                            <td><span class="badge badge-info">{{ item.count }}</span></td>
-                            <td><span class="badge badge-info">{{ item.suggested_score }}</span></td>
-                            <td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
-                            <td>
-                                <button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="empty-state-premium" style="padding: 2rem 1rem;">
-                <span class="empty-state-premium-icon" style="font-size: 2.5rem;">📭</span>
-                <div class="empty-state-premium-title" style="font-size: 1rem;">Nothing to show yet</div>
-                <div class="empty-state-premium-desc" style="font-size: 0.85rem;">Once feedback comes in, gaps will appear here.</div>
-            </div>
-            {% endif %}
-        </div>
+<!-- Broader coverage: all feedback -->
+<div class="chart-card">
+<div class="chart-card-header">
+<div class="chart-card-title">📚 Broader Vocabulary Gaps (all feedback) <span id="broaderCount" class="badge badge-info">{{ all_gap_words|length }}</span></div>
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+<button onclick="addAllBroaderGaps()" class="btn-hero btn-hero-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">➕ Add All to Lexicon</button>
+</div>
+</div>
+{% if all_gap_words %}
+<div style="overflow-x: auto;">
+<table class="table-modern">
+<thead>
+<tr>
+<th>Word</th>
+<th>Occurrences</th>
+<th>Suggested Score</th>
+<th>Context</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="allGapTable">
+{% for item in all_gap_words %}
+<tr id="gap-all-row-{{ loop.index }}" data-word="{{ item.word }}">
+<td><strong>{{ item.word }}</strong></td>
+<td><span class="badge badge-info">{{ item.count }}</span></td>
+<td>
+{% if item.suggested_score < 0 %}
+<span class="badge badge-danger">{{ item.suggested_score }}</span>
+{% elif item.suggested_score > 0 %}
+<span class="badge badge-success">{{ item.suggested_score }}</span>
+{% else %}
+<span class="badge badge-secondary">{{ item.suggested_score }}</span>
+{% endif %}
+</td>
+<td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
+<td>
+<div style="display:flex;gap:0.3rem;">
+<button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}', 'gap-all-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
+<button onclick="dismissGap('gap-all-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;color:var(--secondary);">✗ Dismiss</button>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="empty-state-premium" style="padding: 2rem 1rem;">
+<span class="empty-state-premium-icon" style="font-size: 2.5rem;">📭</span>
+<div class="empty-state-premium-title" style="font-size: 1rem;">Nothing to show yet</div>
+<div class="empty-state-premium-desc" style="font-size: 0.85rem;">Once feedback comes in, gaps will appear here.</div>
+</div>
+{% endif %}
+</div>
 
-    </section>
+</section>
 </div>
 
 <script>
-function addToLexicon(word, score) {
+function addToLexicon(word, score, rowId) {
+    var row = document.getElementById(rowId);
+    if (!row || row.dataset.added === 'true') return;
+    
     fetch('/admin/api/lexicon/add-word', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
@@ -165,26 +194,60 @@ function addToLexicon(word, score) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Hide the row
-            document.querySelectorAll('#gap-row- td:first-child, #gap-all-row- td:first-child').forEach(td => {
-                if (td.textContent.trim() === word) {
-                    td.closest('tr').style.opacity = '0.5';
-                    td.closest('tr').querySelector('button').disabled = true;
-                    td.closest('tr').querySelector('button').textContent = '✓ Added';
-                }
-            });
-            if (typeof showToast === 'function') showToast('"' + word + '" added to lexicon', 'success');
+            row.dataset.added = 'true';
+            row.style.opacity = '0.5';
+            row.style.textDecoration = 'line-through';
+            var btns = row.querySelectorAll('button');
+            btns.forEach(function(b) { b.disabled = true; });
+            btns[0].textContent = '✓ Added';
+            showToast('"' + word + '" added to lexicon', 'success');
+            // Update counts
+            updateGapCounts();
+        } else {
+            showToast(data.error || 'Failed to add', 'error');
         }
     });
 }
 
-function addAllGapWords() {
+function dismissGap(rowId) {
+    var row = document.getElementById(rowId);
+    if (!row) return;
+    row.dataset.added = 'true';
+    row.style.opacity = '0.3';
+    row.style.textDecoration = 'line-through';
+    var btns = row.querySelectorAll('button');
+    btns.forEach(function(b) { b.disabled = true; });
+    btns[0].textContent = 'Dismissed';
+    showToast('Gap dismissed', 'info');
+    updateGapCounts();
+}
+
+function updateGapCounts() {
+    var neutralTotal = document.querySelectorAll('#neutralGapTable tr').length;
+    var neutralActive = document.querySelectorAll('#neutralGapTable tr[data-added!="true"]').length;
+    var broaderTotal = document.querySelectorAll('#allGapTable tr').length;
+    var broaderActive = document.querySelectorAll('#allGapTable tr[data-added!="true"]').length;
+    
+    var neutralCount = document.getElementById('neutralCount');
+    var broaderCount = document.getElementById('broaderCount');
+    if (neutralCount) neutralCount.textContent = neutralActive;
+    if (broaderCount) broaderCount.textContent = broaderActive;
+}
+
+function addAllNeutralGaps() {
     var words = [];
-    document.querySelectorAll('tbody tr').forEach(tr => {
-        var word = tr.querySelector('td:first-child')?.textContent.trim();
+    document.querySelectorAll('#neutralGapTable tbody tr').forEach(tr => {
+        var word = tr.dataset.word;
         var score = tr.querySelector('td:nth-child(3) .badge')?.textContent.trim();
-        if (word && score) words.push({ word: word, sentiment_score: parseFloat(score) });
+        if (word && score && tr.dataset.added !== 'true') {
+            words.push({ word: word, sentiment_score: parseFloat(score) });
+        }
     });
+    
+    if (words.length === 0) {
+        showToast('No words to add', 'info');
+        return;
+    }
     
     fetch('/admin/api/lexicon/add-words-bulk', {
         method: 'POST',
@@ -194,8 +257,58 @@ function addAllGapWords() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            if (typeof showToast === 'function') showToast(data.count + ' words added to lexicon', 'success');
-            setTimeout(() => location.reload(), 1500);
+            showToast(data.count + ' words added to lexicon', 'success');
+            // Mark all as added
+            document.querySelectorAll('#neutralGapTable tbody tr').forEach(tr => {
+                if (tr.dataset.added !== 'true') {
+                    tr.dataset.added = 'true';
+                    tr.style.opacity = '0.5';
+                    tr.style.textDecoration = 'line-through';
+                    var btns = tr.querySelectorAll('button');
+                    btns.forEach(function(b) { b.disabled = true; });
+                    btns[0].textContent = '✓ Added';
+                }
+            });
+            updateGapCounts();
+        }
+    });
+}
+
+function addAllBroaderGaps() {
+    var words = [];
+    document.querySelectorAll('#allGapTable tbody tr').forEach(tr => {
+        var word = tr.dataset.word;
+        var score = tr.querySelector('td:nth-child(3) .badge')?.textContent.trim();
+        if (word && score && tr.dataset.added !== 'true') {
+            words.push({ word: word, sentiment_score: parseFloat(score) });
+        }
+    });
+    
+    if (words.length === 0) {
+        showToast('No words to add', 'info');
+        return;
+    }
+    
+    fetch('/admin/api/lexicon/add-words-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ words: words })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.count + ' words added to lexicon', 'success');
+            document.querySelectorAll('#allGapTable tbody tr').forEach(tr => {
+                if (tr.dataset.added !== 'true') {
+                    tr.dataset.added = 'true';
+                    tr.style.opacity = '0.5';
+                    tr.style.textDecoration = 'line-through';
+                    var btns = tr.querySelectorAll('button');
+                    btns.forEach(function(b) { b.disabled = true; });
+                    btns[0].textContent = '✓ Added';
+                }
+            });
+            updateGapCounts();
         }
     });
 }

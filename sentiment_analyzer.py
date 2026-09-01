@@ -292,9 +292,19 @@ def calculate_urgency(text, sentiment):
         5: ["emergency", "danger", "injured", "unsafe", "hazard", "assault", "harassment", "urgent", "critical",
             "gunshots", "gunshot", "shooting", "weapon", "violence", "hostage", "threat", "armed", "attack",
             "blood", "injury", "panic", "fight", "fire outbreak"],
-        4: ["still not working", "not working", "broken", "no water", "no power", "no electricity", "collapsed", "fire", "ignored", "weeks"],
-        3: ["delay", "late", "rude", "unhelpful", "expensive", "overcharged", "frustrated", "annoying"],
-        2: ["slow", "small", "noisy", "crowded", "uncomfortable"],
+        4: ["still not working", "not working", "broken", "no water", "no power", "no electricity", "collapsed", "fire", "ignored", "weeks",
+             "exposed electrical", "electrical wire", "electrical hazard", "tripping", "falling",
+             "gate left open", "gate open", "left open", "no security"],
+        3: ["delay", "late", "rude", "unhelpful", "expensive", "overcharged", "frustrated", "annoying",
+             "unusable", "disappeared", "crashes", "freezing", "failing", "unreliable",
+             "password", "login", "locked", "account", "payment", "charged", "refund",
+             "overcrowded", "noisy", "dark", "unlit", "poor lighting",
+             "leaking", "burst", "blocked", "damaged", "outage", "offline",
+             "not flushing", "not flowing", "not working properly"],
+        2: ["slow", "small", "noisy", "crowded", "uncomfortable",
+             "difficult", "confusing", "unclear", "complicated", "inconsistent",
+             "long queue", "long wait", "waiting", "delayed",
+             "missing", "incorrect", "wrong", "outdated"],
     }
 
     for level, terms in patterns.items():
@@ -312,7 +322,10 @@ def calculate_urgency(text, sentiment):
 
     if sentiment == "Negative" and urgency < 3 and not resolution:
         urgency = 3
-    
+    elif sentiment == "Mixed" and urgency < 2 and not resolution:
+        # Mixed sentiment with problem description should be at least medium urgency
+        urgency = 2
+
     # Cap urgency for positive and neutral feedback
     if sentiment == "Positive":
         urgency = min(urgency, 2)
