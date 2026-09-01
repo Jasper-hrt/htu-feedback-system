@@ -7,7 +7,7 @@ from enum import Enum
 
 
 # ==================== CONSTANTS ====================
-FALLBACK_CONFIDENCE_THRESHOLD = 0.15
+FALLBACK_CONFIDENCE_THRESHOLD = 0.08
 
 
 # ==================== ENUMS ====================
@@ -141,6 +141,11 @@ CATEGORY_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             r"(?:internet|wifi|network|connection)\s+(?:is\s+)?(?:too\s+slow|very\s+slow|extremely\s+slow|disconnecting|dropping|unstable|always\s+disconnecting|keeps\s+disconnecting)",
             r"(?:online\s+registration|online\s+system|student\s+portal|registration\s+system)\s+(?:is\s+)?(?:down|not\s+working|broken|unavailable|slow|efficient|good|excellent|working\s+well)",
             r"(?:network|internet|wifi)\s+(?:in\s+(?:the\s+)?(?:lecture\s+hall|classroom|library|hostel|dorm|lab|lab\s+room))\s+(?:is\s+)?(?:down|not\s+working|slow|disconnecting|unavailable|broken)",
+            r"(?:payment\s+(?:system|page|portal)|registry\s+(?:website|portal|online)|scholarship\s+(?:portal|website|application\s+system))\s+(?:is\s+)?(?:down|not\s+working|broken|unavailable|slow|crashed|failing|keeps\s+(?:failing|crashing))",
+            r"(?:online\s+payment|payment\s+gateway|payment\s+portal)\s+(?:is\s+)?(?:down|not\s+working|broken|unavailable|slow|crashed|failing)",
+            r"(?:registry\s+(?:website|portal|system)|scholarship\s+(?:portal|system|website))\s+(?:contains?|has|shows?)\s+(?:outdated|old|wrong|incorrect|inaccurate)\s+(?:information|data|content)",
+            r"(?:payment\s+page|payment\s+system|payment\s+portal)\s+(?:crashes?|keeps\s+crashing|freezes?|keeps\s+freezing|stops?\s+working|breaks?\s+down)",
+            r"(?:registry|registrar)\s+(?:website|portal|online\s+system|web\s+page)",
         ],
         "weak_indicators": [
             "online", "digital", "technology", "electronic",
@@ -174,6 +179,7 @@ CATEGORY_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             r"(?:loan|debt)\s+(?:is\s+)?(?:not\s+(?:approved|available)|delayed|problem)",
             r"(?:payment|fee|tuition)\s+(?:I\s+)?(?:made|paid)\s+(?:has\s+)?(?:not\s+been\s+(?:reflected|processed|recognized|updated)|is\s+still\s+(?:not\s+(?:reflected|showing|updated)))",
             r"(?:bursary|scholarship|financial\s+aid)\s+(?:application|process)\s+(?:is\s+)?(?:too\s+(?:complicated|slow|difficult)|delayed|not\s+(?:working|processing|approved|accepted)|problem|issue)",
+            r"(?:scholarship|bursary|financial\s+aid|grant|sponsorship)\s+(?:application|process|portal|system|website)",
             r"(?:account|statement)\s+(?:is\s+)?(?:not\s+(?:updated|reflecting|showing|correct)|wrong|incorrect|has\s+(?:an?\s+)?(?:error|discrepancy|problem))",
         ],
         "weak_indicators": [
@@ -226,6 +232,9 @@ CATEGORY_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             r"(?:laptop|phone|bag|wallet)\s+(?:was\s+)?(?:snatched|grabbed|stolen|taken)\s+(?:by|from)",
             r"(?:someone|person|thief|thieves|burglar|robber)\s+(?:broke?\s+into|entered|broke?\s+in\s+to|forced\s+(?:their|his|her)\s+way\s+into)\s+(?:my|the|our)\s+(?:room|hostel|hall|house|office|car)",
             r"(?:cctv|surveillance|security\s+camera|security\s+cameras)\s+(?:in|at|near)\s+(?:the\s+)?(?:parking\s+lot|parking|campus|hostel|gate|entrance|building|corridor|hallway)",
+            r"(?:exposed\s+(?:electrical\s+)?wire|exposed\s+wire|electrical\s+wire\s+exposed|damaged\s+(?:security\s+)?light|security\s+light\s+(?:is\s+)?(?:not\s+working|broken|damaged|flickering))",
+            r"(?:students?\s+(?:should|need|must)\s+have\s+(?:an?\s+)?(?:easier|better|faster)\s+way\s+to\s+report\s+(?:safety\s+)?(?:concerns?|problems?|issues?))",
+            r"(?:exposed\s+(?:electrical\s+)?wire|electrical\s+(?:socket|panel|system)\s+(?:is\s+)?(?:unsafe|overheating|sparking|damaged))",
         ],
         "weak_indicators": [
             "safe", "protect", "campus", "night",
@@ -399,6 +408,8 @@ CATEGORY_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             r"(?:online\s+registration|registration\s+system|student\s+portal|online\s+system)\s+(?:is\s+)?(?:efficient|good|excellent|working\s+well|reliable|bad|poor|terrible|slow|broken)",
             r"(?:certificate|transcript|document)\s+(?:still\s+)?(?:not\s+ready|not\s+available|not\s+processed|delayed|pending|missing)",
             r"(?:front\s+desk|help\s+desk|reception)\s+(?:is\s+)?(?:unhelpful|rude|not\s+helpful|slow|unresponsive|unprofessional)",
+            r"(?:complaint|feedback|request)\s+(?:was|has\s+been|been)\s+(?:acknowledged|received|submitted)\s+(?:but|and)\s+(?:nothing|no\s+action|no\s+response|not\s+resolved|unresolved|still\s+(?:not\s+)?pending)",
+            r"(?:registry|registrar|academic\s+office|admin\s+office|administrative\s+office)",
         ],
         "weak_indicators": [
             "system", "process", "official",
@@ -728,11 +739,13 @@ def classify_categories(text: str) -> List[CategoryMatch]:
 
         if score > 0:
             # Normalize score to 0-1 range (cap at reasonable max)
-            confidence = min(1.0, score / 10.0)
+            # Use a lower denominator so that even single keyword matches
+            # get reasonable confidence (e.g., score 1 → 0.18, score 2 → 0.36)
+            confidence = min(1.0, score / 5.5)
             scores[cat_name] = {
                 "score": score,
                 "confidence": confidence,
-                "evidence": list(set(evidence)),
+                "evidence": list(set(evidence)),  # deduplicate
             }
 
     if not scores:
@@ -989,6 +1002,25 @@ def analyze_sentiment_type(text: str, sentiment_label: str, sentiment_score: flo
         if text_lower in clear_negative:
             return "negative"
         return "unclear"
+
+    text_lower = text.lower()
+
+    # Context-aware overrides for known VADER weaknesses
+    # "very slowly" should be negative, not positive
+    if "very slowly" in text_lower or "extremely slowly" in text_lower or "too slowly" in text_lower:
+        return "negative"
+    # "very well" should be positive, not negative
+    if "very well" in text_lower or "extremely well" in text_lower:
+        return "positive"
+    # "complaint" with positive words = mixed (the complaint itself is negative)
+    if "complaint" in text_lower and sentiment_score > 0:
+        return "mixed"
+    # "problem" with positive resolution = mixed
+    if "problem" in text_lower and ("solved" in text_lower or "fixed" in text_lower or "resolved" in text_lower):
+        return "mixed"
+    # "issue" with positive resolution = mixed
+    if "issue" in text_lower and ("solved" in text_lower or "fixed" in text_lower or "resolved" in text_lower):
+        return "mixed"
 
     # Check for mixed sentiment FIRST (before checking base sentiment)
     # This handles cases where the overall score is near zero but there are
@@ -1247,7 +1279,7 @@ def _is_suggestion_or_inquiry(text: str) -> bool:
 def determine_urgency(urgency_score: int, sentiment_type: str, categories: List[CategoryMatch], text: str = "") -> str:
     """Determine the urgency level based on risk and context."""
     # Critical safety terms always result in critical urgency
-    critical_terms = ["shooting", "gunshot", "gunshots", "kidnapped", "kidnapping", "hostage", "hostages", "bomb", "explosion", "exploded", "raped", "stabbing", "armed attack", "mass shooting", "fire outbreak", "building fire", "laboratory fire"]
+    critical_terms = ["shooting", "gunshot", "gunshots", "kidnapped", "kidnapping", "hostage", "hostages", "bomb", "explosion", "exploded", "raped", "stabbing", "armed attack", "mass shooting", "fire outbreak", "building fire", "laboratory fire", "strong smell of burning", "burning smell", "smell of burning", "electrical fire", "gas leak", "gas smell", "chemical spill", "toxic", "emergency exit blocked", "fire alarm not functioning", "fire alarm not working", "damaged staircase", "staircase railing", "completely dark", "completely dark pathway", "exposed electrical wire", "exposed wire", "electrical wire exposed", "electrical sockets overheating", "sockets overheating", "electrical system unsafe", "electrical system appears unsafe", "emergency contact not working", "emergency number not working", "fire safety equipment", "fire equipment", "emergency safety inspection", "building needs safety inspection"]
     text_lower = text.lower() if text else ""
     has_critical_safety = any(term in text_lower for term in critical_terms)
 

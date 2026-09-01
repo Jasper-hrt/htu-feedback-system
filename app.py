@@ -16,7 +16,7 @@ from sentiment.topic_extractor import extract_topics
 from solution_recommender import recommend_solutions
 from enhanced_recommender import get_trending_issues, get_department_workload, get_engine
 from recommender import generate_recommendation
-from security_manager import SecurityManager, require_2fa, get_client_ip, get_user_agent
+from security_manager import SecurityManager, get_client_ip, get_user_agent
 from recommendation_learning import RecommendationLearner
 import logging
 import sys
@@ -1778,7 +1778,6 @@ def admin_login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        totp_token = request.form.get('totp_token', '')
         
         user = SRCUser.query.filter_by(username=username).first()
         ip_address = get_client_ip()
@@ -1788,21 +1787,11 @@ def admin_login():
             # Check for anomalies
             anomaly = SecurityManager.detect_anomaly(user.id, ip_address, user_agent)
             
-            # If 2FA is enabled, verify token
-            if user.is_2fa_enabled:
-                if not totp_token:
-                    session['pending_2fa_user_id'] = user.id
-                    return render_template('admin_2fa.html', username=username)
-                if not SecurityManager.verify_2fa_token(user.totp_secret, totp_token):
-                    SecurityManager.record_login(user.id, 'admin', ip_address, user_agent, False, 'Invalid 2FA token')
-                    return render_template('admin_2fa.html', username=username, error='Invalid 2FA code')
-            
             # Login successful
             session['admin_id'] = user.id
             session['admin_name'] = user.full_name
             session['admin_role'] = user.role
-            session['2fa_verified'] = True
-            session.pop('pending_2fa_user_id', None)
+            session.pop('pending_2fa_user_id', None)  # Clean up any old session data
             user.last_login = datetime.utcnow()
             db.session.commit()
             
@@ -1820,64 +1809,7 @@ def admin_login():
     
     return render_template('admin_login.html')
 
-@app.route('/admin/2fa/setup', methods=['GET', 'POST'])
-@src_required
-def admin_2fa_setup():
-    """Setup 2FA for admin account."""
-    user = SRCUser.query.get(session['admin_id'])
-    if request.method == 'POST':
-        token = request.form.get('token', '')
-        secret = session.get('2fa_setup_secret')
-        if secret and SecurityManager.verify_2fa_token(secret, token):
-            user.totp_secret = secret
-            user.is_2fa_enabled = True
-            db.session.commit()
-            session.pop('2fa_setup_secret', None)
-            flash('Two-factor authentication enabled successfully', 'success')
-            return redirect(url_for('admin_dashboard'))
-        return render_template('admin_2fa_setup.html', error='Invalid verification code', secret=secret)
-    
-    secret = SecurityManager.generate_2fa_secret()
-    session['2fa_setup_secret'] = secret
-    totp_uri = SecurityManager.get_totp_uri(secret, user.username)
-    return render_template('admin_2fa_setup.html', secret=secret, totp_uri=totp_uri)
-
-@app.route('/admin/2fa/verify', methods=['GET', 'POST'])
-def admin_2fa_verify():
-    """Verify 2FA token during login."""
-    if request.method == 'POST':
-        username = request.form.get('username')
-        totp_token = request.form.get('totp_token', '')
-        user = SRCUser.query.filter_by(username=username).first()
-        ip_address = get_client_ip()
-        user_agent = get_user_agent()
-        
-        if user and user.is_2fa_enabled and SecurityManager.verify_2fa_token(user.totp_secret, totp_token):
-            session['admin_id'] = user.id
-            session['admin_name'] = user.full_name
-            session['admin_role'] = user.role
-            session['2fa_verified'] = True
-            session.pop('pending_2fa_user_id', None)
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-            SecurityManager.record_login(user.id, 'admin', ip_address, user_agent, True)
-            return redirect(url_for('admin_dashboard'))
-        
-        SecurityManager.record_login(user.id if user else 0, 'admin', ip_address, user_agent, False, 'Invalid 2FA')
-        return render_template('admin_2fa.html', username=username, error='Invalid 2FA code')
-    
-    return render_template('admin_2fa.html')
-
-@app.route('/admin/2fa/disable', methods=['POST'])
-@src_required
-def admin_2fa_disable():
-    """Disable 2FA for admin account."""
-    user = SRCUser.query.get(session['admin_id'])
-    user.totp_secret = None
-    user.is_2fa_enabled = False
-    db.session.commit()
-    flash('Two-factor authentication disabled', 'info')
-    return redirect(url_for('admin_dashboard'))
+# ==================== ADMIN DASHBOARD & FEEDBACK ====================
 
 @app.route('/admin/dashboard')
 @src_required
