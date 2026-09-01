@@ -284,9 +284,7 @@
                                     <button onclick="showCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" class="action-btn action-correct" title="Correct Sentiment">🔄</button>
                                     <button onclick="showAdminInsightsModal({{ f.id }})" class="action-btn action-insights" title="Admin Insights">📋</button>
                                     <button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn action-response" title="Response">💬</button>
-                                    <form method="POST" action="/admin/delete-feedback/{{ f.id }}" onsubmit="return confirm('Delete?')" style="display:inline;">{{ csrf_field() }}
-                                        <button type="submit" class="action-btn action-delete" title="Delete">🗑️</button>
-                                    </form>
+                                    <button onclick="openAssignModal({{ f.id }}, {{ (f.assigned_to or '')|tojson }})" class="action-btn action-assign" title="Assign Member">👤</button>
                                 </div>
                             </td>
                         </tr>
@@ -324,6 +322,7 @@
         }
         </script>
         <div id="responseModal" class="modal"><div class="modal-content"><div class="modal-header">💬 Add SRC Response</div><form method="POST" id="responseForm">{{ csrf_field() }}<textarea name="src_response" rows="4" class="form-textarea mb-3" placeholder="Write your official response here..."></textarea><div class="flex justify-end gap-2"><button type="button" onclick="closeResponseModal()" class="btn btn-secondary">Cancel</button><button type="submit" class="btn btn-primary">✉️ Submit Response</button></div></form></div></div>
+<div id="assignModal" class="modal"><div class="modal-content" style="max-width: 420px;"><div class="modal-header">👤 Assign Member</div><div class="mb-3"><label style="font-weight:600; font-size:0.85rem; color: var(--text-secondary); display:block; margin-bottom:0.4rem;">SRC Member</label><select id="assignMemberSelect" class="form-select" style="width:100%; padding:0.55rem 0.75rem; border-radius:0.5rem; border:1px solid var(--border-color); background: var(--card-bg); color: var(--text-primary); font-size:0.9rem;"><option value="">Unassigned</option></select></div><div class="flex justify-end gap-2"><button type="button" onclick="closeAssignModal()" class="btn btn-secondary">Cancel</button><button type="button" onclick="submitAssign()" class="btn btn-primary">💾 Save Assignment</button></div></div></div>
 <div id="analyzeModal" class="modal"><div class="modal-content"><div class="modal-header">🔍 Feedback Analysis</div><div class="mb-3"><div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;"><span class="badge badge-info" id="analyzeSentimentBadge">Sentiment</span><span class="badge badge-warning" id="analyzeUrgencyBadge">Urgency</span></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🎭 Emotion & Confidence</h4><div id="analyzeEmotion" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">🧠 Sentiment Explanation</h4><div id="sentimentExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="mb-3"><h4 style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-primary);">⚡ Urgency Explanation</h4><div id="urgencyExplanation" style="background: var(--bg-color); border-radius: 0.6rem; padding: 1rem; border: 1px solid var(--border-color); min-height: 60px;"></div></div><div class="flex justify-end gap-2"><button type="button" onclick="closeAnalyzeModal()" class="btn btn-secondary">Close</button></div></div></div>
 <div id="adminInsightsModal" class="modal">
     <div class="modal-content">
@@ -685,8 +684,56 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
             }
         }
         function closeResponseModal() { document.getElementById('responseModal').classList.remove('active'); }
+        var currentAssignId = null;
+        function openAssignModal(id, currentAssignee) {
+            currentAssignId = id;
+            var modal = document.getElementById('assignModal');
+            var select = document.getElementById('assignMemberSelect');
+            if (!modal || !select) return;
+            select.value = currentAssignee || '';
+            modal.classList.add('active');
+        }
+        function closeAssignModal() { document.getElementById('assignModal').classList.remove('active'); }
+        function submitAssign() {
+            if (!currentAssignId) return;
+            var select = document.getElementById('assignMemberSelect');
+            var assignedTo = select.value;
+            fetch('/api/admin/feedback/' + currentAssignId + '/assign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+                body: JSON.stringify({ assigned_to: assignedTo })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    closeAssignModal();
+                    location.reload();
+                } else {
+                    alert(data.error || 'Failed to assign');
+                }
+            })
+            .catch(function() { alert('Network error'); });
+        }
+        function loadSrcUsers() {
+            fetch('/api/admin/src-users')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var select = document.getElementById('assignMemberSelect');
+                    if (!select) return;
+                    data.users.forEach(function(u) {
+                        var opt = document.createElement('option');
+                        opt.value = u.name;
+                        opt.textContent = u.name + (u.role ? ' (' + u.role + ')' : '');
+                        select.appendChild(opt);
+                    });
+                }
+            })
+            .catch(function(e) { console.error('Failed to load SRC users:', e); });
+        }
+        loadSrcUsers();
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') { closeResponseModal(); closeAnalyzeModal(); closeAdminInsightsModal(); }
+            if (e.key === 'Escape') { closeResponseModal(); closeAnalyzeModal(); closeAdminInsightsModal(); closeAssignModal(); }
         });
         document.getElementById('trendPeriod')?.addEventListener('change', function() {
             this.style.borderColor = 'var(--primary)';
@@ -727,7 +774,7 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
                 if (n.notification_type === 'new_feedback') icon = '📝';
                 else if (n.notification_type === 'unattended') icon = '⚠️';
                 else if (n.notification_type === 'status_change') icon = '📋';
-                var feedbackId = n.feedback_id || n.feedback_id;
+                var feedbackId = n.feedback_id;
                 return '<div class="notification-item ' + (n.is_read ? '' : 'unread') + '" onclick="handleAdminNotificationClick(' + n.id + ', ' + feedbackId + ')">' +
                     '<div class="notification-item-title">' + icon + ' ' + n.title + '</div>' +
                     '<div class="notification-item-message">' + n.message + '</div>' +
@@ -755,8 +802,8 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
                     setTimeout(function() { row.style.background = ''; }, 2000);
                     showToast('Feedback #' + feedbackId + ' located', 'success');
                 } else {
-                    // Feedback not in current view - show toast
-                    showToast('Feedback #' + feedbackId + ' - scroll to find it', 'info');
+                    // Feedback not in current view - navigate to admin dashboard
+                    window.location.href = '/admin';
                 }
             }
         }

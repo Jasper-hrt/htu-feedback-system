@@ -10577,7 +10577,7 @@ html.theme-dark .admin-hero-subtitle {
 .action-analyze:hover { background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); }
 .action-solution:hover { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); }
 .action-response:hover { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); }
-.action-delete:hover { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+.action-assign:hover { background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3); }
 
 /* ---- Notification Bell ---- */
 .notification-bell {

@@ -1224,13 +1224,21 @@ def edit_feedback(feedback_id):
 @student_required
 def delete_feedback(feedback_id):
     feedback = Feedback.query.get_or_404(feedback_id)
-    
+
     if feedback.student_id != session['student_id']:
         return render_template('error.html', error="Unauthorized"), 403
-    
-    if feedback.status != 'Pending' and datetime.utcnow() > feedback.created_at + timedelta(hours=1):
-        return render_template('error.html', error="Feedback can only be deleted if pending or within 1 hour")
-    
+
+    if feedback.src_response:
+        return render_template('error.html', error="Feedback cannot be deleted after the SRC has responded")
+
+    if datetime.utcnow() > feedback.created_at + timedelta(hours=1):
+        return render_template('error.html', error="Feedback can only be deleted within 1 hour of submission")
+
+    FeedbackVote.query.filter_by(feedback_id=feedback_id).delete()
+    SolutionFeedback.query.filter_by(feedback_id=feedback_id).delete()
+    Notification.query.filter_by(feedback_id=feedback_id).delete()
+    SentimentCorrection.query.filter_by(feedback_id=feedback_id).delete()
+
     db.session.delete(feedback)
     db.session.commit()
     log_feedback_action(feedback_id, session['student_id'], 'Delete', 'Feedback deleted')
@@ -2288,6 +2296,12 @@ def admin_templates():
 @src_required
 def admin_delete_feedback(feedback_id):
     feedback = Feedback.query.get_or_404(feedback_id)
+
+    FeedbackVote.query.filter_by(feedback_id=feedback_id).delete()
+    SolutionFeedback.query.filter_by(feedback_id=feedback_id).delete()
+    Notification.query.filter_by(feedback_id=feedback_id).delete()
+    SentimentCorrection.query.filter_by(feedback_id=feedback_id).delete()
+
     db.session.delete(feedback)
     db.session.commit()
     log_admin_action(session['admin_name'], 'Delete Feedback', f'Delete feedback ID: {feedback_id}')
@@ -2882,6 +2896,39 @@ def api_admin_unread_count():
     """Get unread notification count for admin."""
     count = Notification.query.filter_by(recipient_type='admin', is_read=False).count()
     return jsonify({'success': True, 'unread_count': count})
+
+@app.route('/api/admin/src-users')
+@src_required
+def api_admin_src_users():
+    """Get list of SRC users for assignment dropdown."""
+    users = SRCUser.query.order_by(SRCUser.full_name.asc()).all()
+    return jsonify({
+        'success': True,
+        'users': [
+            {
+                'id': u.id,
+                'name': u.full_name,
+                'role': u.role or '',
+                'username': u.username or ''
+            }
+            for u in users
+        ]
+    })
+
+@app.route('/api/admin/feedback/<int:feedback_id>/assign', methods=['POST'])
+@src_required
+def api_admin_assign_feedback(feedback_id):
+    """Assign feedback to an SRC member."""
+    feedback = Feedback.query.get_or_404(feedback_id)
+    data = request.get_json()
+    assigned_to = data.get('assigned_to', '')
+
+    feedback.assigned_to = assigned_to.strip() if assigned_to else None
+    db.session.commit()
+
+    log_admin_action(session['admin_name'], 'Assign Feedback', f'Feedback ID: {feedback_id} assigned to: {assigned_to or "Unassigned"}')
+    add_db_log('feedback', 'INFO', 'admin', session['admin_name'], 'Feedback Assigned', f'Feedback ID: {feedback_id} assigned to: {assigned_to or "Unassigned"}')
+    return jsonify({'success': True, 'assigned_to': feedback.assigned_to})
 
 # ==================== ACTIVE LEARNING API ROUTES ====================
 

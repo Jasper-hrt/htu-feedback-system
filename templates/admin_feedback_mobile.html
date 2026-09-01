@@ -21,7 +21,6 @@
 .feedback-table .ft-actions button:hover { background: var(--bg-color); }
 .feedback-table .ft-actions button::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--card-bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.65rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; margin-bottom: 0.25rem; z-index: 10; }
 .feedback-table .ft-actions button:hover::after { opacity: 1; }
-.feedback-table .ft-actions .ft-btn-delete { border-color: var(--danger); }
 
 /* Mobile Cards */
 .feedback-cards { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -44,8 +43,6 @@
 .feedback-card-actions button:active { transform: scale(0.98); }
 .feedback-card-actions button::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--card-bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.65rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; margin-bottom: 0.25rem; z-index: 10; }
 .feedback-card-actions button:hover::after { opacity: 1; }
-.feedback-card-actions .ft-btn-delete { border-color: var(--danger); }
-.feedback-card-actions .ft-btn-delete:hover { background: var(--danger-light); border-color: var(--danger); }
 
 /* Modal */
 .feedback-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
@@ -118,12 +115,13 @@
 <th>Sentiment</th>
 <th onclick="sortTableClick('urgency')" style="cursor:pointer;">Urgency <span id="sort-urgency">{{ '↓' if sort_by=='urgency' else '' }}</span></th>
 <th onclick="sortTableClick('status')" style="cursor:pointer;">Status <span id="sort-status">{{ '↓' if sort_by=='status' else '' }}</span></th>
+<th>Assigned</th>
 <th>Actions</th>
 </tr>
 </thead>
 <tbody>
 {% if feedbacks|length == 0 %}
-<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--text-secondary);">No feedback found</td></tr>
+<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-secondary);">No feedback found</td></tr>
 {% else %}
 {% for f in feedbacks %}
 <tr data-id="{{ f.id }}" data-date="{{ f.created_at.strftime('%Y%m%d%H%M%S') if f.created_at else '0' }}" data-urgency="{{ f.urgency_score }}" data-status="{{ f.status }}" data-category="{{ f.category }}">
@@ -145,12 +143,19 @@
 </form>
 </td>
 <td>
+<form method="POST" action="/admin/update/{{ f.id }}" style="display:inline;">{{ csrf_field() }}
+<select name="assigned_to" onchange="this.form.submit()" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="">Unassigned</option>
+{% if f.assigned_to %}<option value="{{ f.assigned_to }}" selected>{{ f.assigned_to }}</option>{% endif %}
+</select>
+</form>
+</td>
+<td>
 <div class="ft-actions">
 <button onclick="openModal('insights', {{ f.id }})" data-tip="Insights">📋</button>
 <button onclick="openModal('analyze', {{ f.id }})" data-tip="Analyze">🔍</button>
 <button onclick="openCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" data-tip="Correct">🔄</button>
 <button onclick="openModal('reply', {{ f.id }})" data-tip="Reply">💬</button>
-<button onclick="deleteFeedback({{ f.id }})" class="ft-btn-delete" data-tip="Delete">🗑️</button>
 </div>
 </td>
 </tr>
@@ -192,12 +197,19 @@
 </select>
 </form>
 </div>
+<div class="feedback-card-assign">
+<form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}
+<select name="assigned_to" onchange="this.form.submit()" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="">👤 Unassigned</option>
+{% if f.assigned_to %}<option value="{{ f.assigned_to }}" selected>{{ f.assigned_to }}</option>{% endif %}
+</select>
+</form>
+</div>
 <div class="feedback-card-actions">
 <button onclick="openModal('insights', {{ f.id }})" data-tip="Insights">📋</button>
 <button onclick="openModal('analyze', {{ f.id }})" data-tip="Analyze">🔍</button>
 <button onclick="openCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" data-tip="Correct">🔄</button>
 <button onclick="openModal('reply', {{ f.id }})" data-tip="Reply">💬</button>
-<button onclick="deleteFeedback({{ f.id }})" class="ft-btn-delete" data-tip="Delete" style="width:100%;padding:0.5rem 0.3rem;border-radius:0.5rem;border:1px solid var(--danger);background:var(--card-bg);color:var(--danger);cursor:pointer;font-size:0.75rem;font-weight:600;text-align:center;">🗑️</button>
 </div>
 </div>
 </div>
@@ -377,28 +389,6 @@ function submitCorrection() {
             closeModal('correction');
         } else {
             showToast(data.error || 'Failed to record correction', 'error');
-        }
-    })
-    .catch(function() { showToast('Network error', 'error'); });
-}
-
-function deleteFeedback(id) {
-    if (!confirm('Delete this feedback?')) return;
-    var csrf = document.querySelector('input[name="csrf_token"]').value;
-    fetch('/admin/delete-feedback/' + id, {
-        method: 'POST',
-        headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' }
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Feedback deleted', 'success');
-            var row = document.querySelector('tr[data-id="' + id + '"]');
-            if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(function() { row.remove(); }, 300); }
-            var card = document.getElementById('mob-card-' + id);
-            if (card) { card.style.opacity = '0'; card.style.transition = 'opacity 0.3s'; setTimeout(function() { card.remove(); }, 300); }
-        } else {
-            showToast(data.error || 'Failed to delete', 'error');
         }
     })
     .catch(function() { showToast('Network error', 'error'); });
