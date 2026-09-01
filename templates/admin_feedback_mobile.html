@@ -198,12 +198,9 @@
 </form>
 </div>
 <div class="feedback-card-assign">
-<form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}
-<select name="assigned_to" onchange="this.form.submit()" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary);">
-<option value="">👤 Unassigned</option>
-{% if f.assigned_to %}<option value="{{ f.assigned_to }}" selected>{{ f.assigned_to }}</option>{% endif %}
-</select>
-</form>
+<button onclick="openAssignModalMobile({{ f.id }}, {{ (f.assigned_to or '')|tojson }})" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer;">
+👤 {{ f.assigned_to or 'Assign Member' }}
+</button>
 </div>
 <div class="feedback-card-actions">
 <button onclick="openModal('insights', {{ f.id }})" data-tip="Insights">📋</button>
@@ -260,6 +257,22 @@
 </div>
 </div>
 </div></div>
+
+<div id="assignModalMobile" class="feedback-modal modal">
+    <div class="modal-content" style="max-width: 420px; margin: 1rem auto;">
+        <div class="modal-header">👤 Assign Member</div>
+        <div class="mb-3">
+            <label style="font-weight:600; font-size:0.85rem; color: var(--text-secondary); display:block; margin-bottom:0.4rem;">SRC Member</label>
+            <select id="assignMemberSelectMobile" style="width:100%; padding:0.55rem 0.75rem; border-radius:0.5rem; border:1px solid var(--border-color); background: var(--card-bg); color: var(--text-primary); font-size:0.9rem;">
+                <option value="">Unassigned</option>
+            </select>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button type="button" onclick="closeModal('assignModalMobile')" class="btn btn-secondary">Cancel</button>
+            <button type="button" id="assignSaveBtnMobile" onclick="submitAssignMobile()" class="btn btn-primary">💾 Save Assignment</button>
+        </div>
+    </div>
+</div>
 
 <script>
 var feedbackData = {};
@@ -392,6 +405,57 @@ function submitCorrection() {
         }
     })
     .catch(function() { showToast('Network error', 'error'); });
+}
+
+// Assign Modal
+var currentAssignIdMobile = null;
+function openAssignModalMobile(id, currentAssignee) {
+    currentAssignIdMobile = id;
+    var select = document.getElementById('assignMemberSelectMobile');
+    if (select) {
+        select.innerHTML = '<option value="">Unassigned</option>';
+        select.value = currentAssignee || '';
+        fetch('/api/admin/src-users')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success && data.users && data.users.length) {
+                data.users.forEach(function(u) {
+                    var opt = document.createElement('option');
+                    opt.value = u.name;
+                    opt.textContent = u.name + (u.role ? ' - ' + u.role : '');
+                    select.appendChild(opt);
+                });
+                select.value = currentAssignee || '';
+            }
+        })
+        .catch(function(e) { console.error('Failed to load SRC users:', e); });
+    }
+    document.getElementById('assignModalMobile').classList.add('active');
+}
+function closeAssignModalMobile() { document.getElementById('assignModalMobile').classList.remove('active'); }
+function submitAssignMobile() {
+    if (!currentAssignIdMobile) return;
+    var select = document.getElementById('assignMemberSelectMobile');
+    var assignedTo = select.value;
+    var btn = document.getElementById('assignSaveBtnMobile');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+    fetch('/api/admin/feedback/' + currentAssignIdMobile + '/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ assigned_to: assignedTo })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            closeAssignModalMobile();
+            showToast('Assignment updated', 'success');
+            setTimeout(function() { location.reload(); }, 600);
+        } else {
+            showToast(data.error || 'Failed to assign', 'error');
+        }
+    })
+    .catch(function(err) { console.error('Assign error:', err); showToast('Network error', 'error'); })
+    .finally(function() { if (btn) { btn.disabled = false; btn.textContent = '💾 Save Assignment'; } });
 }
 </script>
 {% endblock %}

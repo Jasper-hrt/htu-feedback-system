@@ -978,22 +978,40 @@ html.theme-dark .btn-hero-primary:hover {
     background: #fff;
 }
 
-html.theme-dark .btn-hero {
-    background: rgba(255, 255, 255, 0.1);
+/* Light mode: make btn-hero usable on normal page backgrounds */
+html:not(.theme-dark) .btn-hero {
+    background: var(--bg-color);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+html:not(.theme-dark) .btn-hero:hover {
+    background: var(--border-color);
+}
+
+html:not(.theme-dark) .btn-hero-primary {
+    background: var(--primary);
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--primary);
 }
 
-html.theme-dark .btn-hero:hover {
-    background: rgba(255, 255, 255, 0.2);
+html:not(.theme-dark) .btn-hero-primary:hover {
+    background: var(--primary-dark);
 }
 
-html.theme-dark .btn-hero-primary {
-    background: rgba(255, 255, 255, 0.95);
-    color: var(--primary);
+/* Preserve original hero button look in light mode when inside a dark hero */
+html:not(.theme-dark) .admin-hero .btn-hero,
+html:not(.theme-dark) .admin-hero .btn-hero-primary {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
-html.theme-dark .btn-hero-primary:hover {
+html:not(.theme-dark) .admin-hero .btn-hero:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+html:not(.theme-dark) .admin-hero .btn-hero-primary:hover {
     background: #fff;
 }
 
