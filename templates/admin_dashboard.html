@@ -1,6 +1,54 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+/* Floating admin sidebar */
+.admin-sidebar {
+    position: sticky;
+    flex: 0 0 16rem;
+    width: 16rem;
+    top: calc(var(--nav-height, 4rem) + 1.5rem);
+    align-self: flex-start;
+    max-height: calc(100vh - var(--nav-height, 4rem) - 2rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.10);
+    padding: 1.25rem;
+    z-index: 5;
+}
+html.theme-dark .admin-sidebar {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(59, 130, 246, 0.06));
+    border-color: rgba(148, 163, 184, 0.18);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.student-layout { gap: 1.5rem; padding: 1.5rem 1.75rem 3rem; max-width: 1400px; margin: 0 auto; width: 100%; }
+.student-content { flex: 1; min-width: 0; }
+
+@media (max-width: 900px) {
+    .admin-sidebar {
+        position: fixed;
+        left: 0; top: 4rem; bottom: 0;
+        max-height: none;
+        border-radius: 0 18px 18px 0;
+        transform: translateX(-100%);
+        box-shadow: var(--shadow-lg);
+        z-index: 100;
+    }
+    .admin-sidebar.open { transform: translateX(0); }
+}
+
+/* Assign modal: robust styling & loading state */
+.assign-loading {
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+}
+</style>
+
 <div class="student-layout">
     <aside class="admin-sidebar" aria-label="Admin dashboard sidebar">
         <div class="admin-sidebar-title">
@@ -699,63 +747,109 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
         }
         function closeResponseModal() { document.getElementById('responseModal').classList.remove('active'); }
         var currentAssignId = null;
+        var srcUsersLoaded = false;
+        var srcUsersLoading = false;
+
+        function ensureSrcUsersLoaded(cb) {
+            if (srcUsersLoaded) { cb && cb(); return; }
+            if (srcUsersLoading) {
+                var wait = setInterval(function() {
+                    if (!srcUsersLoading) { clearInterval(wait); cb && cb(); }
+                }, 80);
+                return;
+            }
+            var select = document.getElementById('assignMemberSelect');
+            if (!select) { cb && cb(); return; }
+            select.innerHTML = '<option value="" disabled selected>Loading SRC members…</option>';
+            srcUsersLoading = true;
+            fetch('/api/admin/src-users', { headers: { 'Accept': 'application/json' } })
+                .then(function(r) {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(function(data) {
+                    select.innerHTML = '<option value="">Unassigned</option>';
+                    if (data && data.success && Array.isArray(data.users) && data.users.length) {
+                        data.users.forEach(function(u) {
+                            if (!u || !u.name) return;
+                            var opt = document.createElement('option');
+                            opt.value = u.name;
+                            opt.textContent = u.name + (u.role ? ' — ' + u.role : '');
+                            select.appendChild(opt);
+                        });
+                    } else {
+                        var opt = document.createElement('option');
+                        opt.value = '';
+                        opt.textContent = 'No SRC members found';
+                        opt.disabled = true;
+                        select.appendChild(opt);
+                    }
+                    srcUsersLoaded = true;
+                })
+                .catch(function(err) {
+                    console.error('Failed to load SRC users:', err);
+                    select.innerHTML = '<option value="">Unassigned</option>';
+                    var opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = '⚠️ Failed to load members';
+                    opt.disabled = true;
+                    select.appendChild(opt);
+                    if (typeof showToast === 'function') showToast('Failed to load SRC members', 'error');
+                })
+                .finally(function() {
+                    srcUsersLoading = false;
+                    cb && cb();
+                });
+        }
+
         function openAssignModal(id, currentAssignee) {
             currentAssignId = id;
             var modal = document.getElementById('assignModal');
             var select = document.getElementById('assignMemberSelect');
             if (!modal || !select) return;
-            select.value = currentAssignee || '';
+            ensureSrcUsersLoaded(function() {
+                if (select) select.value = currentAssignee || '';
+            });
             modal.classList.add('active');
         }
         function closeAssignModal() { document.getElementById('assignModal').classList.remove('active'); }
         function submitAssign() {
-            if (!currentAssignId) return;
+            if (!currentAssignId) {
+                if (typeof showToast === 'function') showToast('No feedback selected', 'error');
+                return;
+            }
             var select = document.getElementById('assignMemberSelect');
+            if (!select) return;
             var assignedTo = select.value;
             var btn = document.getElementById('assignSaveBtn');
-            if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+            if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
             fetch('/api/admin/feedback/' + currentAssignId + '/assign', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
                 body: JSON.stringify({ assigned_to: assignedTo })
             })
-            .then(function(r) { return r.json(); })
+            .then(function(r) {
+                if (!r.ok) return r.json().then(function(e) { throw new Error(e.error || 'HTTP ' + r.status); });
+                return r.json();
+            })
             .then(function(data) {
-                if (data.success) {
+                if (data && data.success) {
                     closeAssignModal();
-                    showToast('Assignment updated', 'success');
-                    setTimeout(function() { location.reload(); }, 600);
+                    if (typeof showToast === 'function') showToast('✓ Assignment updated', 'success');
+                    setTimeout(function() { location.reload(); }, 700);
                 } else {
-                    alert(data.error || 'Failed to assign');
+                    if (typeof showToast === 'function') showToast((data && data.error) || 'Failed to assign', 'error');
                 }
             })
-            .catch(function(err) { console.error('Assign error:', err); alert('Network error'); })
+            .catch(function(err) {
+                console.error('Assign error:', err);
+                if (typeof showToast === 'function') showToast('Assign failed: ' + (err.message || 'network error'), 'error');
+            })
             .finally(function() { if (btn) { btn.disabled = false; btn.textContent = '💾 Save Assignment'; } });
         }
-        function loadSrcUsers() {
-            fetch('/api/admin/src-users')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                var select = document.getElementById('assignMemberSelect');
-                if (!select) return;
-                if (data.success && data.users && data.users.length) {
-                    data.users.forEach(function(u) {
-                        var opt = document.createElement('option');
-                        opt.value = u.name;
-                        opt.textContent = u.name + (u.role ? ' - ' + u.role : '');
-                        select.appendChild(opt);
-                    });
-                } else {
-                    var opt = document.createElement('option');
-                    opt.value = '';
-                    opt.textContent = 'No SRC members available';
-                    opt.disabled = true;
-                    select.appendChild(opt);
-                }
-            })
-            .catch(function(e) { console.error('Failed to load SRC users:', e); });
-        }
-        loadSrcUsers();
+        // Backward-compat no-op; loadSrcUsers kept as alias to avoid breaking older call sites.
+        function loadSrcUsers() { ensureSrcUsersLoaded(); }
+        // loadSrcUsers is no longer called eagerly; users load on first modal open.
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') { closeResponseModal(); closeAnalyzeModal(); closeAdminInsightsModal(); closeAssignModal(); }
         });
