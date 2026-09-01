@@ -1317,14 +1317,37 @@ def view_topic(topic_id):
         content = request.form.get('content')
         if content:
             analysis = analyze_chat_message(content)
-            reply = ForumReply(
-                topic_id=topic_id, student_id=student_id, content=content,
-                cleaned_content=analysis['cleaned_message'], sentiment=analysis['sentiment'],
-                sentiment_score=analysis['sentiment_score'], urgency_score=analysis['urgency_score'],
-                is_flagged=analysis['is_flagged']
-            )
+            # analyze_chat_message returns (sentiment, score) tuple
+            if isinstance(analysis, tuple):
+                chat_sentiment, chat_score = analysis
+                reply = ForumReply(
+                    topic_id=topic_id, student_id=student_id, content=content,
+                    cleaned_content=content.lower(), sentiment=chat_sentiment,
+                    sentiment_score=chat_score, urgency_score=3,
+                    is_flagged=False
+                )
+            else:
+                reply = ForumReply(
+                    topic_id=topic_id, student_id=student_id, content=content,
+                    cleaned_content=analysis.get('cleaned_message', content.lower()),
+                    sentiment=analysis.get('sentiment', 'Neutral'),
+                    sentiment_score=analysis.get('sentiment_score', 0.0),
+                    urgency_score=analysis.get('urgency_score', 3),
+                    is_flagged=analysis.get('is_flagged', False)
+                )
             db.session.add(reply)
             topic.updated_at = datetime.utcnow()
+            
+            # Handle reply_to_id if present
+            reply_to_id = request.form.get('reply_to_id')
+            if reply_to_id:
+                try:
+                    reply_to_id = int(reply_to_id)
+                    parent_reply = ForumReply.query.filter_by(id=reply_to_id, topic_id=topic_id).first()
+                    if parent_reply:
+                        reply.reply_to_id = reply_to_id
+                except (ValueError, TypeError):
+                    pass
             
             topic_analysis = analyze_topic(topic.content, topic.replies + [reply])
             topic.sentiment = topic_analysis['sentiment']

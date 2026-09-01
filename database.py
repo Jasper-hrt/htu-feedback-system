@@ -212,10 +212,12 @@ class ForumReply(db.Model):
     urgency_score = db.Column(db.Integer, default=1)
     is_flagged = db.Column(db.Boolean, default=False)
     is_edited = db.Column(db.Boolean, default=False)
+    reply_to_id = db.Column(db.Integer, db.ForeignKey('forum_replies.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     edited_at = db.Column(db.DateTime)
     
     student = db.relationship('Student', backref='replies')
+    reply_to = db.relationship('ForumReply', remote_side=[id], backref='replies_to')
 
     @property
     def upvotes(self):

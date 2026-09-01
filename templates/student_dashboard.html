@@ -7,7 +7,7 @@
 
 /* ===== Sidebar ===== */
 .sd-sidebar {
-    width: 260px; flex-shrink: 0; background: var(--card-bg);
+    width: 220px; flex-shrink: 0; background: var(--card-bg);
     border-right: 1px solid var(--border-color);
     display: flex; flex: 1; flex-direction: column; transition: transform 0.3s ease;
     overflow-y: auto;
@@ -201,13 +201,18 @@
     .sd-sidebar {
         position: fixed; left: 0; top: 4rem; bottom: 0; z-index: 100;
         transform: translateX(-100%); box-shadow: var(--shadow-lg);
+        width: 200px;
     }
     .sd-sidebar.open { transform: translateX(0); }
     .sd-mobile-nav { display: none; }
-    .sd-content { padding: 1rem; }
-    .sd-hero { padding: 0.85rem; }
-    .sd-stats { grid-template-columns: repeat(2, 1fr); }
-    .sd-actions { grid-template-columns: repeat(2, 1fr); }
+    .sd-content { padding: 0.75rem; }
+    .sd-hero { padding: 0.75rem; flex-direction: column; align-items: flex-start; }
+    .sd-stats { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .sd-actions { grid-template-columns: repeat(2, 1fr); gap: 0.4rem; }
+    .sd-card-actions { flex-wrap: wrap; }
+    .sd-btn-small { padding: 0.35rem 0.6rem; font-size: 0.65rem; }
+    .sd-filters { gap: 0.25rem; }
+    .sd-filter { padding: 0.3rem 0.5rem; font-size: 0.65rem; }
 }
 @media (min-width: 769px) {
     .sd-sidebar { transform: none !important; position: static; }
@@ -334,15 +339,15 @@
                             <span class="sd-tag sd-tag-urgency-{{ f.urgency_score }}">{{ f.urgency_score }}/5</span>
                         </div>
                         <div class="sd-card-actions">
-                            {% if f.phase2_ai_explanation %}<button onclick="showAnalysis('{{ f.id }}')" class="sd-btn-small">🧠 Analysis</button>{% endif %}
-                            {% if f.short_term_solution %}<button onclick="showSolution('{{ f.id }}')" class="sd-btn-small">💡 Solution</button>{% endif %}
+                            <button onclick="toggleAnalysis('{{ f.id }}')" class="sd-btn-small" id="analysis-btn-{{ f.id }}">🧠 Analysis</button>
+                            <button onclick="toggleSolution('{{ f.id }}')" class="sd-btn-small" id="solution-btn-{{ f.id }}">💡 Solution</button>
                             <a href="/edit-feedback/{{ f.id }}" class="sd-btn-small">✏️ Edit</a>
                         </div>
                     </div>
-                    {% if f.phase2_ai_explanation %}
-                    <div class="sd-analysis" id="analysis-{{ f.id }}" hidden>
+                    <div class="sd-analysis" id="analysis-{{ f.id }}" style="display:none;">
                         <div class="sd-analysis-title">🧠 AI Analysis</div>
-                        <div class="sd-analysis-content">
+                        <div class="sd-analysis-content" id="analysis-content-{{ f.id }}">
+                            {% if f.phase2_ai_explanation %}
                             {% set expl = f.phase2_ai_explanation %}
                             {% if expl is string %}<p>{{ expl }}</p>
                             {% elif expl is mapping %}
@@ -351,16 +356,20 @@
                                 {% if expl.get('category_reason') %}<div class="sd-analysis-item"><strong>Category Reason:</strong> {{ expl.category_reason }}</div>{% endif %}
                                 {% if expl.get('keywords') %}<div class="sd-analysis-item"><strong>Keywords:</strong><div class="sd-keywords">{% for kw in expl.keywords %}<span class="sd-keyword">{{ kw }}</span>{% endfor %}</div></div>{% endif %}
                             {% else %}<p>{{ expl }}</p>{% endif %}
+                            {% else %}
+                            <p>Analyzing your feedback...</p>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
-                    {% if f.short_term_solution %}
-                    <div class="sd-solution" id="sol-{{ f.id }}" hidden>
+                    <div class="sd-solution" id="sol-{{ f.id }}" style="display:none;">
                         <div class="sd-solution-title">💡 Recommended Solution</div>
+                        {% if f.short_term_solution %}
                         <p>{{ f.short_term_solution }}</p>
                         <div class="sd-solution-foot"><span>🏢 {{ f.responsible_department or 'SRC' }}</span><span>⏱️ {{ f.estimated_time or 'N/A' }}</span></div>
+                        {% else %}
+                        <p>Solution is being generated...</p>
+                        {% endif %}
                     </div>
-                    {% endif %}
                     {% if f.src_response %}
                     <div class="sd-response">
                         <div class="sd-response-head">
@@ -404,8 +413,18 @@ function filterDash(status) {
     var btn = document.getElementById('f' + status.replace(' ', ''));
     if (btn) btn.classList.add('active');
 }
-function showSolution(id) { var el = document.getElementById('sol-' + id); if (el) el.hidden = !el.hidden; }
-function showAnalysis(id) { var el = document.getElementById('analysis-' + id); if (el) el.hidden = !el.hidden; }
+function toggleAnalysis(id) {
+    var el = document.getElementById('analysis-' + id);
+    if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+}
+function toggleSolution(id) {
+    var el = document.getElementById('sol-' + id);
+    if (el) {
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+}
 
 // Notifications
 function loadNotifs() {

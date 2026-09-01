@@ -136,11 +136,11 @@
 {% if not topic.is_locked %}
 <div class="reply-form" id="replyForm">
     <h4>💬 Post a Reply</h4>
-    <form method="POST" action="/forum/topic/{{ topic.id }}/reply">
+    <form method="POST" action="/forum/topic/{{ topic.id }}">
         {{ csrf_field() }}
         <input type="hidden" name="reply_to_id" id="replyToId" value="">
         <div class="form-group-enhanced" style="margin-bottom: 0.75rem;">
-            <textarea name="content" rows="4" required class="form-textarea-enhanced" placeholder="Type your reply here..." style="min-height: 100px;"></textarea>
+            <textarea name="content" id="replyContent" rows="4" required class="form-textarea-enhanced" placeholder="Type your reply here..." style="min-height: 100px;"></textarea>
         </div>
         <button type="submit" class="btn btn-primary flex items-center gap-2" style="font-weight: 800;">📤 Post Reply</button>
     </form>
