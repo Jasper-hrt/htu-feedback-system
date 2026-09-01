@@ -547,6 +547,7 @@ def process_feedback(text, user_category=None):
 def analyze_chat_message(message):
     """Fast sentiment analysis for chat messages."""
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    from cleaning import clean_text
     analyzer = SentimentIntensityAnalyzer()
     vs = analyzer.polarity_scores(message)
     compound = vs['compound']
@@ -558,7 +559,15 @@ def analyze_chat_message(message):
     else:
         sentiment = 'Neutral'
     
-    return sentiment, round(compound, 3)
+    cleaned = clean_text(message) if message else None
+    
+    return {
+        'cleaned_message': cleaned,
+        'sentiment': sentiment,
+        'sentiment_score': round(compound, 3),
+        'urgency_score': 1,
+        'is_flagged': False,
+    }
 
 
 def analyze_topic(content, replies=[]):
