@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Feedback #{{ feedback.id }} · Student{% endblock %}
+{% block content %}
+<div class="main-container" style="max-width: 880px; margin: 0 auto;">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div>
+            <h2>📝 Feedback #{{ feedback.id }}</h2>
+            <p>Viewing this feedback from your notification.</p>
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+            <a href="{{ url_for('student_dashboard') }}" class="page-btn">← Back</a>
+        </div>
+    </div>
+
+    <div class="card" style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:14px;padding:1.5rem;margin-bottom:1.25rem;box-shadow:var(--shadow);">
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+            <span class="sd-badge sd-badge-gray">{{ feedback.category or 'General' }}</span>
+            {% if feedback.status == 'Resolved' %}<span class="sd-badge sd-badge-green">✅ Resolved</span>
+            {% elif feedback.status == 'In Progress' %}<span class="sd-badge sd-badge-blue">🔄 In Progress</span>
+            {% elif feedback.status == 'Acknowledged' %}<span class="sd-badge sd-badge-blue">👀 Acknowledged</span>
+            {% elif feedback.status == 'Escalated' %}<span class="sd-badge sd-badge-red">🚨 Escalated</span>
+            {% else %}<span class="sd-badge sd-badge-yellow">⏳ Pending</span>{% endif %}
+            {% if feedback.sentiment == 'Positive' %}<span class="sd-tag sd-tag-green">😊 Positive</span>
+            {% elif feedback.sentiment == 'Negative' %}<span class="sd-tag sd-tag-red">😞 Negative</span>
+            {% else %}<span class="sd-tag sd-tag-gray">😐 Neutral</span>{% endif %}
+            <span class="sd-tag sd-tag-urgency-{{ feedback.urgency_score or 1 }}">Urgency {{ feedback.urgency_score or 1 }}/5</span>
+        </div>
+
+        {% if feedback.location %}
+        <div style="margin-bottom:0.75rem;color:var(--text-secondary);font-size:0.9rem;">📍 {{ feedback.location }}</div>
+        {% endif %}
+
+        <div style="background:var(--bg-secondary);padding:1rem;border-radius:10px;border:1px solid var(--border-color);white-space:pre-wrap;line-height:1.6;">{{ feedback.feedback_text }}</div>
+
+        <div style="margin-top:1rem;font-size:0.85rem;color:var(--text-secondary);">
+            🕒 Submitted {{ feedback.created_at.strftime('%Y-%m-%d %H:%M') if feedback.created_at else 'N/A' }}
+        </div>
+    </div>
+
+    {% if feedback.src_response %}
+    <div class="card" style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;">
+        <h3 style="margin:0 0 0.5rem 0;font-size:1.05rem;color:var(--primary);">💬 SRC Response</h3>
+        <div style="white-space:pre-wrap;line-height:1.5;">{{ feedback.src_response }}</div>
+    </div>
+    {% endif %}
+
+    {% if feedback.short_term_solution or feedback.long_term_solution %}
+    <div class="card" style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;">
+        <h3 style="margin:0 0 0.75rem 0;font-size:1.05rem;color:var(--primary);">💡 Recommended Action</h3>
+        {% if feedback.short_term_solution %}
+        <div style="margin-bottom:0.75rem;">
+            <div style="font-weight:600;color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.25rem;">Short term</div>
+            <div style="white-space:pre-wrap;line-height:1.5;">{{ feedback.short_term_solution }}</div>
+        </div>
+        {% endif %}
+        {% if feedback.long_term_solution %}
+        <div>
+            <div style="font-weight:600;color:var(--text-secondary);font-size:0.85rem;margin-bottom:0.25rem;">Long term</div>
+            <div style="white-space:pre-wrap;line-height:1.5;">{{ feedback.long_term_solution }}</div>
+        </div>
+        {% endif %}
+        {% if feedback.responsible_department or feedback.estimated_time %}
+        <div style="margin-top:0.75rem;display:flex;gap:1rem;flex-wrap:wrap;font-size:0.85rem;color:var(--text-secondary);">
+            {% if feedback.responsible_department %}<span>🏛 {{ feedback.responsible_department }}</span>{% endif %}
+            {% if feedback.estimated_time %}<span>⏳ {{ feedback.estimated_time }}</span>{% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if explanation %}
+    <div class="card" style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:14px;padding:1.25rem;margin-bottom:1.25rem;">
+        <h3 style="margin:0 0 0.75rem 0;font-size:1.05rem;color:var(--primary);">🧠 Analysis</h3>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:0.9rem;color:var(--text-secondary);">
+            <span>{{ explanation.emotion_emoji or '😐' }} Mood: {{ explanation.compound_mood or '—' }}</span>
+            <span>Dominant: {{ explanation.dominant_emotion or '—' }}</span>
+            {% if explanation.confidence_score is not none %}<span>Confidence: {{ '%.0f'|format(explanation.confidence_score) }}%</span>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:flex-end;margin-top:1rem;">
+        <a href="{{ url_for('student_dashboard') }}" class="page-btn">← Back to Dashboard</a>
+        <a href="{{ url_for('edit_feedback', feedback_id=feedback.id) }}" class="page-btn" style="background:var(--primary);color:#fff;border-color:var(--primary);">✏️ Edit</a>
+    </div>
+</div>
+{% endblock %}

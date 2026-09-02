@@ -1,57 +1,20 @@
 {% extends "base.html" %}
+{% block title %}Feedback #{{ feedback.id }} · Admin{% endblock %}
 {% block content %}
 <style>
-/* Feedback Page Styles */
-.feedback-page { padding: 1rem; }
+.detail-page { padding: 1rem; max-width: 960px; margin: 0 auto; }
+.detail-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
+.detail-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.detail-text-block { background: var(--bg-color); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); white-space: pre-wrap; line-height: 1.6; }
+.detail-meta { margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary); display: flex; gap: 1rem; flex-wrap: wrap; }
 
-/* Filters */
-.feedback-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; background: var(--card-bg); padding: 0.75rem; border-radius: 0.75rem; border: 1px solid var(--border-color); }
-.feedback-filters input, .feedback-filters select { padding: 0.45rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem; background: var(--bg-color); color: var(--text-primary); }
-.feedback-filters input { flex: 1; min-width: 150px; }
-.feedback-filters select { min-width: 100px; }
-
-/* Desktop Table */
-.feedback-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 0.75rem; overflow: hidden; border: 1px solid var(--border-color); }
-.feedback-table th { background: var(--bg-color); padding: 0.75rem 0.5rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); cursor: pointer; white-space: nowrap; }
-.feedback-table td { padding: 0.65rem 0.5rem; font-size: 0.8rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); vertical-align: top; }
-.feedback-table tr:hover { background: var(--bg-color); }
-.feedback-table .ft-text { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.feedback-table .ft-actions { display: flex; gap: 0.25rem; white-space: nowrap; position: relative; }
-.feedback-table .ft-actions button { padding: 0.3rem 0.5rem; border-radius: 0.35rem; border: 1px solid var(--border-color); background: var(--card-bg); cursor: pointer; font-size: 0.85rem; position: relative; }
-.feedback-table .ft-actions button:hover { background: var(--bg-color); }
-.feedback-table .ft-actions button::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--card-bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.65rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; margin-bottom: 0.25rem; z-index: 10; }
-.feedback-table .ft-actions button:hover::after { opacity: 1; }
-
-/* Mobile Cards */
-.feedback-cards { display: flex; flex-direction: column; gap: 0.75rem; }
-.feedback-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 1rem; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-.feedback-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-.feedback-card-accent { height: 4px; }
-.feedback-card-body { padding: 1rem; }
-.feedback-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem; }
-.feedback-card-id { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
-.feedback-card-cat { font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.1rem; }
-.feedback-card-date { font-size: 0.7rem; color: var(--text-muted); }
-.feedback-card-text { font-size: 0.88rem; line-height: 1.5; margin-bottom: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: 0.6rem; border-left: 3px solid var(--primary); }
-.feedback-card-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-.feedback-card-badges .badge { font-size: 0.7rem; padding: 0.25rem 0.5rem; }
-.feedback-card-status { margin-bottom: 0.75rem; }
-.feedback-card-status select { width: 100%; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem; background: var(--bg-color); color: var(--text-primary); }
-.feedback-card-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-.feedback-card-actions button { flex: 1; min-width: 0; padding: 0.5rem 0.3rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-primary); cursor: pointer; font-size: 0.75rem; font-weight: 600; text-align: center; transition: all 0.15s ease; position: relative; }
-.feedback-card-actions button:hover { background: var(--bg-color); border-color: var(--primary); }
-.feedback-card-actions button:active { transform: scale(0.98); }
-.feedback-card-actions button::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--card-bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.65rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; margin-bottom: 0.25rem; z-index: 10; }
-.feedback-card-actions button:hover::after { opacity: 1; }
-
-/* Modal */
 .feedback-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
 .feedback-modal.active { display: flex; }
 .feedback-modal-content { background: var(--card-bg); border-radius: 1rem; max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalSlideIn 0.2s ease; }
 @keyframes modalSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .feedback-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
 .feedback-modal-title { font-size: 1.1rem; font-weight: 700; }
-.feedback-modal-close { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 0.5rem; width: 2rem; height: 2rem; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
+.feedback-modal-close { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 0.5rem; width: 2rem; height: 2rem; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; }
 .feedback-modal-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
 .feedback-modal-body { font-size: 0.88rem; line-height: 1.6; }
 .feedback-modal-body .modal-section { margin-bottom: 1rem; padding: 0.85rem; background: var(--bg-color); border-radius: 0.6rem; }
@@ -65,168 +28,121 @@
 .feedback-modal-body .emotion-intensity-value { text-align: right; font-weight: 700; font-size: 0.8rem; }
 .feedback-modal-body ul { margin: 0; padding-left: 1.2rem; line-height: 1.8; }
 
-/* Responsive */
-@media (min-width: 769px) {
-    .feedback-cards { display: none; }
-}
-@media (max-width: 768px) {
-    .feedback-table-wrapper { display: none; }
-    .feedback-filters { flex-direction: column; gap: 0.4rem; padding: 0.6rem; }
-    .feedback-filters input, .feedback-filters select { width: 100%; }
-    .feedback-filters .filter-row { display: flex; gap: 0.3rem; }
-    .feedback-filters .filter-row select { flex: 1; }
-}
+.action-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.action-row button { padding: 0.5rem 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+.action-row button:hover { border-color: var(--primary); }
 </style>
 
-<div class="feedback-page">
-<!-- Filters -->
-<div class="feedback-filters">
-    <div style="display:flex; gap:0.3rem; align-items:center; margin-bottom:0.3rem; width:100%;">
-        <a href="/admin/dashboard" style="padding:0.35rem 0.6rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-primary); text-decoration:none; font-size:0.8rem; font-weight:600;">← Back</a>
-        <span style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">{{ pagination.total }} feedback</span>
+<div class="detail-page">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <div>
+            <h2>📝 Feedback #{{ feedback.id }}</h2>
+            <p>Single-feedback view opened from notification.</p>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <a href="{{ url_for('admin_dashboard') }}" class="page-btn">← Dashboard</a>
+            <a href="{{ url_for('admin_feedback') }}" class="page-btn">📋 Feedback Page</a>
+        </div>
     </div>
-    <input type="text" id="searchInput" placeholder="Search feedback..." value="{{ current_search }}" onkeydown="if(event.key==='Enter')applyFilters()">
-    <div class="filter-row">
-        <select id="sortSelect" onchange="applyFilters()" style="flex:2;">
-            <option value="date" {% if sort_by=='date' %}selected{% endif %}>Sort: Date</option>
-            <option value="urgency" {% if sort_by=='urgency' %}selected{% endif %}>Sort: Urgency</option>
-            <option value="status" {% if sort_by=='status' %}selected{% endif %}>Sort: Status</option>
-            <option value="category" {% if sort_by=='category' %}selected{% endif %}>Sort: Category</option>
-        </select>
-        <button id="sortDirBtn" onclick="toggleSortDir()" data-dir="{{ sort_dir }}" style="min-width:2.5rem; padding:0.45rem 0.6rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--bg-color); cursor:pointer;">{{ '↑' if sort_dir=='asc' else '↓' }}</button>
+
+    <div class="detail-card">
+        <div class="detail-row">
+            <span class="cat-badge">{{ feedback.category or 'General' }}</span>
+            <span class="sentiment-badge sentiment-{{ (feedback.sentiment or 'neutral')|lower }}">
+                {% if feedback.sentiment == 'Positive' %}😊{% elif feedback.sentiment == 'Negative' %}😞{% else %}😐{% endif %}
+                {{ feedback.sentiment or 'Unknown' }}
+            </span>
+            <span class="urgency-text urgency-{{ feedback.urgency_score or 1 }}">{{ feedback.urgency_score or 1 }}/5 Urgency</span>
+            <span class="status-badge status-{{ (feedback.status or 'pending')|lower|replace(' ', '-') }}">{{ feedback.status or 'Pending' }}</span>
+            {% if feedback.has_profanity %}<span class="profanity-badge">🤬 Profanity</span>{% endif %}
+        </div>
+
+        {% if feedback.location %}
+        <div style="margin-bottom:0.75rem;color:var(--text-secondary);font-size:0.9rem;">📍 {{ feedback.location }}</div>
+        {% endif %}
+
+        <div class="detail-text-block">{{ feedback.feedback_text }}</div>
+
+        <div class="detail-meta">
+            <span>🕒 Submitted {{ feedback.created_at.strftime('%Y-%m-%d %H:%M') if feedback.created_at else 'N/A' }}</span>
+            {% if feedback.anonymous %}
+            <span style="color:var(--primary);font-weight:700;">🙈 Identity hidden — student opted to stay anonymous from everyone</span>
+            {% else %}
+            <span>👤 Student: <strong>{{ submitter.full_name if submitter else feedback.student_id }}</strong> ({{ feedback.student_id }})</span>
+            {% endif %}
+            {% if feedback.assigned_to %}<span>📌 Assigned: {{ feedback.assigned_to }}</span>{% endif %}
+            {% if feedback.vote_count %}<span>🗳 {{ feedback.vote_count }} votes</span>{% endif %}
+        </div>
+
+        {% if not feedback.anonymous and submitter %}
+        <div style="margin-top:1rem; padding:0.85rem 1rem; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:0.75rem; display:flex; flex-wrap:wrap; gap:1rem; font-size:0.85rem; align-items:center;">
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-secondary); font-weight:700;">Submitter (student opted in)</span>
+                <span style="font-weight:700;">{{ submitter.full_name or submitter.student_id }}</span>
+            </div>
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-secondary); font-weight:700;">Email</span>
+                <span><a href="mailto:{{ submitter.email }}" style="color:var(--primary); text-decoration:none;">{{ submitter.email }}</a></span>
+            </div>
+            {% if submitter.department %}
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-secondary); font-weight:700;">Department</span>
+                <span>{{ submitter.department }}{% if submitter.year_ofStudy or submitter.year_of_study %} · Year {{ submitter.year_ofStudy or submitter.year_of_study }}{% endif %}</span>
+            </div>
+            {% endif %}
+            <div style="margin-left:auto; display:flex; gap:0.4rem;">
+                <a href="/admin/students?search={{ submitter.student_id }}" class="page-btn" style="font-size:0.78rem;">👤 View Student</a>
+            </div>
+        </div>
+        {% endif %}
     </div>
-    <div class="filter-row">
-        <select id="statusFilter" onchange="applyFilters()" style="flex:1;">
-            <option value="">All Status</option>
-            <option value="Pending" {% if current_status=='Pending' %}selected{% endif %}>⏳ Pending</option>
-            <option value="Acknowledged" {% if current_status=='Acknowledged' %}selected{% endif %}>👀 Ack</option>
-            <option value="In Progress" {% if current_status=='In Progress' %}selected{% endif %}>🔄 Progress</option>
-            <option value="Resolved" {% if current_status=='Resolved' %}selected{% endif %}>✅ Resolved</option>
-            <option value="Escalated" {% if current_status=='Escalated' %}selected{% endif %}>🚨 Escalated</option>
-        </select>
-        <select id="categoryFilter" onchange="applyFilters()" style="flex:1;">
-            <option value="">All Categories</option>
-            {% for cat in categories %}<option value="{{ cat }}" {% if current_category==cat %}selected{% endif %}>{{ cat }}</option>{% endfor %}
-        </select>
+
+    {% if feedback.src_response %}
+    <div class="detail-card">
+        <h3 style="margin:0 0 0.5rem 0;font-size:1.05rem;color:var(--primary);">💬 SRC Response</h3>
+        <div style="white-space:pre-wrap;line-height:1.5;">{{ feedback.src_response }}</div>
     </div>
-</div>
+    {% endif %}
 
-<!-- Desktop Table -->
-<div class="feedback-table-wrapper">
-<table class="feedback-table">
-<thead>
-<tr>
-<th onclick="sortTableClick('id')" style="cursor:pointer;">ID <span id="sort-id">{{ '↓' if sort_by=='id' and sort_dir=='desc' else '↑' if sort_by=='id' and sort_dir=='asc' else '' }}</span></th>
-<th onclick="sortTableClick('date')" style="cursor:pointer;">Date <span id="sort-date">{{ '↓' if sort_by=='date' and sort_dir=='desc' else '↑' if sort_by=='date' and sort_dir=='asc' else '' }}</span></th>
-<th>Feedback</th>
-<th onclick="sortTableClick('category')" style="cursor:pointer;">Category <span id="sort-category">{{ '↓' if sort_by=='category' else '' }}</span></th>
-<th>Sentiment</th>
-<th onclick="sortTableClick('urgency')" style="cursor:pointer;">Urgency <span id="sort-urgency">{{ '↓' if sort_by=='urgency' else '' }}</span></th>
-<th onclick="sortTableClick('status')" style="cursor:pointer;">Status <span id="sort-status">{{ '↓' if sort_by=='status' else '' }}</span></th>
-<th>Assigned</th>
-<th>Actions</th>
-</tr>
-</thead>
-<tbody>
-{% if feedbacks|length == 0 %}
-<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--text-secondary);">No feedback found</td></tr>
-{% else %}
-{% for f in feedbacks %}
-<tr data-id="{{ f.id }}" data-date="{{ f.created_at.strftime('%Y%m%d%H%M%S') if f.created_at else '0' }}" data-urgency="{{ f.urgency_score }}" data-status="{{ f.status }}" data-category="{{ f.category }}">
-<td><strong>#{{ f.id }}</strong></td>
-<td style="white-space:nowrap;">{{ f.created_at.strftime('%b %d, %H:%M') if f.created_at else '' }}</td>
-<td class="ft-text" title="{{ f.feedback_text }}">{{ f.feedback_text[:60] }}{% if f.feedback_text|length > 60 %}...{% endif %}</td>
-<td><span class="badge badge-info" style="font-size:0.7rem;">{{ f.category }}</span></td>
-<td><span class="badge badge-{% if f.sentiment=='Positive' %}success{% elif f.sentiment=='Negative' %}danger{% else %}secondary{% endif %}" style="font-size:0.7rem;">{{ f.sentiment }}</span></td>
-<td><span class="badge badge-{% if f.urgency_score>=4 %}danger{% elif f.urgency_score>=3 %}warning{% else %}info{% endif %}" style="font-size:0.7rem;">{{ f.urgency_score }}/5</span></td>
-<td>
-<form method="POST" action="/admin/update/{{ f.id }}" style="display:inline;">{{ csrf_field() }}
-<select name="status" onchange="this.form.submit()" class="status-select status-{{ f.status.lower().replace(' ','-') }}" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
-<option value="Pending" {% if f.status=='Pending' %}selected{% endif %}>Pending</option>
-<option value="Acknowledged" {% if f.status=='Acknowledged' %}selected{% endif %}>Acknowledged</option>
-<option value="In Progress" {% if f.status=='In Progress' %}selected{% endif %}>In Progress</option>
-<option value="Resolved" {% if f.status=='Resolved' %}selected{% endif %}>Resolved</option>
-<option value="Escalated" {% if f.status=='Escalated' %}selected{% endif %}>Escalated</option>
-</select>
-</form>
-</td>
-<td>
-<button type="button" onclick="openAssignModal({{ f.id }}, {{ (f.assigned_to or '')|tojson }})" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
-👤 {{ f.assigned_to or 'Assign' }}
-</button>
-</td>
-<td>
-<div class="ft-actions">
-<button onclick="showAdminInsightsModal({{ f.id }})" data-tip="Insights">📋</button>
-<button onclick="showAnalyzeModal({{ f.id }})" data-tip="Analyze">🔍</button>
-<button onclick="showCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" data-tip="Correct">🔄</button>
-<button onclick="showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})" data-tip="Reply">💬</button>
-</div>
-</td>
-</tr>
-{% endfor %}
-{% endif %}
-</tbody>
-</table>
-</div>
+    <div class="detail-card">
+        <h3 style="margin:0 0 0.75rem 0;font-size:1.05rem;color:var(--primary);">⚙️ Quick Actions</h3>
+        <div class="action-row">
+            <button type="button" onclick="showAdminInsightsModal({{ feedback.id }})">📋 Insights</button>
+            <button type="button" onclick="showAnalyzeModal({{ feedback.id }})">🔍 Analyze</button>
+            <button type="button" onclick="showCorrectionModal({{ feedback.id }}, '{{ feedback.sentiment or 'Neutral' }}')">🔄 Correct Sentiment</button>
+            <button type="button" onclick="showResponseModal({{ feedback.id }}, {{ (feedback.src_response or '')|tojson }})">💬 Reply</button>
+            <button type="button" onclick="openAssignModal({{ feedback.id }}, {{ (feedback.assigned_to or '')|tojson }})">👤 Assign Member</button>
+        </div>
+    </div>
 
-<!-- Mobile Cards -->
-<div class="feedback-cards">
-{% if feedbacks|length == 0 %}
-<div style="text-align:center; padding:2rem; color:var(--text-secondary);">No feedback found</div>
-{% else %}
-{% for f in feedbacks %}
-<div class="feedback-card" data-id="{{ f.id }}" data-date="{{ f.created_at.strftime('%Y%m%d%H%M%S') if f.created_at else '0' }}" data-urgency="{{ f.urgency_score }}" data-status="{{ f.status }}" data-category="{{ f.category }}">
-<div class="feedback-card-accent" style="background:{% if f.urgency_score>=4 %}var(--danger){% elif f.urgency_score>=3 %}var(--warning){% else %}var(--success){% endif %};"></div>
-<div class="feedback-card-body">
-<div class="feedback-card-header">
-<div>
-<div class="feedback-card-id">#{{ f.id }}</div>
-<div class="feedback-card-cat">{{ f.category }}</div>
-<div class="feedback-card-date">{{ f.created_at.strftime('%b %d, %H:%M') if f.created_at else '' }}</div>
-</div>
-</div>
-<div class="feedback-card-text">{{ f.feedback_text[:150] }}{% if f.feedback_text|length > 150 %}...{% endif %}</div>
-<div class="feedback-card-badges">
-<span class="badge badge-{% if f.urgency_score>=4 %}danger{% elif f.urgency_score>=3 %}warning{% else %}info{% endif %}">{{ f.urgency_score }}/5</span>
-<span class="badge badge-{% if f.sentiment=='Positive' %}success{% elif f.sentiment=='Negative' %}danger{% else %}secondary{% endif %}">{{ f.sentiment }}</span>
-</div>
-<div class="feedback-card-status">
-<form method="POST" action="/admin/update/{{ f.id }}">{{ csrf_field() }}
-<select name="status" onchange="this.form.submit()" class="status-{{ f.status.lower().replace(' ','-') }}">
-<option value="Pending" {% if f.status=='Pending' %}selected{% endif %}>⏳ Pending</option>
-<option value="Acknowledged" {% if f.status=='Acknowledged' %}selected{% endif %}>👀 Acknowledged</option>
-<option value="In Progress" {% if f.status=='In Progress' %}selected{% endif %}>🔄 In Progress</option>
-<option value="Resolved" {% if f.status=='Resolved' %}selected{% endif %}>✅ Resolved</option>
-<option value="Escalated" {% if f.status=='Escalated' %}selected{% endif %}>🚨 Escalated</option>
-</select>
-</form>
-</div>
-<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
-<button type="button" onclick="openAssignModal({{ f.id }}, {{ (f.assigned_to or '')|tojson }})" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
-👤 {{ f.assigned_to or 'Assign Member' }}
-</button>
-</div>
-<div class="feedback-card-actions">
-<button onclick="showAdminInsightsModal({{ f.id }})" data-tip="Insights">📋</button>
-<button onclick="showAnalyzeModal({{ f.id }})" data-tip="Analyze">🔍</button>
-<button onclick="showCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" data-tip="Correct">🔄</button>
-<button onclick="showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})" data-tip="Reply">💬</button>
-</div>
-</div>
-</div>
-{% endfor %}
-{% endif %}
-</div>
-
-<!-- Pagination -->
-{% if pagination.pages > 1 %}
-<div style="display:flex; justify-content:center; align-items:center; gap:0.75rem; padding:1rem;">
-{% if pagination.has_prev %}<a href="?page={{ pagination.prev_num }}&sort={{ sort_by }}&dir={{ sort_dir }}&status={{ current_status }}&category={{ current_category }}&search={{ current_search }}" style="padding:0.5rem 1rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--card-bg); text-decoration:none; font-weight:600; color:var(--text-primary);">← Prev</a>{% endif %}
-<span style="font-size:0.8rem; color:var(--text-secondary); font-weight:600;">Page {{ pagination.page }} of {{ pagination.pages }}</span>
-{% if pagination.has_next %}<a href="?page={{ pagination.next_num }}&sort={{ sort_by }}&dir={{ sort_dir }}&status={{ current_status }}&category={{ current_category }}&search={{ current_search }}" style="padding:0.5rem 1rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--card-bg); text-decoration:none; font-weight:600; color:var(--text-primary);">Next →</a>{% endif %}
-</div>
-{% endif %}
+    <div class="detail-card">
+        <h3 style="margin:0 0 0.75rem 0;font-size:1.05rem;color:var(--primary);">🔧 Update Status & Response</h3>
+        <form method="POST" action="{{ url_for('update_feedback', feedback_id=feedback.id) }}">
+            {{ csrf_field() }}
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:0.75rem;margin-bottom:0.75rem;">
+                <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.85rem;color:var(--text-secondary);">
+                    Status
+                    <select name="status" class="filter-select" style="width:100%;">
+                        {% for s in ['Pending', 'Acknowledged', 'In Progress', 'Resolved', 'Escalated'] %}
+                        <option value="{{ s }}" {% if feedback.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.85rem;color:var(--text-secondary);">
+                    Assign To
+                    <input type="text" name="assigned_to" value="{{ feedback.assigned_to or '' }}" placeholder="Name or role" class="filter-input" style="width:100%;">
+                </label>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.85rem;color:var(--text-secondary);">
+                SRC Response
+                <textarea name="src_response" rows="4" class="filter-input" style="width:100%;font-family:inherit;">{{ feedback.src_response or '' }}</textarea>
+            </label>
+            <div style="margin-top:0.75rem;display:flex;justify-content:flex-end;gap:0.5rem;">
+                <a href="{{ url_for('admin_dashboard') }}" class="page-btn">Cancel</a>
+                <button type="submit" class="page-btn" style="background:var(--primary);color:#fff;border-color:var(--primary);">Save Update</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- Modals -->
@@ -239,7 +155,11 @@
 <div class="feedback-modal" id="modal-analyze">
 <div class="feedback-modal-content">
 <div class="feedback-modal-header"><span class="feedback-modal-title">🔍 Feedback Analysis</span><button class="feedback-modal-close" onclick="closeModal('analyze')">✕</button></div>
-<div class="feedback-modal-body" id="modal-analyze-body"></div>
+<div class="feedback-modal-body">
+<div class="modal-section"><div class="modal-section-title">🧠 Emotion Breakdown</div><div id="analyzeEmotion"></div></div>
+<div class="modal-section"><div class="modal-section-title">💭 Sentiment Drivers</div><div id="analyzeSentiment"></div></div>
+<div class="modal-section"><div class="modal-section-title">⚡ Urgency Drivers</div><div id="analyzeUrgency"></div></div>
+</div>
 </div></div>
 
 <div class="feedback-modal" id="modal-reply">
@@ -285,22 +205,21 @@
 </div></div>
 
 <script>
-var adminInsightsById = {{ admin_insights_by_id | default({}) | tojson }};
-var explanationsById = {{ explanation_by_id | default({}) | tojson }};
-var feedbackData = {};
-{% for f in feedbacks %}
-feedbackData[{{ f.id }}] = {
-    text: {{ f.feedback_text|tojson }},
-    category: {{ f.category|tojson }},
-    sentiment: {{ f.sentiment|tojson }},
-    urgency: {{ f.urgency_score }},
-    status: {{ f.status|tojson }},
-    response: {{ (f.src_response or "")|tojson }},
-    confidence: {{ f.confidence_score or 0 }},
-    emotion: {{ (f.dominant_emotion or 'neutral')|tojson }},
-    explanation: {{ (f.phase2_ai_explanation or '')|tojson }}
+var adminInsightsById = {{ admin_insights_by_id | tojson }};
+var explanationsById = {{ explanation_by_id | tojson }};
+var feedbackData = {
+    {{ feedback.id }}: {
+        text: {{ feedback.feedback_text|tojson }},
+        category: {{ (feedback.category or '')|tojson }},
+        sentiment: {{ (feedback.sentiment or '')|tojson }},
+        urgency: {{ feedback.urgency_score or 0 }},
+        status: {{ (feedback.status or '')|tojson }},
+        response: {{ (feedback.src_response or '')|tojson }},
+        confidence: {{ feedback.confidence_score or 0 }},
+        emotion: {{ (feedback.dominant_emotion or 'neutral')|tojson }},
+        explanation: {{ ((feedback.phase2_ai_explanation or ''))|tojson }}
+    }
 };
-{% endfor %}
 
 function closeModal(type) {
     var modal = document.getElementById('modal-' + type);
@@ -550,43 +469,6 @@ function submitAssign() {
     .finally(function() { if (btn) { btn.disabled = false; btn.textContent = '💾 Save Assignment'; } });
 }
 
-function applyFilters() {
-    var search = document.getElementById('searchInput').value;
-    var sort = document.getElementById('sortSelect').value;
-    var status = document.getElementById('statusFilter').value;
-    var category = document.getElementById('categoryFilter').value;
-    var dir = document.getElementById('sortDirBtn').dataset.dir || 'desc';
-    var params = new URLSearchParams();
-    if (search) params.set('search', search);
-    if (sort) params.set('sort', sort);
-    if (status) params.set('status', status);
-    if (category) params.set('category', category);
-    params.set('dir', dir);
-    window.location.href = '/admin/feedback?' + params.toString();
-}
-
-function toggleSortDir() {
-    var btn = document.getElementById('sortDirBtn');
-    var dir = btn.dataset.dir === 'asc' ? 'desc' : 'asc';
-    btn.dataset.dir = dir;
-    btn.textContent = dir === 'asc' ? '↑' : '↓';
-    applyFilters();
-}
-
-function sortTableClick(column) {
-    var btn = document.getElementById('sortDirBtn');
-    var currentSort = document.getElementById('sortSelect').value;
-    var dir = btn.dataset.dir || 'desc';
-    if (currentSort === column) {
-        dir = dir === 'asc' ? 'desc' : 'asc';
-    }
-    document.getElementById('sortSelect').value = column;
-    btn.dataset.dir = dir;
-    btn.textContent = dir === 'asc' ? '↑' : '↓';
-    applyFilters();
-}
-
-// Close modal on outside click or Escape key
 document.querySelectorAll('.feedback-modal').forEach(function(modal) {
     modal.addEventListener('click', function(e) {
         if (e.target === modal) modal.classList.remove('active');

@@ -905,24 +905,16 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
         }
 
         function handleAdminNotificationClick(notifId, feedbackId) {
-            // Mark as read
-            markAdminNotificationRead(notifId);
             // Close dropdown
             document.getElementById('adminNotificationDropdown').style.display = 'none';
-            // Navigate to feedback
+            // Delete the notification (clears it from the list permanently for this admin)
+            fetch('/api/admin/notifications/' + notifId, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-Token': getCsrfToken() }
+            }).catch(function(e) { console.error('Delete notification error:', e); });
+            // Navigate to the single-feedback detail page so the admin can view/update it
             if (feedbackId) {
-                // Scroll to and highlight the feedback in the table
-                var row = document.querySelector('tr[data-id="' + feedbackId + '"]');
-                if (row) {
-                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    row.style.background = 'var(--warning-light)';
-                    row.style.transition = 'background 0.5s ease';
-                    setTimeout(function() { row.style.background = ''; }, 2000);
-                    showToast('Feedback #' + feedbackId + ' located', 'success');
-                } else {
-                    // Feedback not in current view - navigate to admin dashboard
-                    window.location.href = '/admin';
-                }
+                window.location.href = '/admin/feedback/' + feedbackId;
             }
         }
 

@@ -1,117 +1,546 @@
 {% extends "base.html" %}
+{% block title %}Submit Feedback · HTU SRC{% endblock %}
 {% block content %}
 <style>
-/* ===== Simple Submit Feedback ===== */
-.sf-wrap { max-width: 38rem; margin: 0 auto; padding: 1rem 0.5rem; }
-.sf-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.25rem; box-shadow: var(--shadow-sm); }
-.sf-header { margin-bottom: 1rem; }
-.sf-header h1 { font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.25rem; }
-.sf-header p { font-size: 0.8rem; color: var(--text-secondary); margin: 0; }
-.sf-back { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-decoration: none; margin-bottom: 0.75rem; }
-.sf-back:hover { color: var(--primary); }
-.sf-field { margin-bottom: 0.9rem; }
-.sf-label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem; }
-.sf-hint { display: block; font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.35rem; }
-.sf-input, .sf-textarea, .sf-select { width: 100%; padding: 0.55rem 0.7rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-primary); font-size: 0.85rem; font-family: inherit; transition: all 0.15s ease; }
-.sf-input:focus, .sf-textarea:focus, .sf-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
-.sf-textarea { resize: vertical; min-height: 120px; line-height: 1.5; }
-.sf-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.7rem center; padding-right: 2rem; }
-.sf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-.sf-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-.sf-btn { flex: 1; padding: 0.65rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.85rem; border: none; cursor: pointer; transition: all 0.15s ease; text-align: center; text-decoration: none; }
-.sf-btn-primary { background: var(--primary); color: #fff; }
-.sf-btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
-.sf-btn-secondary { background: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.sf-wrap { max-width: 56rem; margin: 0 auto; padding: 1.5rem 0.5rem 3rem; }
+
+.sf-hero {
+    position: relative;
+    border-radius: 1.25rem;
+    padding: 2rem 2rem 1.75rem;
+    margin-bottom: 1.5rem;
+    background:
+        radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.18), transparent 50%),
+        radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.18), transparent 50%),
+        linear-gradient(135deg, var(--card-bg) 0%, var(--bg-color) 100%);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 12px 32px -12px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+}
+.sf-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(16,185,129,0.05));
+    pointer-events: none;
+}
+.sf-hero-content { position: relative; z-index: 1; }
+.sf-hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    margin-bottom: 0.85rem;
+}
+.sf-hero-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.5rem;
+    background: linear-gradient(135deg, var(--primary), #10b981);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.sf-hero-sub { color: var(--text-secondary); font-size: 0.95rem; margin: 0; max-width: 38rem; line-height: 1.55; }
+.sf-hero-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+}
+.sf-hero-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+.sf-hero-stat strong { font-size: 1.1rem; font-weight: 800; color: var(--text-primary); }
+.sf-hero-stat span { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+
+.sf-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.sf-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+    box-shadow: 0 4px 20px -8px rgba(15, 23, 42, 0.08);
+    position: relative;
+}
+.sf-card-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.sf-step {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.75rem;
+    background: var(--bg-color);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+.sf-step.active { border-color: var(--primary); background: rgba(59,130,246,0.06); }
+.sf-step.done { border-color: var(--success); background: rgba(16,185,129,0.06); }
+.sf-step-num {
+    width: 1.75rem; height: 1.75rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+.sf-step.active .sf-step-num { background: var(--primary); color: #fff; border-color: var(--primary); }
+.sf-step.done .sf-step-num { background: var(--success); color: #fff; border-color: var(--success); }
+.sf-step-label { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+.sf-step-meta { font-size: 0.7rem; color: var(--text-secondary); }
+
+.sf-progress {
+    height: 4px;
+    background: var(--bg-color);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 0.75rem;
+}
+.sf-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #10b981);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.sf-field { margin-bottom: 1.25rem; }
+.sf-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+}
+.sf-label-required { color: var(--danger); margin-left: 0.2rem; }
+.sf-label-optional { font-weight: 500; color: var(--text-secondary); font-size: 0.75rem; }
+.sf-hint { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; line-height: 1.4; }
+
+.sf-input, .sf-textarea, .sf-select {
+    width: 100%;
+    padding: 0.75rem 0.95rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-color);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+.sf-input:hover, .sf-textarea:hover, .sf-select:hover { border-color: var(--primary); }
+.sf-input:focus, .sf-textarea:focus, .sf-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+    background: var(--card-bg);
+}
+.sf-textarea {
+    resize: vertical;
+    min-height: 140px;
+    line-height: 1.6;
+}
+.sf-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.95rem center;
+    padding-right: 2.5rem;
+}
+
+.sf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.sf-charcount {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+.sf-charcount.warn { color: var(--warning); }
+.sf-charcount.danger { color: var(--danger); }
+
+.sf-error {
+    color: var(--danger);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.4rem;
+    display: none;
+    align-items: center;
+    gap: 0.3rem;
+}
+.sf-error.visible { display: flex; }
+.sf-field.has-error .sf-input,
+.sf-field.has-error .sf-textarea,
+.sf-field.has-error .sf-select { border-color: var(--danger); }
+
+.sf-urgency {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+.sf-urgency-opt {
+    position: relative;
+    cursor: pointer;
+}
+.sf-urgency-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.sf-urgency-opt span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.7rem 0.4rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid var(--border-color);
+    background: var(--bg-color);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    text-align: center;
+}
+.sf-urgency-opt span small { font-size: 0.6rem; font-weight: 500; opacity: 0.7; }
+.sf-urgency-opt input:checked + span {
+    background: rgba(59,130,246,0.08);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px -4px rgba(59,130,246,0.3);
+}
+.sf-urgency-opt:hover span { border-color: var(--primary); }
+
+.sf-anon {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 1.15rem;
+    border-radius: 0.85rem;
+    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(16,185,129,0.06));
+    border: 1.5px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.sf-anon:hover { border-color: var(--primary); }
+.sf-anon-toggle {
+    position: relative;
+    width: 2.6rem;
+    height: 1.45rem;
+    background: var(--border-color);
+    border-radius: 999px;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+.sf-anon-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 1.15rem; height: 1.15rem;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.sf-anon input:checked ~ .sf-anon-toggle { background: var(--primary); }
+.sf-anon input:checked ~ .sf-anon-toggle::after { transform: translateX(1.15rem); }
+.sf-anon-text { flex: 1; }
+.sf-anon-title { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem; }
+.sf-anon-desc { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem; line-height: 1.4; }
+
+.sf-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-color);
+}
+.sf-btn {
+    flex: 1;
+    padding: 0.85rem 1.25rem;
+    border-radius: 0.65rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.sf-btn-primary {
+    background: linear-gradient(135deg, var(--primary), #10b981);
+    color: #fff;
+    box-shadow: 0 6px 18px -6px rgba(59,130,246,0.6);
+}
+.sf-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -6px rgba(59,130,246,0.7);
+}
+.sf-btn-primary:active { transform: translateY(0); }
+.sf-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.sf-btn-secondary {
+    background: var(--bg-color);
+    color: var(--text-secondary);
+    border: 1.5px solid var(--border-color);
+}
 .sf-btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
-.sf-error { color: var(--danger); font-size: 0.7rem; font-weight: 600; margin-top: 0.25rem; display: none; }
-.sf-error.visible { display: block; }
-.sf-alert { padding: 0.6rem 0.8rem; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.75rem; display: none; }
-.sf-alert.visible { display: block; }
+
+.sf-info-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px -8px rgba(15, 23, 42, 0.08);
+    position: sticky;
+    top: 5rem;
+}
+.sf-info-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0 0 0.85rem;
+    display: flex; align-items: center; gap: 0.4rem;
+}
+.sf-info-list { list-style: none; padding: 0; margin: 0 0 1rem; }
+.sf-info-list li {
+    display: flex; gap: 0.55rem;
+    padding: 0.55rem 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    border-bottom: 1px dashed var(--border-color);
+}
+.sf-info-list li:last-child { border-bottom: none; }
+.sf-info-list li::before {
+    content: '✓';
+    color: var(--success);
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.sf-tip {
+    padding: 0.85rem;
+    background: rgba(99,102,241,0.06);
+    border-left: 3px solid var(--primary);
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+.sf-tip strong { color: var(--primary); display: block; margin-bottom: 0.2rem; }
+
+.sf-alert {
+    padding: 0.85rem 1rem;
+    border-radius: 0.65rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+}
+.sf-alert.visible { display: flex; }
 .sf-alert-error { background: rgba(239,68,68,0.08); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
 .sf-alert-success { background: rgba(16,185,129,0.08); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
-.sf-checkbox { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; }
-.sf-checkbox input { width: 1rem; height: 1rem; accent-color: var(--primary); cursor: pointer; }
-.sf-draft { font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.35rem; }
-@media (max-width: 768px) {
+
+.sf-draft {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-top: 1rem;
+}
+.sf-draft-saved { color: var(--success); }
+
+@media (max-width: 900px) {
+    .sf-grid { grid-template-columns: 1fr; }
+    .sf-info-card { position: static; }
+}
+@media (max-width: 640px) {
+    .sf-wrap { padding: 1rem 0.5rem 2rem; }
+    .sf-hero { padding: 1.5rem 1.25rem; }
+    .sf-card { padding: 1.25rem; }
     .sf-row { grid-template-columns: 1fr; }
-    .sf-actions { flex-direction: column; }
+    .sf-urgency { grid-template-columns: repeat(2, 1fr); }
+    .sf-actions { flex-direction: column-reverse; }
+    .sf-hero-stats { gap: 1rem; }
 }
 </style>
 
-<a href="{{ url_for('student_dashboard') }}" class="sf-back">← Back to Dashboard</a>
 <div class="sf-wrap">
-    <div class="sf-card">
-        <div class="sf-header">
-            <h1>✍️ Submit Feedback</h1>
-            <p>Tell us what's on your mind. We'll route it to the right team.</p>
+    <a href="{{ url_for('student_dashboard') }}" class="sf-back" style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.8rem;font-weight:600;color:var(--text-secondary);text-decoration:none;margin-bottom:0.85rem;">← Back to Dashboard</a>
+
+    <section class="sf-hero">
+        <div class="sf-hero-content">
+            <span class="sf-hero-eyebrow">⚡ Quick & Confidential</span>
+            <h1 class="sf-hero-title">Share what's on your mind</h1>
+            <p class="sf-hero-sub">Your feedback goes directly to the SRC. We use AI to route it to the right department and respond faster. Every submission is logged and tracked.</p>
+            <div class="sf-hero-stats">
+                <div class="sf-hero-stat"><strong>&lt; 48h</strong><span>Avg. response</span></div>
+                <div class="sf-hero-stat"><strong>9</strong><span>Categories</span></div>
+                <div class="sf-hero-stat"><strong>100%</strong><span>Tracked</span></div>
+            </div>
+        </div>
+    </section>
+
+    {% if request.args.get('submitted') %}
+    <div class="sf-alert sf-alert-success visible">✅ Feedback submitted successfully! We'll review it shortly.</div>
+    {% endif %}
+
+    <div class="sf-grid">
+        <div class="sf-card">
+            <div class="sf-card-eyebrow">📝 New Submission</div>
+
+            <div style="margin-bottom:1.25rem;">
+                <div class="sf-step active" id="step1">
+                    <div class="sf-step-num">1</div>
+                    <div><div class="sf-step-label">Choose a category</div><div class="sf-step-meta">Pick what your feedback is about</div></div>
+                </div>
+                <div class="sf-step" id="step2">
+                    <div class="sf-step-num">2</div>
+                    <div><div class="sf-step-label">Describe your feedback</div><div class="sf-step-meta">Be specific — at least 10 characters</div></div>
+                </div>
+                <div class="sf-step" id="step3">
+                    <div class="sf-step-num">3</div>
+                    <div><div class="sf-step-label">Set urgency & privacy</div><div class="sf-step-meta">Help us prioritize your request</div></div>
+                </div>
+                <div class="sf-progress"><div class="sf-progress-fill" id="progressFill"></div></div>
+            </div>
+
+            <form method="POST" id="feedbackForm" novalidate>
+                {{ csrf_field() }}
+
+                <div class="sf-field" id="fieldCategory">
+                    <label class="sf-label" for="category">
+                        <span>Category<span class="sf-label-required">*</span></span>
+                    </label>
+                    <span class="sf-hint">Choose the area your feedback relates to. The SRC will route it accordingly.</span>
+                    <select name="category" id="category" class="sf-select" required>
+                        <option value="">Select a category…</option>
+                        <option value="Wi-Fi Issues">📶 Wi-Fi Issues</option>
+                        <option value="Maintenance">🔧 Maintenance</option>
+                        <option value="Staff Conduct">👤 Staff Conduct</option>
+                        <option value="Safety Concern">🛡️ Safety Concern</option>
+                        <option value="Accommodation">🏠 Accommodation</option>
+                        <option value="Catering">🍽️ Catering</option>
+                        <option value="Academics">📚 Academics</option>
+                        <option value="Financial">💰 Financial</option>
+                        <option value="Other">📋 Other</option>
+                    </select>
+                    <div class="sf-error" id="categoryError">⚠️ Please select a category</div>
+                </div>
+
+                <div class="sf-field" id="fieldText">
+                    <label class="sf-label" for="feedbackText">
+                        <span>Your Feedback<span class="sf-label-required">*</span></span>
+                        <span class="sf-charcount" id="charCount">0 / 1000</span>
+                    </label>
+                    <span class="sf-hint">Describe the situation, your suggestion, or the issue you're facing. The more detail, the faster we can act.</span>
+                    <textarea name="feedback_text" id="feedbackText" class="sf-textarea" rows="6" placeholder="Example: The Wi-Fi in the library keeps dropping during evening study hours (after 7pm). This makes it hard to access online research papers…" maxlength="1000" required></textarea>
+                    <div class="sf-error" id="textError">⚠️ Please provide at least 10 characters</div>
+                </div>
+
+                <div class="sf-row">
+                    <div class="sf-field">
+                        <label class="sf-label" for="location">
+                            <span>Location</span>
+                            <span class="sf-label-optional">Optional</span>
+                        </label>
+                        <span class="sf-hint">Where is this happening?</span>
+                        <input type="text" name="location" id="location" class="sf-input" placeholder="e.g. Science Lab, Block A">
+                    </div>
+                    <div class="sf-field">
+                        <label class="sf-label">
+                            <span>Urgency</span>
+                        </label>
+                        <span class="sf-hint">How urgent is this for you?</span>
+                        <div class="sf-urgency">
+                            <label class="sf-urgency-opt">
+                                <input type="radio" name="user_urgency" value="1">
+                                <span>🔵<br>Low<small>Minor</small></span>
+                            </label>
+                            <label class="sf-urgency-opt">
+                                <input type="radio" name="user_urgency" value="2" checked>
+                                <span>🟡<br>Medium<small>Default</small></span>
+                            </label>
+                            <label class="sf-urgency-opt">
+                                <input type="radio" name="user_urgency" value="3">
+                                <span>🟠<br>High<small>Important</small></span>
+                            </label>
+                            <label class="sf-urgency-opt">
+                                <input type="radio" name="user_urgency" value="4">
+                                <span>🔴<br>Critical<small>Urgent</small></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sf-field">
+                    <label class="sf-anon" for="hideIdentity">
+                        <input type="checkbox" name="hide_identity" id="hideIdentity" checked>
+                        <span class="sf-anon-text">
+                            <span class="sf-anon-title">🙈 Hide my identity completely</span>
+                            <span class="sf-anon-desc">Checked by default — <strong>nobody</strong> (not even SRC admins) can see who submitted this. Uncheck only if you want the SRC to know it's you so they can follow up.</span>
+                        </span>
+                        <span class="sf-anon-toggle" aria-hidden="true"></span>
+                    </label>
+                </div>
+
+                <div class="sf-actions">
+                    <a href="{{ url_for('student_dashboard') }}" class="sf-btn sf-btn-secondary">Cancel</a>
+                    <button type="submit" class="sf-btn sf-btn-primary" id="submitBtn">🚀 Submit Feedback</button>
+                </div>
+            </form>
+
+            <div class="sf-draft" id="draftStatus"></div>
         </div>
 
-        {% if request.args.get('submitted') %}
-        <div class="sf-alert sf-alert-success visible">✅ Feedback submitted successfully!</div>
-        {% endif %}
-
-        <form method="POST" id="feedbackForm" novalidate>
-            {{ csrf_field() }}
-
-            <div class="sf-field">
-                <label class="sf-label" for="category">Category <span style="color: var(--danger);">*</span></label>
-                <span class="sf-hint">What is this about?</span>
-                <select name="category" id="category" class="sf-select" required>
-                    <option value="">Select a category</option>
-                    <option value="Wi-Fi Issues">📶 Wi-Fi Issues</option>
-                    <option value="Maintenance">🔧 Maintenance</option>
-                    <option value="Staff Conduct">👤 Staff Conduct</option>
-                    <option value="Safety Concern">🛡️ Safety Concern</option>
-                    <option value="Accommodation">🏠 Accommodation</option>
-                    <option value="Catering">🍽️ Catering</option>
-                    <option value="Academics">📚 Academics</option>
-                    <option value="Financial">💰 Financial</option>
-                    <option value="Other">📋 Other</option>
-                </select>
-                <div class="sf-error" id="categoryError">⚠️ Please select a category</div>
+        <aside class="sf-info-card">
+            <h3 class="sf-info-title">💡 Tips for great feedback</h3>
+            <ul class="sf-info-list">
+                <li><span>Be specific about location and time so the team can act quickly.</span></li>
+                <li><span>Describe what's happening vs. what you expected.</span></li>
+                <li><span>Mention any safety, health, or access concerns up front.</span></li>
+                <li><span>Avoid sharing personal info of others — keep it about the issue.</span></li>
+                <li><span>You'll get a confirmation and can track status from your dashboard.</span></li>
+            </ul>
+            <div class="sf-tip">
+                <strong>How "Hide my identity" works</strong>
+                Checked by default — your name and student ID are hidden from <strong>everyone</strong>, including SRC admins. Uncheck only if you want the SRC to know it's you so they can follow up on your feedback.
             </div>
-
-            <div class="sf-field">
-                <label class="sf-label" for="feedbackText">Your Feedback <span style="color: var(--danger);">*</span></label>
-                <span class="sf-hint">Be specific so we can help faster.</span>
-                <textarea name="feedback_text" id="feedbackText" class="sf-textarea" rows="5" placeholder="Describe your feedback, concern, or suggestion..." maxlength="1000" required></textarea>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.25rem;">
-                    <div class="sf-error" id="textError">⚠️ Please provide at least 10 characters</div>
-                    <span style="font-size:0.7rem; color:var(--text-secondary);" id="charCount">0/1000</span>
-                </div>
-            </div>
-
-            <div class="sf-row">
-                <div class="sf-field">
-                    <label class="sf-label" for="location">Location <span style="font-weight:400; color:var(--text-secondary);">(optional)</span></label>
-                    <input type="text" name="location" id="location" class="sf-input" placeholder="e.g. Science Lab, Block A">
-                </div>
-                <div class="sf-field">
-                    <label class="sf-label" for="urgency">Urgency</label>
-                    <span class="sf-hint">How urgent is this?</span>
-                    <select name="user_urgency" id="urgency" class="sf-select">
-                        <option value="1">🔵 Low</option>
-                        <option value="2" selected>🟡 Medium</option>
-                        <option value="3">🟠 High</option>
-                        <option value="4">🔴 Critical</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="sf-field">
-                <label class="sf-checkbox">
-                    <input type="checkbox" name="anonymous" id="anonymous" checked>
-                    <span>🙈 Submit anonymously</span>
-                </label>
-                <span class="sf-hint" style="margin-top:0.25rem; display:block;">Your identity will be hidden from public display, but SRC admins will still see it.</span>
-            </div>
-
-            <div class="sf-actions">
-                <a href="{{ url_for('student_dashboard') }}" class="sf-btn sf-btn-secondary">Cancel</a>
-                <button type="submit" class="sf-btn sf-btn-primary">🚀 Submit Feedback</button>
-            </div>
-        </form>
-        <div class="sf-draft" id="draftStatus"></div>
+        </aside>
     </div>
 </div>
 
@@ -123,26 +552,76 @@ const charCount = document.getElementById('charCount');
 const textError = document.getElementById('textError');
 const categoryError = document.getElementById('categoryError');
 const draftStatus = document.getElementById('draftStatus');
+const progressFill = document.getElementById('progressFill');
+const submitBtn = document.getElementById('submitBtn');
+const step1 = document.getElementById('step1');
+const step2 = document.getElementById('step2');
+const step3 = document.getElementById('step3');
 let draftTimer = null;
+
+function updateProgress() {
+    let pct = 0;
+    if (category.value) pct += 33;
+    if (feedbackText.value.trim().length >= 10) pct += 33;
+    if (form.querySelector('input[name="user_urgency"]:checked')) pct += 34;
+    progressFill.style.width = pct + '%';
+
+    step1.classList.toggle('done', !!category.value);
+    step1.classList.toggle('active', !category.value);
+    step2.classList.toggle('done', feedbackText.value.trim().length >= 10);
+    step2.classList.toggle('active', !!category.value && feedbackText.value.trim().length < 10);
+    step3.classList.toggle('done', pct >= 80);
+    step3.classList.toggle('active', pct >= 66 && pct < 100);
+}
 
 function validate() {
     let valid = true;
-    if (!category.value) { categoryError.classList.add('visible'); valid = false; } else { categoryError.classList.remove('visible'); }
-    if (feedbackText.value.trim().length < 10) { textError.classList.add('visible'); valid = false; } else { textError.classList.remove('visible'); }
+    const fieldCategory = document.getElementById('fieldCategory');
+    const fieldText = document.getElementById('fieldText');
+    if (!category.value) {
+        categoryError.classList.add('visible');
+        fieldCategory.classList.add('has-error');
+        valid = false;
+    } else {
+        categoryError.classList.remove('visible');
+        fieldCategory.classList.remove('has-error');
+    }
+    if (feedbackText.value.trim().length < 10) {
+        textError.classList.add('visible');
+        fieldText.classList.add('has-error');
+        valid = false;
+    } else {
+        textError.classList.remove('visible');
+        fieldText.classList.remove('has-error');
+    }
     return valid;
 }
 
 function updateCharCount() {
     const len = feedbackText.value.length;
-    charCount.textContent = len + '/1000';
-    if (len >= 10) textError.classList.remove('visible');
+    charCount.textContent = len + ' / 1000';
+    charCount.classList.remove('warn', 'danger');
+    if (len >= 950) charCount.classList.add('danger');
+    else if (len >= 800) charCount.classList.add('warn');
+    if (len >= 10) {
+        textError.classList.remove('visible');
+        document.getElementById('fieldText').classList.remove('has-error');
+    }
+    updateProgress();
 }
 
 function saveDraft() {
-    const draft = { category: category.value, feedback_text: feedbackText.value, location: document.getElementById('location').value, urgency: document.getElementById('urgency').value, anonymous: document.getElementById('anonymous').checked, saved_at: new Date().toISOString() };
+    const draft = {
+        category: category.value,
+        feedback_text: feedbackText.value,
+        location: document.getElementById('location').value,
+        urgency: (form.querySelector('input[name="user_urgency"]:checked') || {}).value,
+        hide_identity: document.getElementById('hideIdentity').checked,
+        saved_at: new Date().toISOString()
+    };
     localStorage.setItem('feedback_draft', JSON.stringify(draft));
-    draftStatus.textContent = 'Draft saved ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    draftStatus.style.color = 'var(--text-secondary)';
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    draftStatus.innerHTML = '<span class="sf-draft-saved">✓</span> Draft saved at ' + t;
 }
 
 function loadDraft() {
@@ -153,18 +632,44 @@ function loadDraft() {
         if (draft.category) category.value = draft.category;
         if (draft.feedback_text) feedbackText.value = draft.feedback_text;
         if (draft.location) document.getElementById('location').value = draft.location;
-        if (draft.urgency) document.getElementById('urgency').value = draft.urgency;
-        if (draft.anonymous !== undefined) document.getElementById('anonymous').checked = draft.anonymous;
+        if (draft.urgency) {
+            const r = form.querySelector('input[name="user_urgency"][value="' + draft.urgency + '"]');
+            if (r) r.checked = true;
+        }
+        if (draft.hide_identity !== undefined) document.getElementById('hideIdentity').checked = draft.hide_identity;
         updateCharCount();
+        updateProgress();
     } catch(e) {}
 }
 
-function clearDraft() { localStorage.removeItem('feedback_draft'); draftStatus.textContent = ''; }
+function clearDraft() {
+    localStorage.removeItem('feedback_draft');
+    draftStatus.innerHTML = '';
+}
 
-[category, feedbackText, document.getElementById('location'), document.getElementById('urgency'), document.getElementById('anonymous')].forEach(function(el) {
-    if (!el) return;
-    el.addEventListener('input', function() { updateCharCount(); draftStatus.textContent = 'Saving...'; clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 800); });
-    el.addEventListener('change', function() { draftStatus.textContent = 'Saving...'; clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 800); });
+['input', 'change'].forEach(function(evt) {
+    [category, feedbackText, document.getElementById('location')].forEach(function(el) {
+        if (!el) return;
+        el.addEventListener(evt, function() {
+            draftStatus.innerHTML = '💾 Saving…';
+            clearTimeout(draftTimer);
+            draftTimer = setTimeout(saveDraft, 800);
+            if (evt === 'change') updateProgress();
+        });
+    });
+});
+form.querySelectorAll('input[name="user_urgency"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+        updateProgress();
+        draftStatus.innerHTML = '💾 Saving…';
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(saveDraft, 800);
+    });
+});
+document.getElementById('hideIdentity').addEventListener('change', function() {
+    draftStatus.innerHTML = '💾 Saving…';
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 800);
 });
 
 form.addEventListener('submit', function(e) {
@@ -172,16 +677,29 @@ form.addEventListener('submit', function(e) {
         e.preventDefault();
         const alertDiv = document.createElement('div');
         alertDiv.className = 'sf-alert sf-alert-error visible';
-        alertDiv.textContent = '⚠️ Please fix the errors above before submitting.';
+        alertDiv.innerHTML = '⚠️ Please fix the highlighted fields before submitting.';
         const existing = document.querySelector('.sf-alert-error');
-        if (!existing) document.querySelector('.sf-header').after(alertDiv);
-        setTimeout(() => { const el = document.querySelector('.sf-alert-error'); if (el) el.remove(); }, 4000);
-    } else {
-        clearDraft();
+        if (!existing) document.querySelector('.sf-card').insertBefore(alertDiv, document.getElementById('feedbackForm'));
+        setTimeout(function() { const el = document.querySelector('.sf-alert-error'); if (el) el.remove(); }, 5000);
+        const firstError = document.querySelector('.sf-field.has-error');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '⏳ Submitting…';
+    clearDraft();
+});
+
+category.addEventListener('change', function() {
+    updateProgress();
+    if (category.value) {
+        categoryError.classList.remove('visible');
+        document.getElementById('fieldCategory').classList.remove('has-error');
     }
 });
 
-loadDraft();
+updateProgress();
 updateCharCount();
+loadDraft();
 </script>
 {% endblock %}

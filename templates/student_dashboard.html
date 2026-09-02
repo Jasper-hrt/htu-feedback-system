@@ -865,12 +865,17 @@ function loadNotifs() {
     });
 }
 function handleStudentNotificationClick(notifId, feedbackId) {
-    fetch('/api/notifications/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }, body: JSON.stringify({ ids: [notifId] }) });
+    // Hide the dropdown
     var dropdown = document.getElementById('notifDrop');
-    if (dropdown) dropdown.hidden = true;
+    if (dropdown) dropdown.style.display = 'none';
+    // Delete the notification so it disappears from the list
+    fetch('/api/notifications/' + notifId, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    }).catch(function(e) { console.error('Delete notification error:', e); });
+    // Navigate to the single-feedback detail page so the student can view it
     if (feedbackId) {
-        var card = document.querySelector('.sd-card[data-id="' + feedbackId + '"]');
-        if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); card.style.boxShadow = '0 0 0 3px var(--primary)'; setTimeout(function() { card.style.boxShadow = ''; }, 2000); }
+        window.location.href = '/student/feedback/' + feedbackId;
     }
 }
 function toggleNotif() {

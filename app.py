@@ -90,7 +90,10 @@ def create_admin_notification(feedback_id, notification_type, title, message):
 def notify_admins_new_feedback(feedback):
     """Notify all admins about new feedback."""
     try:
-        student_name = feedback.student.full_name if feedback.student else 'Anonymous'
+        if feedback.anonymous:
+            student_name = 'Anonymous Student'
+        else:
+            student_name = feedback.student.full_name if feedback.student else 'Unknown Student'
         title = f'New Feedback #{feedback.id}'
         message = f'{student_name} submitted feedback in {feedback.category or "General"} - Urgency {feedback.urgency_score}/5'
         
@@ -134,7 +137,10 @@ def check_unattended_feedback():
             ).first()
             
             if not existing:
-                student_name = feedback.student.full_name if hasattr(feedback, 'student') and feedback.student else 'Anonymous'
+                if feedback.anonymous:
+                    student_name = 'Anonymous Student'
+                else:
+                    student_name = feedback.student.full_name if hasattr(feedback, 'student') and feedback.student else 'Unknown Student'
                 title = f'Unattended Feedback #{feedback.id}'
                 message = f'Feedback from {student_name} has been pending for over 24 hours. Category: {feedback.category or "General"}, Urgency: {feedback.urgency_score}/5'
                 
@@ -1060,7 +1066,10 @@ def submit_feedback():
         text = request.form.get('feedback_text')
         category = request.form.get('category')
         location = request.form.get('location')
-        anonymous = request.form.get('anonymous') == 'on'
+        # New semantics: "hide_identity" checked => truly anonymous (no one, including admins,
+        # can see who submitted it). Unchecked => student opts in and admins can see identity.
+        hide_identity = request.form.get('hide_identity') == 'on'
+        anonymous = hide_identity
         user_urgency = int(request.form.get('user_urgency', 3))
         
         analysis = process_feedback(text, category)
@@ -2017,9 +2026,38 @@ def admin_feedback():
     paginated = query.paginate(page=page, per_page=per_page, error_out=False)
     
     categories = sorted({f.category for f in Feedback.query.with_entities(Feedback.category).distinct() if f.category})
-    
-    return render_template('admin_feedback_mobile.html', 
-                         feedbacks=paginated.items, 
+
+    # Build explanations/insights dictionaries for modal renderers
+    explanations_by_id = {}
+    admin_insights_by_id = {}
+    for f in paginated.items:
+        base_text = (f.cleaned_text or '').strip() or (f.feedback_text or '').strip()
+        explanations_by_id[f.id] = {
+            'sentiment_explanation': get_sentiment_explanation(base_text).get('sentiment_explanation', []),
+            'urgency_explanation': get_urgency_explanation(base_text, f.sentiment),
+            'confidence_score': f.confidence_score,
+            'dominant_emotion': f.dominant_emotion,
+            'compound_mood': f.compound_mood,
+            'emotion_emoji': get_emotion_emoji(f.dominant_emotion, f.compound_mood),
+            'emotion_intensities': _parse_json_field(f.emotion_intensities, {}),
+            'secondary_emotions': _parse_json_field(f.secondary_emotions, []),
+        }
+        admin_insights_by_id[f.id] = {
+            'investigation': _parse_json_field(f.admin_action_investigation, []),
+            'corrective': _parse_json_field(f.admin_action_corrective, []),
+            'preventive': _parse_json_field(f.admin_action_preventive, []),
+            'department': f.admin_action_department,
+            'priority': f.admin_action_priority,
+            'escalation': f.admin_action_escalation,
+            'status': f.status,
+            'assigned_to': f.assigned_to,
+            'category': f.category,
+            'urgency_score': f.urgency_score,
+            'sentiment': f.sentiment,
+        }
+
+    return render_template('admin_feedback_mobile.html',
+                         feedbacks=paginated.items,
                          pagination=paginated,
                          categories=categories,
                          current_category=category_filter,
@@ -2027,7 +2065,87 @@ def admin_feedback():
                          current_urgency=urgency_filter,
                          current_search=search_query,
                          sort_by=sort_by,
-                         sort_dir=sort_dir)
+                         sort_dir=sort_dir,
+                         explanation_by_id=explanations_by_id,
+                         admin_insights_by_id=admin_insights_by_id)
+
+
+@app.route('/admin/feedback/<int:feedback_id>')
+@src_required
+def admin_feedback_detail(feedback_id):
+    """Single-feedback detail view used when an admin opens a notification."""
+    feedback = Feedback.query.get_or_404(feedback_id)
+    base_text = (feedback.cleaned_text or '').strip() or (feedback.feedback_text or '').strip()
+    sentiment_expl = get_sentiment_explanation(base_text).get('sentiment_explanation', [])
+    urgency_expl = get_urgency_explanation(base_text, feedback.sentiment)
+
+    explanation = {
+        'sentiment_explanation': sentiment_expl,
+        'urgency_explanation': urgency_expl,
+        'confidence_score': feedback.confidence_score,
+        'dominant_emotion': feedback.dominant_emotion,
+        'compound_mood': feedback.compound_mood,
+        'emotion_emoji': get_emotion_emoji(feedback.dominant_emotion, feedback.compound_mood),
+        'emotion_intensities': _parse_json_field(feedback.emotion_intensities, {}),
+        'secondary_emotions': _parse_json_field(feedback.secondary_emotions, []),
+    }
+    admin_insights = {
+        'investigation': _parse_json_field(feedback.admin_action_investigation, []),
+        'corrective': _parse_json_field(feedback.admin_action_corrective, []),
+        'preventive': _parse_json_field(feedback.admin_action_preventive, []),
+        'department': feedback.admin_action_department,
+        'priority': feedback.admin_action_priority,
+        'escalation': feedback.admin_action_escalation,
+        'status': feedback.status,
+        'assigned_to': feedback.assigned_to,
+        'category': feedback.category,
+        'urgency_score': feedback.urgency_score,
+        'sentiment': feedback.sentiment,
+    }
+    # Mirror the data shape the dashboard JS expects for showAnalyzeModal / showAdminInsightsModal
+    explanation_by_id = {feedback.id: explanation}
+    admin_insights_by_id = {feedback.id: admin_insights}
+    # Admins always see the submitting student's identity (for follow-up),
+    # regardless of the public-facing "anonymous" flag.
+    submitter = None
+    if feedback.student_id:
+        from database import Student
+        submitter = Student.query.filter_by(student_id=feedback.student_id).first()
+    return render_template(
+        'admin_feedback_detail.html',
+        feedback=feedback,
+        explanation=explanation,
+        admin_insights=admin_insights,
+        explanation_by_id=explanation_by_id,
+        admin_insights_by_id=admin_insights_by_id,
+        submitter=submitter,
+    )
+
+
+@app.route('/student/feedback/<int:feedback_id>')
+@src_required
+def student_feedback_detail(feedback_id):
+    """Single-feedback detail view used when a student opens a notification."""
+    student_id = session.get('student_id')
+    if not student_id:
+        return redirect(url_for('student_login'))
+    feedback = Feedback.query.get_or_404(feedback_id)
+    if feedback.student_id != student_id:
+        return redirect(url_for('student_dashboard'))
+    base_text = (feedback.cleaned_text or '').strip() or (feedback.feedback_text or '').strip()
+    explanation = {
+        'confidence_score': feedback.confidence_score,
+        'dominant_emotion': feedback.dominant_emotion,
+        'compound_mood': feedback.compound_mood,
+        'emotion_emoji': get_emotion_emoji(feedback.dominant_emotion, feedback.compound_mood),
+        'emotion_intensities': _parse_json_field(feedback.emotion_intensities, {}),
+        'secondary_emotions': _parse_json_field(feedback.secondary_emotions, []),
+    }
+    return render_template(
+        'student_feedback_detail.html',
+        feedback=feedback,
+        explanation=explanation,
+    )
 
 
 @app.route('/admin/update/<int:feedback_id>', methods=['POST'])
@@ -2897,6 +3015,42 @@ def api_admin_unread_count():
     count = Notification.query.filter_by(recipient_type='admin', is_read=False).count()
     return jsonify({'success': True, 'unread_count': count})
 
+@app.route('/api/admin/notifications/<int:notification_id>', methods=['DELETE'])
+@src_required
+def api_admin_delete_notification(notification_id):
+    """Delete a single admin notification (called when admin opens the linked feedback)."""
+    notif = Notification.query.filter_by(id=notification_id, recipient_type='admin').first()
+    if not notif:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    try:
+        db.session.delete(notif)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting admin notification: {e}")
+        return jsonify({'success': False, 'error': 'Delete failed'}), 500
+    return jsonify({'success': True})
+
+
+@app.route('/api/notifications/<int:notification_id>', methods=['DELETE'])
+@login_required
+def api_delete_notification(notification_id):
+    """Delete a single student notification (called when student opens the linked feedback)."""
+    student_id = session.get('student_id')
+    if not student_id:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    notif = Notification.query.filter_by(id=notification_id, student_id=student_id).first()
+    if not notif:
+        return jsonify({'success': False, 'error': 'Not found'}), 404
+    try:
+        db.session.delete(notif)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error deleting student notification: {e}")
+        return jsonify({'success': False, 'error': 'Delete failed'}), 500
+    return jsonify({'success': True})
+
 @app.route('/api/admin/src-users')
 @src_required
 def api_admin_src_users():
@@ -2961,9 +3115,9 @@ def api_record_sentiment_correction():
         # Update the feedback record
         feedback = Feedback.query.get(feedback_id)
         if feedback:
-            feedback.sentiment = corrected.lower()
-            feedback.confidence_score = 100.0
-        
+            feedback.sentiment = corrected.capitalize()
+            feedback.confidence_score = None
+
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:

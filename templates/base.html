@@ -171,6 +171,9 @@
                 <span class="hamburger-bar"></span>
                 <span class="hamburger-bar"></span>
             </button>
+            {% if session and session.get('student_id') and not session.get('admin_id') and request.path != '/student/dashboard' %}
+            <button class="sd-hamburger" id="sdHamburgerBtn" type="button" aria-label="Toggle student sidebar" aria-expanded="false" onclick="toggleStudentSidebar()">☰</button>
+            {% endif %}
             <label class="theme-toggle mobile-theme-toggle" title="Toggle theme">
                 <input id="themeToggleMobile" type="checkbox" />
                 <span class="theme-toggle-ui">🌙 Dark</span>
@@ -458,5 +461,8 @@
             to { opacity: 1; transform: translateX(0); }
         }
     </style>
+    {% if session and session.get('student_id') and not session.get('admin_id') and request.path != '/student/dashboard' %}
+        {% include "_student_sidebar.html" %}
+    {% endif %}
 </body>
 </html>
