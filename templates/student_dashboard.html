@@ -612,37 +612,8 @@ html.theme-dark .sd-response {
 .stats-grid .stat-card:nth-child(4) { animation-delay: 0.14s; }
 </style>
 
-<!-- Overlay for mobile -->
-<div class="sd-overlay" id="sdOverlay" onclick="toggleSidebar()"></div>
-
 <div class="student-layout">
-    <!-- Floating Sidebar -->
-    <aside class="admin-sidebar sd-sidebar" id="sdSidebar" aria-label="Student dashboard sidebar">
-        <div class="admin-sidebar-title">
-            🎓 Student Portal
-            <span class="sub">Feedback &amp; support</span>
-        </div>
-        <nav class="admin-sidebar-nav">
-            <a href="/student/dashboard" class="admin-sidebar-link admin-sidebar-link-active">📋 Dashboard</a>
-            <a href="/submit" class="admin-sidebar-link">✍️ Submit Feedback</a>
-            <a href="/forum" class="admin-sidebar-link">💬 Forum</a>
-            <a href="/chat" class="admin-sidebar-link">💬 Chat</a>
-            <a href="/announcements" class="admin-sidebar-link">📢 Announcements</a>
-            <a href="/public" class="admin-sidebar-link">📊 Public Board</a>
-        </nav>
-        <div style="margin-top: 1.25rem;">
-            <a href="/student/change-password" class="admin-sidebar-link">🔑 Settings</a>
-            <form method="POST" action="/student/logout" style="margin:0.5rem 0 0;">
-                {{ csrf_field() }}
-                <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
-                    <span class="btn-logout-icon">⏻</span>
-                    <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Student session</span></span>
-                </button>
-            </form>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
+    <!-- Sidebar is provided by _student_sidebar.html (included from base.html) -->
     <main class="student-content">
         <!-- Hero -->
         <section class="admin-hero sd-hero">
@@ -809,16 +780,6 @@ html.theme-dark .sd-response {
 </div>
 
 <script>
-function toggleSidebar() {
-    var sidebar = document.getElementById('sdSidebar');
-    var overlay = document.getElementById('sdOverlay');
-    var btn = document.getElementById('sdHamburgerBtn');
-    if (sidebar && overlay) {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('open');
-        if (btn) btn.classList.toggle('active');
-    }
-}
 function filterDash(status) {
     document.querySelectorAll('.sd-card').forEach(function(c) {
         c.style.display = (status === 'all' || c.getAttribute('data-status') === status) ? '' : 'none';

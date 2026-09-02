@@ -1,33 +1,147 @@
 {% if session and session.get('student_id') %}
 <style>
-/* Mobile sidebar toggle styles — used on every student page */
+/* ============== Student Mobile Drawer Sidebar ============== */
 .sd-overlay {
     display: none;
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.55);
-    z-index: 99;
+    z-index: 999;
     backdrop-filter: blur(3px);
+    -webkit-tap-highlight-color: transparent;
 }
 .sd-overlay.open { display: block; }
 
-.admin-sidebar.sd-sidebar {
-    position: sticky;
-    flex: 0 0 16rem;
-    width: 16rem;
-    top: calc(var(--nav-height, 4rem) + 1.5rem);
-    align-self: flex-start;
-    max-height: calc(100vh - var(--nav-height, 4rem) - 2rem);
+.sd-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 17rem;
+    max-width: 85vw;
+    background: var(--card-bg);
+    border-right: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg, 0 10px 40px rgba(0,0,0,0.15));
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
-    scrollbar-width: thin;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
 }
-html.theme-dark .admin-sidebar.sd-sidebar {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(59, 130, 246, 0.06));
-    border-color: rgba(148, 163, 184, 0.18);
+.sd-sidebar.open { transform: translateX(0); }
+
+.sd-sidebar-header {
+    padding: 1.25rem 1.15rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(16,185,129,0.06));
+}
+.sd-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+.sd-sidebar-brand-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.6rem;
+    background: linear-gradient(135deg, var(--primary), #10b981);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+.sd-sidebar-sub {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 0.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
 }
 
+.sd-sidebar-nav { padding: 0.75rem 0.5rem; flex: 1; }
+.sd-sidebar-nav-section { padding: 0 0.5rem; margin-bottom: 0.25rem; }
+.sd-sidebar-nav-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    font-weight: 700;
+    padding: 0.5rem 0.6rem 0.35rem;
+}
+.sd-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem 0.85rem;
+    margin: 0.1rem 0;
+    border-radius: 0.65rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 2.6rem;
+}
+.sd-sidebar-link:hover { background: var(--bg-color); }
+.sd-sidebar-link.active {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    font-weight: 700;
+}
+.sd-sidebar-link-icon { font-size: 1.05rem; flex-shrink: 0; }
+
+.sd-sidebar-foot {
+    padding: 0.85rem 0.85rem 1.15rem;
+    border-top: 1px solid var(--border-color);
+}
+.sd-sidebar-logout {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.65rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    min-height: 2.6rem;
+    -webkit-tap-highlight-color: transparent;
+}
+.sd-sidebar-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+.sd-sidebar-close {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sd-sidebar-close:hover { color: var(--danger); border-color: var(--danger); }
+
 .sd-hamburger {
-    display: none;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 2.4rem;
@@ -38,29 +152,14 @@ html.theme-dark .admin-sidebar.sd-sidebar {
     color: var(--text-primary);
     cursor: pointer;
     font-size: 1.1rem;
+    -webkit-tap-highlight-color: transparent;
 }
 .sd-hamburger:hover { border-color: var(--primary); }
+.sd-hamburger.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-@media (max-width: 900px) {
-    .admin-sidebar.sd-sidebar {
-        position: fixed;
-        left: 0;
-        top: var(--nav-height, 4rem);
-        bottom: 0;
-        margin: 0;
-        width: 16rem;
-        max-height: none;
-        border-radius: 0 18px 18px 0;
-        transform: translateX(-100%);
-        box-shadow: var(--shadow-lg);
-        z-index: 100;
-        transition: transform 0.25s ease;
-    }
-    .admin-sidebar.sd-sidebar.open { transform: translateX(0); }
-    .sd-hamburger { display: inline-flex !important; }
-}
 @media (min-width: 901px) {
-    .admin-sidebar.sd-sidebar { transform: none !important; }
+    /* Desktop: hide the drawer entirely (admin pages use their own sidebar) */
+    .sd-sidebar { display: none; }
     .sd-overlay { display: none !important; }
     .sd-hamburger { display: none !important; }
 }
@@ -68,26 +167,57 @@ html.theme-dark .admin-sidebar.sd-sidebar {
 
 <div class="sd-overlay" id="sdOverlay" onclick="toggleStudentSidebar()"></div>
 
-<aside class="admin-sidebar sd-sidebar" id="sdSidebar" aria-label="Student sidebar">
-    <div class="admin-sidebar-title">
-        🎓 Student Portal
-        <span class="sub">Feedback &amp; support</span>
+<aside class="sd-sidebar" id="sdSidebar" aria-label="Student sidebar">
+    <button class="sd-sidebar-close" type="button" aria-label="Close sidebar" onclick="toggleStudentSidebar()">✕</button>
+
+    <div class="sd-sidebar-header">
+        <div class="sd-sidebar-brand">
+            <div class="sd-sidebar-brand-icon">🎓</div>
+            <div>
+                <div>{{ session.student_name or 'Student' }}</div>
+                <div class="sd-sidebar-sub">Student Portal</div>
+            </div>
+        </div>
     </div>
-    <nav class="admin-sidebar-nav">
-        <a href="/student/dashboard" class="admin-sidebar-link {% if request.path.startswith('/student/dashboard') %}admin-sidebar-link-active{% endif %}">📋 Dashboard</a>
-        <a href="/submit" class="admin-sidebar-link {% if request.path == '/submit' or request.path.startswith('/submit_feedback') %}admin-sidebar-link-active{% endif %}">✍️ Submit Feedback</a>
-        <a href="/forum" class="admin-sidebar-link {% if request.path.startswith('/forum') %}admin-sidebar-link-active{% endif %}">💬 Forum</a>
-        <a href="/chat" class="admin-sidebar-link {% if request.path.startswith('/chat') %}admin-sidebar-link-active{% endif %}">💬 Chat</a>
-        <a href="/announcements" class="admin-sidebar-link {% if request.path.startswith('/announcements') %}admin-sidebar-link-active{% endif %}">📢 Announcements</a>
-        <a href="/public" class="admin-sidebar-link {% if request.path.startswith('/public') %}admin-sidebar-link-active{% endif %}">📊 Public Board</a>
+
+    <nav class="sd-sidebar-nav" aria-label="Student navigation">
+        <div class="sd-sidebar-nav-section">
+            <div class="sd-sidebar-nav-title">Main</div>
+            <a href="/student/dashboard" class="sd-sidebar-link {% if request.path.startswith('/student/dashboard') %}active{% endif %}">
+                <span class="sd-sidebar-link-icon">📋</span><span>Dashboard</span>
+            </a>
+            <a href="/submit" class="sd-sidebar-link {% if request.path == '/submit' or request.path.startswith('/submit_feedback') %}active{% endif %}">
+                <span class="sd-sidebar-link-icon">✍️</span><span>Submit Feedback</span>
+            </a>
+        </div>
+        <div class="sd-sidebar-nav-section">
+            <div class="sd-sidebar-nav-title">Community</div>
+            <a href="/forum" class="sd-sidebar-link {% if request.path.startswith('/forum') %}active{% endif %}">
+                <span class="sd-sidebar-link-icon">💬</span><span>Forum</span>
+            </a>
+            <a href="/chat" class="sd-sidebar-link {% if request.path.startswith('/chat') %}active{% endif %}">
+                <span class="sd-sidebar-link-icon">🗨️</span><span>Chat</span>
+            </a>
+            <a href="/announcements" class="sd-sidebar-link {% if request.path.startswith('/announcements') %}active{% endif %}">
+                <span class="sd-sidebar-link-icon">📢</span><span>Announcements</span>
+            </a>
+            <a href="/public" class="sd-sidebar-link {% if request.path.startswith('/public') %}active{% endif %}">
+                <span class="sd-sidebar-link-icon">📊</span><span>Public Board</span>
+            </a>
+        </div>
+        <div class="sd-sidebar-nav-section">
+            <div class="sd-sidebar-nav-title">Account</div>
+            <a href="/student/change-password" class="sd-sidebar-link {% if request.path.startswith('/student/change-password') %}active{% endif %}">
+                <span class="sd-sidebar-link-icon">🔑</span><span>Settings</span>
+            </a>
+        </div>
     </nav>
-    <div style="margin-top: 1.25rem;">
-        <a href="/student/change-password" class="admin-sidebar-link {% if request.path.startswith('/student/change-password') %}admin-sidebar-link-active{% endif %}">🔑 Settings</a>
-        <form method="POST" action="/student/logout" style="margin:0.5rem 0 0;">
+
+    <div class="sd-sidebar-foot">
+        <form method="POST" action="/student/logout" style="margin:0;">
             {{ csrf_field() }}
-            <button type="submit" class="btn-logout btn-logout--student student-sidebar-logout" style="width:100%; text-align:left;">
-                <span class="btn-logout-icon">⏻</span>
-                <span><span class="btn-logout-text">Logout</span><span class="btn-logout-subtext">Student session</span></span>
+            <button type="submit" class="sd-sidebar-logout">
+                <span class="sd-sidebar-link-icon">⏻</span><span>Logout</span>
             </button>
         </form>
     </div>
@@ -99,10 +229,17 @@ function toggleStudentSidebar() {
     var overlay = document.getElementById('sdOverlay');
     var btn = document.getElementById('sdHamburgerBtn');
     if (sidebar && overlay) {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('open');
-        if (btn) btn.classList.toggle('active');
+        var isOpen = sidebar.classList.toggle('open');
+        overlay.classList.toggle('open', isOpen);
+        if (btn) btn.classList.toggle('active', isOpen);
+        document.body.style.overflow = isOpen ? 'hidden' : '';
     }
 }
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var sidebar = document.getElementById('sdSidebar');
+        if (sidebar && sidebar.classList.contains('open')) toggleStudentSidebar();
+    }
+});
 </script>
 {% endif %}
