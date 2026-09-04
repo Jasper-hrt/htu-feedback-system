@@ -1957,9 +1957,19 @@ class CustomLexiconManager:
         this class at all (only the ``.lexicon`` attribute did), so that
         function raised ``AttributeError`` on every call.
         """
+        runtime_lexicon = dict(self.lexicon)
+        try:
+            from flask import has_app_context
+            if has_app_context():
+                from database import CustomLexicon
+                for row in CustomLexicon.query.filter_by(is_active=True).all():
+                    runtime_lexicon[row.word.strip().lower()] = float(row.sentiment_score)
+        except Exception:
+            pass
+
         if text and is_discussion_context(text):
-            return {w: s for w, s in self.lexicon.items() if w not in _SAFETY_VOCAB_OVERLAP}
-        return dict(self.lexicon)
+            return {w: s for w, s in runtime_lexicon.items() if w not in _SAFETY_VOCAB_OVERLAP}
+        return runtime_lexicon
 
     def calculate_score(self, text: str) -> float:
         """

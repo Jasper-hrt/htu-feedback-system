@@ -6,7 +6,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import os
 import re
-from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken
+from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken, SentimentCorrection
 from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag, ForumReplyVote
 from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
 from database import SolutionTemplate, SolutionFeedback, CustomLexicon, UnknownWord, AIReviewLog, Notification
@@ -2428,6 +2428,12 @@ def admin_delete_feedback(feedback_id):
         return jsonify({'success': True})
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/2fa/setup')
+@src_required
+def admin_2fa_setup():
+    """Two-factor authentication setup placeholder."""
+    return jsonify({'success': True, 'message': '2FA setup is not currently available.'})
+
 @app.route('/admin/students')
 @src_required
 def admin_students():
@@ -2479,13 +2485,14 @@ def review_ai_feedback(feedback_id):
     allowed = {'positive', 'negative', 'neutral'}
     if new_sentiment not in allowed:
         new_sentiment = feedback.sentiment or 'neutral'
+    new_sentiment = new_sentiment.capitalize()
 
     feedback.sentiment = new_sentiment
     feedback.category = new_category
     feedback.urgency_score = new_urgency
 
     # Regenerate solution recommendation if sentiment changed to Negative
-    if new_sentiment == 'negative' and old[0] != 'negative':
+    if new_sentiment == 'Negative' and old[0] != 'Negative':
         try:
             rec_result = generate_recommendation(
                 text=feedback.feedback_text,
@@ -2510,11 +2517,11 @@ def review_ai_feedback(feedback_id):
     # Active-learning loop: teach the custom lexicon any domain words the
     # generic engines missed, scored by the human reviewer's label. Words are
     # added to the session and persisted by the commit below.
-    if new_sentiment in ('positive', 'negative'):
+    if new_sentiment in ('Positive', 'Negative'):
         try:
             from sentiment.custom_lexicon import CustomLexiconManager
             learned = CustomLexiconManager().learn_from_correction(
-                (feedback.feedback_text or ''), new_sentiment,
+                (feedback.feedback_text or ''), new_sentiment.lower(),
                 session.get('admin_name', 'admin'),
             )
             if learned:
@@ -2872,13 +2879,14 @@ def api_ai_review_correct(feedback_id):
     allowed = {'positive', 'negative', 'neutral'}
     if new_sentiment not in allowed:
         new_sentiment = feedback.sentiment or 'neutral'
+    new_sentiment = new_sentiment.capitalize()
     
     feedback.sentiment = new_sentiment
     feedback.category = new_category
     feedback.urgency_score = max(1, min(5, new_urgency))
     
     # Regenerate recommendation if sentiment changed to negative
-    if new_sentiment == 'negative' and old[0] != 'negative':
+    if new_sentiment == 'Negative' and old[0] != 'Negative':
         try:
             rec_result = generate_recommendation(
                 text=feedback.feedback_text,
@@ -2900,11 +2908,11 @@ def api_ai_review_correct(feedback_id):
     ))
     
     # Active learning
-    if new_sentiment in ('positive', 'negative'):
+    if new_sentiment in ('Positive', 'Negative'):
         try:
             from sentiment.custom_lexicon import CustomLexiconManager
             CustomLexiconManager().learn_from_correction(
-                (feedback.feedback_text or ''), new_sentiment,
+                (feedback.feedback_text or ''), new_sentiment.lower(),
                 session.get('admin_name', 'admin'),
             )
         except Exception:

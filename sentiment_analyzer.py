@@ -189,18 +189,29 @@ def build_ai_explanation(text, analysis=None, category=None, recommendation=None
     Uses the new unified analyzer for consistent results across the system.
     """
     if analysis is None:
-        # Use the new analyzer instead of hybrid_engine
-        sentiment, score, confidence = _analyze_sentiment_internal(text or "")
-        analysis = {
-            "sentiment": sentiment,
-            "final_score": score,
-            "confidence": confidence,
-            "safety_mode": "none",
-            "context": {},
-            "decision_reasons": [],
-            "model_version": "HTU-Sentiment-v4-unified",
-            "review_required": False,
-        }
+        if final_sentiment is not None:
+            analysis = {
+                "sentiment": final_sentiment,
+                "final_score": final_confidence if final_confidence is not None else 0.0,
+                "confidence": float(final_confidence if final_confidence is not None else 0.0),
+                "safety_mode": "none",
+                "context": {},
+                "decision_reasons": [],
+                "model_version": "HTU-Sentiment-v4-unified",
+                "review_required": False,
+            }
+        else:
+            sentiment, score, confidence = _analyze_sentiment_internal(text or "")
+            analysis = {
+                "sentiment": sentiment,
+                "final_score": score,
+                "confidence": confidence,
+                "safety_mode": "none",
+                "context": {},
+                "decision_reasons": [],
+                "model_version": "HTU-Sentiment-v4-unified",
+                "review_required": False,
+            }
 
     # When a feedback item already has a persisted final classification, that
     # result is authoritative. The explanation must describe it, not silently
