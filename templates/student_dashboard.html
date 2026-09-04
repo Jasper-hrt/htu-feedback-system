@@ -781,14 +781,24 @@ html.theme-dark .stat-card-pill-done   { color: #6ee7b7; }
             </div>
         </section>
 
-        <!-- Notification Dropdown -->
-        <div class="notification-dropdown" id="notifDrop" style="display:none;">
-            <div class="notification-dropdown-header">
-                <span>🔔 Notifications</span>
-                <button onclick="markReadAll()" class="notification-mark-read">Mark all read</button>
+        <!-- Student Notification Center -->
+        <div class="notification-center" id="notifDrop" style="display:none;">
+            <div class="notification-center-header">
+                <div class="notification-center-title">
+                    🔔 Notifications
+                    <span class="notification-center-count" id="notifCount" style="display:none;">0</span>
+                </div>
+                <div class="notification-center-actions">
+                    <button class="notification-action-btn" onclick="markReadAll()">Mark all read</button>
+                    <button class="notification-action-btn danger" onclick="clearAllNotifications()">Clear all</button>
+                </div>
             </div>
-            <div class="notification-dropdown-list" id="notifList">
-                <div class="notification-empty">No notifications yet</div>
+            <div class="notification-center-list" id="notifList">
+                <div class="notification-empty-state">
+                    <div class="notification-empty-state-icon">🔔</div>
+                    <div class="notification-empty-state-title">No notifications</div>
+                    <div class="notification-empty-state-desc">You're all caught up.</div>
+                </div>
             </div>
         </div>
 
@@ -995,29 +1005,108 @@ function toggleSdLeftSidebar() {
 function loadNotifs() {
     fetch('/api/notifications').then(function(r) { return r.json(); }).then(function(data) {
         if (data.success) {
-            var badge = document.getElementById('notifBadge');
-            if (data.unread_count > 0) { badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count; badge.hidden = false; }
-            else { badge.hidden = true; }
-            var list = document.getElementById('notifList');
-            if (data.notifications && data.notifications.length > 0) {
-                list.innerHTML = data.notifications.map(function(n) {
-                    var icon = n.notification_type === 'status_change' ? '📋' : n.notification_type === 'response' ? '💬' : '🔔';
-                    var feedbackId = n.feedback_id;
-                    return '<div class="sd-notif-item ' + (n.is_read ? '' : 'unread') + '" onclick="handleStudentNotificationClick(' + n.id + ', ' + feedbackId + ')">' +
-                        '<div class="sd-notif-item-title">' + icon + ' ' + n.title + '</div>' +
-                        '<div class="sd-notif-item-text">' + n.message + '</div>' +
-                        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.25rem;">' +
-                        '<span class="sd-notif-item-time">' + n.created_at + '</span>' +
-                        (feedbackId ? '<span style="font-size:0.7rem;color:var(--primary);font-weight:600;">View →</span>' : '') +
-                        '</div></div>';
-                }).join('');
-            } else { list.innerHTML = '<div class="sd-notif-empty">No notifications</div>'; }
+            updateStudentNotificationBadge(data.unread_count);
+            renderStudentNotifications(data.notifications);
         }
-    });
+    }).catch(function(e) { console.error('Student notifications error:', e); });
 }
+
+function updateStudentNotificationBadge(count) {
+    var badge = document.getElementById('notifBadge');
+    var countBadge = document.getElementById('notifCount');
+    if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.hidden = false;
+        if (countBadge) {
+            countBadge.textContent = count > 9 ? '9+' : count;
+            countBadge.style.display = 'inline-flex';
+        }
+    } else {
+        badge.hidden = true;
+        if (countBadge) countBadge.style.display = 'none';
+    }
+}
+
+function groupNotificationsByDate(notifications) {
+    var groups = {};
+    notifications.forEach(function(n) {
+        var dateKey = 'Older';
+        if (n.created_at) {
+            var date = new Date(n.created_at);
+            var now = new Date();
+            var diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+            if (diffDays === 0) dateKey = 'Today';
+            else if (diffDays === 1) dateKey = 'Yesterday';
+        }
+        if (!groups[dateKey]) groups[dateKey] = [];
+        groups[dateKey].push(n);
+    });
+    return groups;
+}
+
+function renderStudentNotifications(notifications) {
+    var list = document.getElementById('notifList');
+    if (!notifications || notifications.length === 0) {
+        list.innerHTML = '<div class="notification-empty-state">' +
+            '<div class="notification-empty-state-icon">🔔</div>' +
+            '<div class="notification-empty-state-title">No notifications</div>' +
+            '<div class="notification-empty-state-desc">You\'re all caught up.</div>' +
+            '</div>';
+        return;
+    }
+
+    var groups = groupNotificationsByDate(notifications);
+    var html = '';
+    var groupOrder = ['Today', 'Yesterday', 'Older'];
+    groupOrder.forEach(function(groupName) {
+        if (!groups[groupName]) return;
+        html += '<div class="notification-group">' +
+            '<div class="notification-group-title">' + groupName + '</div>';
+        groups[groupName].forEach(function(n) {
+            var icon = '🔔';
+            if (n.notification_type === 'status_change') icon = '📋';
+            else if (n.notification_type === 'response') icon = '💬';
+            else if (n.notification_type === 'new_feedback') icon = '📝';
+            else if (n.notification_type === 'sentiment_change') icon = '🧠';
+            else if (n.notification_type === 'category_change') icon = '🏷️';
+            var feedbackId = n.feedback_id;
+            html += '<div class="notification-card ' + (n.is_read ? '' : 'unread') + '">' +
+                '<div class="notification-card-header">' +
+                '<div class="notification-card-title">' + icon + ' ' + n.title + '</div>' +
+                '<button class="notification-dismiss" onclick="event.stopPropagation(); dismissStudentNotification(' + n.id + ')" title="Dismiss">×</button>' +
+                '</div>' +
+                '<div class="notification-card-body">' + n.message + '</div>' +
+                '<div class="notification-card-footer">' +
+                '<span class="notification-card-time">' + n.created_at + '</span>' +
+                (feedbackId ? '<span class="notification-card-action">View →</span>' : '') +
+                '</div>' +
+                '</div>';
+        });
+        html += '</div>';
+    });
+    list.innerHTML = html;
+}
+
+function dismissStudentNotification(notifId) {
+    fetch('/api/notifications/' + notifId, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) loadNotifs();
+    })
+    .catch(function(e) { console.error('Dismiss notification error:', e); });
+}
+
 function handleStudentNotificationClick(notifId, feedbackId) {
-    var dropdown = document.getElementById('notifDrop');
-    if (dropdown) dropdown.style.display = 'none';
+    var panel = document.getElementById('notifDrop');
+    if (panel) panel.style.display = 'none';
+    fetch('/api/notifications/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ ids: [notifId] })
+    }).catch(function(e) { console.error('Mark read error:', e); });
     fetch('/api/notifications/' + notifId, {
         method: 'DELETE',
         headers: { 'X-CSRF-Token': getCsrfToken() }
@@ -1026,18 +1115,40 @@ function handleStudentNotificationClick(notifId, feedbackId) {
         window.location.href = '/student/feedback/' + feedbackId;
     }
 }
+
 function toggleNotif() {
-    var dropdown = document.getElementById('notifDrop');
-    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    var panel = document.getElementById('notifDrop');
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+    if (panel.style.display === 'flex') loadNotifs();
 }
+
 function markReadAll() {
-    fetch('/api/notifications/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }, body: JSON.stringify({ ids: [] }) }).then(function() { loadNotifs(); });
+    fetch('/api/notifications/mark-read', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() }, body: JSON.stringify({ ids: [] }) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) loadNotifs();
+        if (typeof showToast === 'function') showToast('All notifications marked as read', 'info');
+    });
 }
+
+function clearAllNotifications() {
+    if (!confirm('Clear all notifications permanently?')) return;
+    fetch('/api/notifications/clear-all', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) loadNotifs();
+        if (typeof showToast === 'function') showToast('All notifications cleared', 'info');
+    });
+}
+
 document.addEventListener('click', function(e) {
     var bell = document.getElementById('adminNotificationBell');
-    var dropdown = document.getElementById('notifDrop');
-    if (bell && dropdown && !bell.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.style.display = 'none';
+    var panel = document.getElementById('notifDrop');
+    if (bell && panel && !bell.contains(e.target) && !panel.contains(e.target)) {
+        panel.style.display = 'none';
     }
 });
 loadNotifs();

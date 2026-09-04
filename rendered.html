@@ -1,0 +1,2531 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e40af">
+        <meta name="csrf-token" content="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HTU SRC">
+    <title>HTU SRC Feedback System</title>
+<link rel="stylesheet" href="/static/css/style.css?v=1788551556">
+    <link rel="stylesheet" href="/static/css/mobile.css?v=1788551556">
+    <style>
+        /* Quick utility to ensure consistent page headers */
+        .page-header { margin-bottom: 1.5rem; }
+        .page-header h2 { font-size: 1.5rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .page-header p { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.15rem; }
+        /* Smooth page transitions */
+        .main-container { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-student-id="" class="admin-page">
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="navbar-brand-with-logo">
+                <div class="navbar-brand-logo-container">
+                    <img src="/static/images/htu-logo.png" alt="HTU Logo" class="htu-logo-nav">
+                </div>
+                <div class="navbar-brand-text">
+                    <h1>HTU SRC Feedback System</h1>
+                    <p>Your Voice, Our Commitment</p>
+                </div>
+            </a>
+<div class="navbar-links navbar-links-admin">
+                
+                <label class="theme-toggle" title="Toggle theme">
+                    <input id="themeToggle" type="checkbox" />
+                    <span class="theme-toggle-ui">🌙 Dark</span>
+                </label>
+                
+            </div>
+
+            <button class="navbar-hamburger" id="navbarHamburger" type="button" aria-label="Toggle navigation" aria-expanded="false">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+            
+            <label class="theme-toggle mobile-theme-toggle" title="Toggle theme">
+                <input id="themeToggleMobile" type="checkbox" />
+                <span class="theme-toggle-ui">🌙 Dark</span>
+            </label>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div class="navbar-mobile-menu" id="navbarMobileMenu">
+            <div class="mobile-menu-header">
+                <div class="mobile-menu-brand-icon">🛡️</div>
+                <div class="mobile-menu-brand-text">SRC Admin</div>
+            </div>
+            <div class="mobile-menu-links">
+                <a href="/"><span class="mobile-menu-link-icon">🏠</span> Home</a>
+                <a href="/announcements"><span class="mobile-menu-link-icon">📢</span> Announcements</a>
+                <a href="/public"><span class="mobile-menu-link-icon">📊</span> Public Board</a>
+                
+                <div class="mobile-menu-divider"></div>
+                <div class="mobile-menu-label">Admin Panel</div>
+                <a href="/admin/dashboard"><span class="mobile-menu-link-icon">📋</span> Dashboard</a>
+                <a href="/admin/feedback"><span class="mobile-menu-link-icon">📱</span> Feedback</a>
+                <a href="/admin/analytics"><span class="mobile-menu-link-icon">📈</span> Analytics</a>
+                <a href="/admin/templates"><span class="mobile-menu-link-icon">📝</span> Templates</a>
+                <a href="/admin/solution-templates"><span class="mobile-menu-link-icon">🧩</span> Solution Templates</a>
+                <a href="/admin/students"><span class="mobile-menu-link-icon">👥</span> Students</a>
+                <a href="/admin/announcements"><span class="mobile-menu-link-icon">📢</span> Announcements</a>
+                <a href="/admin/ai-review"><span class="mobile-menu-link-icon">🔎</span> AI Review Queue</a>
+                <a href="/admin/lexicon-manager"><span class="mobile-menu-link-icon">🧠</span> Lexicon Manager</a>
+                <a href="/admin/ai-audit"><span class="mobile-menu-link-icon">🛡️</span> AI Audit Trail</a>
+                <a href="/admin/lexicon-gaps"><span class="mobile-menu-link-icon">🧠</span> Lexicon Gaps</a>
+                <a href="/admin/logs"><span class="mobile-menu-link-icon">📋</span> Logs</a>
+                <a href="/admin/chat"><span class="mobile-menu-link-icon">💬</span> Chat Rooms</a>
+                <a href="/admin/export/excel"><span class="mobile-menu-link-icon">📊</span> Export Excel</a>
+                <a href="/admin/change-password"><span class="mobile-menu-link-icon">🔑</span> Change Password</a>
+                <div class="mobile-menu-divider"></div>
+                <a href="/admin/logout" class="mobile-menu-logout" onclick="event.preventDefault(); document.getElementById('adminLogoutForm').submit();"><span class="mobile-menu-link-icon">⏻</span> Logout</a>
+                
+            </div>
+        </div>
+    </nav>
+    
+<main class="main-container">
+        
+<style>
+/* Feedback Page Styles */
+.feedback-page { padding: 1rem; }
+
+/* Filters */
+.feedback-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; background: var(--card-bg); padding: 0.75rem; border-radius: 0.75rem; border: 1px solid var(--border-color); }
+.feedback-filters input, .feedback-filters select { padding: 0.45rem 0.6rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem; background: var(--bg-color); color: var(--text-primary); }
+.feedback-filters input { flex: 1; min-width: 150px; }
+.feedback-filters select { min-width: 100px; }
+
+/* Desktop Table */
+.feedback-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 0.75rem; overflow: hidden; border: 1px solid var(--border-color); }
+.feedback-table th { background: var(--bg-color); padding: 0.75rem 0.5rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); cursor: pointer; white-space: nowrap; }
+.feedback-table td { padding: 0.65rem 0.5rem; font-size: 0.8rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); vertical-align: top; }
+.feedback-table tr:hover { background: var(--bg-color); }
+.feedback-table .ft-text { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feedback-table .ft-actions { display: flex; gap: 0.25rem; white-space: nowrap; position: relative; }
+.feedback-table .ft-actions button { padding: 0.3rem 0.5rem; border-radius: 0.35rem; border: 1px solid var(--border-color); background: var(--card-bg); cursor: pointer; font-size: 0.85rem; position: relative; }
+.feedback-table .ft-actions button:hover { background: var(--bg-color); }
+.feedback-table .ft-actions button::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--card-bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.65rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; margin-bottom: 0.25rem; z-index: 10; }
+.feedback-table .ft-actions button:hover::after { opacity: 1; }
+
+/* Mobile Cards */
+.feedback-cards { display: flex; flex-direction: column; gap: 0.75rem; }
+.feedback-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 1rem; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.feedback-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.feedback-card-accent { height: 4px; }
+.feedback-card-body { padding: 1rem; }
+.feedback-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem; }
+.feedback-card-id { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
+.feedback-card-cat { font-size: 0.7rem; color: var(--text-secondary); margin-top: 0.1rem; }
+.feedback-card-date { font-size: 0.7rem; color: var(--text-muted); }
+.feedback-card-text { font-size: 0.88rem; line-height: 1.5; margin-bottom: 0.75rem; padding: 0.75rem; background: var(--bg-color); border-radius: 0.6rem; border-left: 3px solid var(--primary); }
+.feedback-card-badges { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.feedback-card-badges .badge { font-size: 0.7rem; padding: 0.25rem 0.5rem; }
+.feedback-card-status { margin-bottom: 0.75rem; }
+.feedback-card-status select { width: 100%; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); font-size: 0.8rem; background: var(--bg-color); color: var(--text-primary); }
+.feedback-card-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.feedback-card-actions button { flex: 1; min-width: 0; padding: 0.5rem 0.3rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-primary); cursor: pointer; font-size: 0.75rem; font-weight: 600; text-align: center; transition: all 0.15s ease; position: relative; }
+.feedback-card-actions button:hover { background: var(--bg-color); border-color: var(--primary); }
+.feedback-card-actions button:active { transform: scale(0.98); }
+.feedback-card-actions button::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--card-bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.65rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; margin-bottom: 0.25rem; z-index: 10; }
+.feedback-card-actions button:hover::after { opacity: 1; }
+
+/* Modal */
+.feedback-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; backdrop-filter: blur(4px); }
+.feedback-modal.active { display: flex; }
+.feedback-modal-content { background: var(--card-bg); border-radius: 1rem; max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalSlideIn 0.2s ease; }
+@keyframes modalSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.feedback-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
+.feedback-modal-title { font-size: 1.1rem; font-weight: 700; }
+.feedback-modal-close { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 0.5rem; width: 2rem; height: 2rem; font-size: 1.2rem; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
+.feedback-modal-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+.feedback-modal-body { font-size: 0.88rem; line-height: 1.6; }
+.feedback-modal-body .modal-section { margin-bottom: 1rem; padding: 0.85rem; background: var(--bg-color); border-radius: 0.6rem; }
+.feedback-modal-body .modal-section-title { font-weight: 700; margin-bottom: 0.4rem; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+.feedback-modal-body .keyword-chip { display: inline-block; padding: 0.2rem 0.55rem; border-radius: 999px; background: var(--card-bg); border: 1px solid var(--border-color); font-size: 0.75rem; margin: 0.15rem 0.2rem 0.15rem 0; }
+.feedback-modal-body .keyword-chip-impact { color: var(--text-secondary); font-size: 0.7rem; margin-left: 0.2rem; }
+.feedback-modal-body .emotion-intensity-item { display: grid; grid-template-columns: 90px 1fr 50px; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; font-size: 0.85rem; }
+.feedback-modal-body .emotion-intensity-label { color: var(--text-secondary); font-weight: 600; }
+.feedback-modal-body .emotion-intensity-bar { height: 8px; background: var(--bg-color); border-radius: 4px; overflow: hidden; }
+.feedback-modal-body .emotion-intensity-fill { height: 100%; transition: width 0.4s ease; }
+.feedback-modal-body .emotion-intensity-value { text-align: right; font-weight: 700; font-size: 0.8rem; }
+.feedback-modal-body ul { margin: 0; padding-left: 1.2rem; line-height: 1.8; }
+
+/* Responsive */
+@media (min-width: 769px) {
+    .feedback-cards { display: none; }
+}
+@media (max-width: 768px) {
+    .feedback-table-wrapper { display: none; }
+    .feedback-filters { flex-direction: column; gap: 0.4rem; padding: 0.6rem; }
+    .feedback-filters input, .feedback-filters select { width: 100%; }
+    .feedback-filters .filter-row { display: flex; gap: 0.3rem; }
+    .feedback-filters .filter-row select { flex: 1; }
+}
+</style>
+
+<div class="feedback-page">
+<!-- Filters -->
+<div class="feedback-filters">
+    <div style="display:flex; gap:0.3rem; align-items:center; margin-bottom:0.3rem; width:100%;">
+        <a href="/admin/dashboard" style="padding:0.35rem 0.6rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-primary); text-decoration:none; font-size:0.8rem; font-weight:600;">← Back</a>
+        <span style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">52 feedback</span>
+    </div>
+    <input type="text" id="searchInput" placeholder="Search feedback..." value="" onkeydown="if(event.key==='Enter')applyFilters()">
+    <div class="filter-row">
+        <select id="sortSelect" onchange="applyFilters()" style="flex:2;">
+            <option value="date" selected>Sort: Date</option>
+            <option value="urgency" >Sort: Urgency</option>
+            <option value="status" >Sort: Status</option>
+            <option value="category" >Sort: Category</option>
+        </select>
+        <button id="sortDirBtn" onclick="toggleSortDir()" data-dir="desc" style="min-width:2.5rem; padding:0.45rem 0.6rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--bg-color); cursor:pointer;">↓</button>
+    </div>
+    <div class="filter-row">
+        <select id="statusFilter" onchange="applyFilters()" style="flex:1;">
+            <option value="">All Status</option>
+            <option value="Pending" >⏳ Pending</option>
+            <option value="Acknowledged" >👀 Ack</option>
+            <option value="In Progress" >🔄 Progress</option>
+            <option value="Resolved" >✅ Resolved</option>
+            <option value="Escalated" >🚨 Escalated</option>
+        </select>
+        <select id="categoryFilter" onchange="applyFilters()" style="flex:1;">
+            <option value="">All Categories</option>
+            <option value="Academics" >Academics</option><option value="Finance" >Finance</option><option value="ICT" >ICT</option><option value="Maintenance" >Maintenance</option><option value="Other" >Other</option><option value="Safety" >Safety</option><option value="Staff Conduct" >Staff Conduct</option><option value="Wi-Fi Issues" >Wi-Fi Issues</option>
+        </select>
+    </div>
+</div>
+
+<!-- Desktop Table -->
+<div class="feedback-table-wrapper">
+<table class="feedback-table">
+<thead>
+<tr>
+<th onclick="sortTableClick('id')" style="cursor:pointer;">ID <span id="sort-id"></span></th>
+<th onclick="sortTableClick('date')" style="cursor:pointer;">Date <span id="sort-date">↓</span></th>
+<th>Feedback</th>
+<th onclick="sortTableClick('category')" style="cursor:pointer;">Category <span id="sort-category"></span></th>
+<th>Sentiment</th>
+<th onclick="sortTableClick('urgency')" style="cursor:pointer;">Urgency <span id="sort-urgency"></span></th>
+<th onclick="sortTableClick('status')" style="cursor:pointer;">Status <span id="sort-status"></span></th>
+<th>Assigned</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>
+
+
+<tr data-id="54" data-date="20260904172016" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#54</strong></td>
+<td style="white-space:nowrap;">Sep 04, 17:20</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/54" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(54, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(54)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(54)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(54, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(54, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="53" data-date="20260904164142" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#53</strong></td>
+<td style="white-space:nowrap;">Sep 04, 16:41</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/53" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(53, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(53)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(53)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(53, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(53, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="52" data-date="20260904163457" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#52</strong></td>
+<td style="white-space:nowrap;">Sep 04, 16:34</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/52" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(52, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(52)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(52)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(52, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(52, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="51" data-date="20260904161046" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#51</strong></td>
+<td style="white-space:nowrap;">Sep 04, 16:10</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/51" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(51, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(51)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(51)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(51, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(51, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="50" data-date="20260904161002" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<td><strong>#50</strong></td>
+<td style="white-space:nowrap;">Sep 04, 16:10</td>
+<td class="ft-text" title="Test feedback with low confidence">Test feedback with low confidence</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">neutral</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/50" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(50, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(50)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(50)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(50, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(50, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="49" data-date="20260904160858" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<td><strong>#49</strong></td>
+<td style="white-space:nowrap;">Sep 04, 16:08</td>
+<td class="ft-text" title="Test feedback with low confidence">Test feedback with low confidence</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">neutral</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/49" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(49, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(49)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(49)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(49, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(49, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="48" data-date="20260904160818" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#48</strong></td>
+<td style="white-space:nowrap;">Sep 04, 16:08</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/48" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(48, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(48)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(48)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(48, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(48, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="47" data-date="20260904160651" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#47</strong></td>
+<td style="white-space:nowrap;">Sep 04, 16:06</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/47" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(47, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(47)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(47)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(47, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(47, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="46" data-date="20260904143114" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#46</strong></td>
+<td style="white-space:nowrap;">Sep 04, 14:31</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/46" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(46, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(46)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(46)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(46, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(46, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="45" data-date="20260904142148" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#45</strong></td>
+<td style="white-space:nowrap;">Sep 04, 14:21</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/45" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(45, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(45)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(45)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(45, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(45, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="44" data-date="20260904142148" data-urgency="3" data-status="In Progress" data-category="Wi-Fi Issues">
+<td><strong>#44</strong></td>
+<td style="white-space:nowrap;">Sep 04, 14:21</td>
+<td class="ft-text" title="Admin test feedback for actions">Admin test feedback for actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">negative</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/44" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-in-progress" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" >Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" selected>In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(44, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(44)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(44)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(44, 'negative')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(44, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="43" data-date="20260904142145" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<td><strong>#43</strong></td>
+<td style="white-space:nowrap;">Sep 04, 14:21</td>
+<td class="ft-text" title="Updated feedback text for testing with more details">Updated feedback text for testing with more details</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/43" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(43, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(43)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(43)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(43, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(43, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="42" data-date="20260904135253" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#42</strong></td>
+<td style="white-space:nowrap;">Sep 04, 13:52</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/42" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(42, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(42)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(42)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(42, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(42, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="41" data-date="20260904135253" data-urgency="3" data-status="In Progress" data-category="Wi-Fi Issues">
+<td><strong>#41</strong></td>
+<td style="white-space:nowrap;">Sep 04, 13:52</td>
+<td class="ft-text" title="Admin test feedback for actions">Admin test feedback for actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">negative</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/41" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-in-progress" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" >Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" selected>In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(41, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(41)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(41)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(41, 'negative')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(41, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="40" data-date="20260904135251" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<td><strong>#40</strong></td>
+<td style="white-space:nowrap;">Sep 04, 13:52</td>
+<td class="ft-text" title="Updated feedback text for testing with more details">Updated feedback text for testing with more details</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/40" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(40, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(40)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(40)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(40, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(40, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="39" data-date="20260904135227" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#39</strong></td>
+<td style="white-space:nowrap;">Sep 04, 13:52</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/39" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(39, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(39)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(39)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(39, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(39, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="38" data-date="20260904135227" data-urgency="3" data-status="In Progress" data-category="Wi-Fi Issues">
+<td><strong>#38</strong></td>
+<td style="white-space:nowrap;">Sep 04, 13:52</td>
+<td class="ft-text" title="Admin test feedback for actions">Admin test feedback for actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">negative</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/38" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-in-progress" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" >Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" selected>In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(38, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(38)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(38)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(38, 'negative')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(38, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="37" data-date="20260904135224" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<td><strong>#37</strong></td>
+<td style="white-space:nowrap;">Sep 04, 13:52</td>
+<td class="ft-text" title="Updated feedback text for testing with more details">Updated feedback text for testing with more details</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">Neutral</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/37" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(37, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(37)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(37)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(37, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(37, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="36" data-date="20260904135138" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<td><strong>#36</strong></td>
+<td style="white-space:nowrap;">Sep 04, 13:51</td>
+<td class="ft-text" title="Admin test feedback for non-destructive actions">Admin test feedback for non-destructive actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Maintenance</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">neutral</span></td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">2/5</span></td>
+<td>
+<form method="POST" action="/admin/update/36" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-pending" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" selected>Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" >In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(36, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(36)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(36)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(36, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(36, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+<tr data-id="35" data-date="20260904135138" data-urgency="3" data-status="In Progress" data-category="Wi-Fi Issues">
+<td><strong>#35</strong></td>
+<td style="white-space:nowrap;">Sep 04, 13:51</td>
+<td class="ft-text" title="Admin test feedback for actions">Admin test feedback for actions</td>
+<td><span class="badge badge-info" style="font-size:0.7rem;">Wi-Fi Issues</span></td>
+<td><span class="badge badge-secondary" style="font-size:0.7rem;">negative</span></td>
+<td><span class="badge badge-warning" style="font-size:0.7rem;">3/5</span></td>
+<td>
+<form method="POST" action="/admin/update/35" style="display:inline;"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-select status-in-progress" style="padding:0.25rem 0.4rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary);">
+<option value="Pending" >Pending</option>
+<option value="Acknowledged" >Acknowledged</option>
+<option value="In Progress" selected>In Progress</option>
+<option value="Resolved" >Resolved</option>
+<option value="Escalated" >Escalated</option>
+</select>
+</form>
+</td>
+<td>
+<button type="button" onclick="openAssignModal(35, "")" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+👤 Assign
+</button>
+</td>
+<td>
+<div class="ft-actions">
+<button onclick="showAdminInsightsModal(35)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(35)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(35, 'negative')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(35, "")" data-tip="Reply">💬</button>
+</div>
+</td>
+</tr>
+
+
+</tbody>
+</table>
+</div>
+
+<!-- Mobile Cards -->
+<div class="feedback-cards">
+
+
+<div class="feedback-card" data-id="54" data-date="20260904172016" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#54</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 17:20</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/54"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(54, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(54)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(54)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(54, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(54, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="53" data-date="20260904164142" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#53</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 16:41</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/53"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(53, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(53)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(53)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(53, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(53, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="52" data-date="20260904163457" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#52</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 16:34</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/52"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(52, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(52)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(52)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(52, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(52, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="51" data-date="20260904161046" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#51</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 16:10</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/51"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(51, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(51)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(51)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(51, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(51, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="50" data-date="20260904161002" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#50</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 16:10</div>
+</div>
+</div>
+<div class="feedback-card-text">Test feedback with low confidence</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/50"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(50, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(50)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(50)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(50, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(50, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="49" data-date="20260904160858" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#49</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 16:08</div>
+</div>
+</div>
+<div class="feedback-card-text">Test feedback with low confidence</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/49"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(49, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(49)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(49)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(49, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(49, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="48" data-date="20260904160818" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#48</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 16:08</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/48"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(48, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(48)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(48)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(48, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(48, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="47" data-date="20260904160651" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#47</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 16:06</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/47"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(47, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(47)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(47)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(47, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(47, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="46" data-date="20260904143114" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#46</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 14:31</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/46"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(46, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(46)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(46)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(46, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(46, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="45" data-date="20260904142148" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#45</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 14:21</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/45"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(45, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(45)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(45)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(45, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(45, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="44" data-date="20260904142148" data-urgency="3" data-status="In Progress" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#44</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 14:21</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">negative</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/44"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-in-progress">
+<option value="Pending" >⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" selected>🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(44, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(44)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(44)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(44, 'negative')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(44, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="43" data-date="20260904142145" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#43</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 14:21</div>
+</div>
+</div>
+<div class="feedback-card-text">Updated feedback text for testing with more details</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/43"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(43, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(43)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(43)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(43, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(43, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="42" data-date="20260904135253" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#42</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 13:52</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/42"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(42, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(42)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(42)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(42, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(42, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="41" data-date="20260904135253" data-urgency="3" data-status="In Progress" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#41</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 13:52</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">negative</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/41"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-in-progress">
+<option value="Pending" >⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" selected>🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(41, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(41)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(41)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(41, 'negative')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(41, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="40" data-date="20260904135251" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#40</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 13:52</div>
+</div>
+</div>
+<div class="feedback-card-text">Updated feedback text for testing with more details</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/40"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(40, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(40)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(40)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(40, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(40, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="39" data-date="20260904135227" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#39</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 13:52</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/39"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(39, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(39)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(39)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(39, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(39, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="38" data-date="20260904135227" data-urgency="3" data-status="In Progress" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#38</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 13:52</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">negative</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/38"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-in-progress">
+<option value="Pending" >⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" selected>🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(38, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(38)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(38)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(38, 'negative')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(38, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="37" data-date="20260904135224" data-urgency="3" data-status="Pending" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#37</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 13:52</div>
+</div>
+</div>
+<div class="feedback-card-text">Updated feedback text for testing with more details</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">Neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/37"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(37, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(37)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(37)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(37, 'Neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(37, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="36" data-date="20260904135138" data-urgency="2" data-status="Pending" data-category="Maintenance">
+<div class="feedback-card-accent" style="background:var(--success);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#36</div>
+<div class="feedback-card-cat">Maintenance</div>
+<div class="feedback-card-date">Sep 04, 13:51</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for non-destructive actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-info">2/5</span>
+<span class="badge badge-secondary">neutral</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/36"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-pending">
+<option value="Pending" selected>⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" >🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(36, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(36)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(36)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(36, 'neutral')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(36, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+<div class="feedback-card" data-id="35" data-date="20260904135138" data-urgency="3" data-status="In Progress" data-category="Wi-Fi Issues">
+<div class="feedback-card-accent" style="background:var(--warning);"></div>
+<div class="feedback-card-body">
+<div class="feedback-card-header">
+<div>
+<div class="feedback-card-id">#35</div>
+<div class="feedback-card-cat">Wi-Fi Issues</div>
+<div class="feedback-card-date">Sep 04, 13:51</div>
+</div>
+</div>
+<div class="feedback-card-text">Admin test feedback for actions</div>
+<div class="feedback-card-badges">
+<span class="badge badge-warning">3/5</span>
+<span class="badge badge-secondary">negative</span>
+</div>
+<div class="feedback-card-status">
+<form method="POST" action="/admin/update/35"><input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+<select name="status" onchange="this.form.submit()" class="status-in-progress">
+<option value="Pending" >⏳ Pending</option>
+<option value="Acknowledged" >👀 Acknowledged</option>
+<option value="In Progress" selected>🔄 In Progress</option>
+<option value="Resolved" >✅ Resolved</option>
+<option value="Escalated" >🚨 Escalated</option>
+</select>
+</form>
+</div>
+<div class="feedback-card-assign" style="margin-bottom:0.75rem;">
+<button type="button" onclick="openAssignModal(35, "")" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+👤 Assign Member
+</button>
+</div>
+<div class="feedback-card-actions">
+<button onclick="showAdminInsightsModal(35)" data-tip="Insights">📋</button>
+<button onclick="showAnalyzeModal(35)" data-tip="Analyze">🔍</button>
+<button onclick="showCorrectionModal(35, 'negative')" data-tip="Correct">🔄</button>
+<button onclick="showResponseModal(35, "")" data-tip="Reply">💬</button>
+</div>
+</div>
+</div>
+
+
+</div>
+
+<!-- Pagination -->
+
+<div style="display:flex; justify-content:center; align-items:center; gap:0.75rem; padding:1rem;">
+
+<span style="font-size:0.8rem; color:var(--text-secondary); font-weight:600;">Page 1 of 3</span>
+<a href="?page=2&sort=date&dir=desc&status=&category=&search=" style="padding:0.5rem 1rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--card-bg); text-decoration:none; font-weight:600; color:var(--text-primary);">Next →</a>
+</div>
+
+</div>
+
+<!-- Modals -->
+<div class="feedback-modal" id="modal-insights">
+<div class="feedback-modal-content">
+<div class="feedback-modal-header"><span class="feedback-modal-title">📋 Administrative Insights</span><button class="feedback-modal-close" onclick="closeModal('insights')">✕</button></div>
+<div class="feedback-modal-body" id="modal-insights-body"></div>
+</div></div>
+
+<div class="feedback-modal" id="modal-analyze">
+<div class="feedback-modal-content">
+<div class="feedback-modal-header"><span class="feedback-modal-title">🔍 Feedback Analysis</span><button class="feedback-modal-close" onclick="closeModal('analyze')">✕</button></div>
+<div class="feedback-modal-body">
+<div class="modal-section"><div class="modal-section-title">🧠 Emotion Breakdown</div><div id="analyzeEmotion"></div></div>
+<div class="modal-section"><div class="modal-section-title">💭 Sentiment Drivers</div><div id="analyzeSentiment"></div></div>
+<div class="modal-section"><div class="modal-section-title">⚡ Urgency Drivers</div><div id="analyzeUrgency"></div></div>
+</div>
+</div></div>
+
+<div class="feedback-modal" id="modal-reply">
+<div class="feedback-modal-content">
+<div class="feedback-modal-header"><span class="feedback-modal-title">💬 SRC Response</span><button class="feedback-modal-close" onclick="closeModal('reply')">✕</button></div>
+<div class="feedback-modal-body" id="modal-reply-body"></div>
+</div></div>
+
+<div class="feedback-modal" id="modal-correction">
+<div class="feedback-modal-content">
+<div class="feedback-modal-header"><span class="feedback-modal-title">🔄 Correct Sentiment</span><button class="feedback-modal-close" onclick="closeModal('correction')">✕</button></div>
+<div class="feedback-modal-body">
+<input type="hidden" id="correctionFeedbackId">
+<div class="modal-section"><div class="modal-section-title">Current AI Prediction</div><strong id="correctionOriginal"></strong></div>
+<div class="modal-section"><div class="modal-section-title">Corrected Sentiment</div>
+<select id="correctionSelect" style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-primary);">
+<option value="Positive">😊 Positive</option>
+<option value="Neutral">😐 Neutral</option>
+<option value="Negative">😞 Negative</option>
+</select></div>
+<div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;">
+<button onclick="closeModal('correction')" style="padding:0.5rem 1rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--card-bg); cursor:pointer; color:var(--text-primary);">Cancel</button>
+<button onclick="submitCorrection()" style="padding:0.5rem 1rem; border-radius:0.5rem; border:none; background:var(--primary); color:#fff; font-weight:600; cursor:pointer;">Save Correction</button>
+</div>
+</div>
+</div></div>
+
+<div class="feedback-modal" id="modal-assign">
+<div class="feedback-modal-content">
+<div class="feedback-modal-header"><span class="feedback-modal-title">👤 Assign Member</span><button class="feedback-modal-close" onclick="closeModal('assign')">✕</button></div>
+<div class="feedback-modal-body">
+<div class="modal-section">
+<div class="modal-section-title">SRC Member</div>
+<select id="assignMemberSelect" style="width:100%; padding:0.55rem 0.75rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-primary); font-size:0.9rem;">
+<option value="">Unassigned</option>
+</select>
+</div>
+<div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+<button onclick="closeModal('assign')" style="padding:0.5rem 1rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--card-bg); cursor:pointer; color:var(--text-primary);">Cancel</button>
+<button id="assignSaveBtn" onclick="submitAssign()" style="padding:0.5rem 1rem; border-radius:0.5rem; border:none; background:var(--primary); color:#fff; font-weight:600; cursor:pointer;">💾 Save Assignment</button>
+</div>
+</div>
+</div></div>
+
+<script>
+var adminInsightsById = {"35": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": [], "department": null, "escalation": null, "investigation": [], "preventive": [], "priority": null, "sentiment": "negative", "status": "In Progress", "urgency_score": 3}, "36": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "neutral", "status": "Pending", "urgency_score": 2}, "37": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": ["Categorize the feedback correctly", "Route to the appropriate department for resolution", "Follow up with the student on progress"], "department": "SRC Secretariat", "escalation": "SRC President", "investigation": ["Review the feedback manually and identify key themes", "Cross-reference with recent similar complaints", "Contact the student for clarification if needed"], "preventive": ["Improve feedback collection to capture more details", "Review categorization rules for edge cases"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 3}, "38": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": [], "department": null, "escalation": null, "investigation": [], "preventive": [], "priority": null, "sentiment": "negative", "status": "In Progress", "urgency_score": 3}, "39": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "neutral", "status": "Pending", "urgency_score": 2}, "40": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": ["Categorize the feedback correctly", "Route to the appropriate department for resolution", "Follow up with the student on progress"], "department": "SRC Secretariat", "escalation": "SRC President", "investigation": ["Review the feedback manually and identify key themes", "Cross-reference with recent similar complaints", "Contact the student for clarification if needed"], "preventive": ["Improve feedback collection to capture more details", "Review categorization rules for edge cases"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 3}, "41": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": [], "department": null, "escalation": null, "investigation": [], "preventive": [], "priority": null, "sentiment": "negative", "status": "In Progress", "urgency_score": 3}, "42": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "neutral", "status": "Pending", "urgency_score": 2}, "43": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": ["Categorize the feedback correctly", "Route to the appropriate department for resolution", "Follow up with the student on progress"], "department": "SRC Secretariat", "escalation": "SRC President", "investigation": ["Review the feedback manually and identify key themes", "Cross-reference with recent similar complaints", "Contact the student for clarification if needed"], "preventive": ["Improve feedback collection to capture more details", "Review categorization rules for edge cases"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 3}, "44": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": [], "department": null, "escalation": null, "investigation": [], "preventive": [], "priority": null, "sentiment": "negative", "status": "In Progress", "urgency_score": 3}, "45": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 2}, "46": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 2}, "47": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 2}, "48": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 2}, "49": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": [], "department": null, "escalation": null, "investigation": [], "preventive": [], "priority": null, "sentiment": "neutral", "status": "Pending", "urgency_score": 3}, "50": {"assigned_to": null, "category": "Wi-Fi Issues", "corrective": [], "department": null, "escalation": null, "investigation": [], "preventive": [], "priority": null, "sentiment": "neutral", "status": "Pending", "urgency_score": 3}, "51": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 2}, "52": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 2}, "53": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 2}, "54": {"assigned_to": null, "category": "Maintenance", "corrective": ["Address the specific issue with the lecturer/department", "Ensure fair processes are followed", "Provide student with clear next steps"], "department": "Academic Affairs / Department", "escalation": "Department Head \u2192 Dean of Faculty \u2192 Academic Board", "investigation": ["Review the specific academic concern with the department", "Check if other students have reported similar issues", "Examine relevant records (grades, attendance, etc.)"], "preventive": ["Review teaching evaluation processes", "Establish clearer communication channels", "Implement regular academic quality checks"], "priority": "medium", "sentiment": "Neutral", "status": "Pending", "urgency_score": 2}};
+var explanationsById = {"35": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "negative", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "36": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "37": {"compound_mood": "neutral", "confidence_score": 50.0, "dominant_emotion": "neutral", "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "38": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "negative", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "39": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "40": {"compound_mood": "neutral", "confidence_score": 50.0, "dominant_emotion": "neutral", "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "41": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "negative", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "42": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "43": {"compound_mood": "neutral", "confidence_score": 50.0, "dominant_emotion": "neutral", "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "44": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "negative", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "45": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "46": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "47": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "48": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "49": {"compound_mood": null, "confidence_score": null, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "50": {"compound_mood": null, "confidence_score": null, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "51": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "52": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "53": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}, "54": {"compound_mood": null, "confidence_score": 75.0, "dominant_emotion": null, "emotion_emoji": "\ud83d\ude10", "emotion_intensities": {}, "secondary_emotions": [], "sentiment_explanation": [], "urgency_explanation": {"base_urgency_from_keywords": 1, "critical_safety_override": false, "final_urgency": 1, "resolution_context": false, "sentiment": "Neutral", "sentiment_boost_applied": false, "urgency_keywords_detected": []}}};
+var feedbackData = {};
+
+feedbackData[54] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "Neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[53] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "Neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[52] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "Neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[51] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "Neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[50] = {
+    text: "Test feedback with low confidence",
+    category: "Wi-Fi Issues",
+    sentiment: "neutral",
+    urgency: 3,
+    status: "Pending",
+    response: "",
+    confidence: 0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[49] = {
+    text: "Test feedback with low confidence",
+    category: "Wi-Fi Issues",
+    sentiment: "neutral",
+    urgency: 3,
+    status: "Pending",
+    response: "",
+    confidence: 0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[48] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "Neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[47] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "Neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[46] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "Neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[45] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "Neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[44] = {
+    text: "Admin test feedback for actions",
+    category: "Wi-Fi Issues",
+    sentiment: "negative",
+    urgency: 3,
+    status: "In Progress",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[43] = {
+    text: "Updated feedback text for testing with more details",
+    category: "Wi-Fi Issues",
+    sentiment: "Neutral",
+    urgency: 3,
+    status: "Pending",
+    response: "",
+    confidence: 50.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[42] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[41] = {
+    text: "Admin test feedback for actions",
+    category: "Wi-Fi Issues",
+    sentiment: "negative",
+    urgency: 3,
+    status: "In Progress",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[40] = {
+    text: "Updated feedback text for testing with more details",
+    category: "Wi-Fi Issues",
+    sentiment: "Neutral",
+    urgency: 3,
+    status: "Pending",
+    response: "",
+    confidence: 50.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[39] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[38] = {
+    text: "Admin test feedback for actions",
+    category: "Wi-Fi Issues",
+    sentiment: "negative",
+    urgency: 3,
+    status: "In Progress",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[37] = {
+    text: "Updated feedback text for testing with more details",
+    category: "Wi-Fi Issues",
+    sentiment: "Neutral",
+    urgency: 3,
+    status: "Pending",
+    response: "",
+    confidence: 50.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[36] = {
+    text: "Admin test feedback for non-destructive actions",
+    category: "Maintenance",
+    sentiment: "neutral",
+    urgency: 2,
+    status: "Pending",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+feedbackData[35] = {
+    text: "Admin test feedback for actions",
+    category: "Wi-Fi Issues",
+    sentiment: "negative",
+    urgency: 3,
+    status: "In Progress",
+    response: "",
+    confidence: 75.0,
+    emotion: "neutral",
+    explanation: ""
+};
+
+
+function closeModal(type) {
+    var modal = document.getElementById('modal-' + type);
+    if (modal) modal.classList.remove('active');
+}
+
+function renderEmotionBlock(eb, data) {
+    if (!eb) return;
+    var html = '';
+    if (data && data.emotion_emoji) {
+        html += '<div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">' +
+            '<span style="font-size:2rem;">' + data.emotion_emoji + '</span>' +
+            '<div><div style="font-weight:700;font-size:1rem;">' + (data.compound_mood || '—') + '</div>' +
+            '<div style="font-size:0.8rem;color:var(--text-secondary);">Dominant: ' + (data.dominant_emotion || '—') + '</div></div></div>';
+        if (typeof data.confidence_score === 'number') {
+            html += '<div style="margin-bottom:0.5rem;"><strong>Confidence:</strong> ' + Math.round(data.confidence_score) + '%</div>';
+        }
+    }
+    if (data && data.emotion_intensities) {
+        var intensities = data.emotion_intensities || {};
+        var entries = Object.keys(intensities).filter(function(k) { return intensities[k] > 0; }).map(function(k) { return [k, intensities[k]]; });
+        entries.sort(function(a, b) { return b[1] - a[1]; });
+        if (entries.length) {
+            var negEmotions = ['anger', 'fear', 'sadness', 'disgust'];
+            var posEmotions = ['joy', 'trust', 'love', 'gratitude', 'optimism'];
+            html += '<div>';
+            entries.forEach(function(e) {
+                var name = e[0];
+                var val = Math.round(e[1] * 100);
+                var color = negEmotions.indexOf(name) !== -1 ? 'var(--danger)' : (posEmotions.indexOf(name) !== -1 ? 'var(--success)' : 'var(--info)');
+                var label = name.charAt(0).toUpperCase() + name.slice(1);
+                html += '<div class="emotion-intensity-item"><span class="emotion-intensity-label">' + label + '</span>';
+                html += '<div class="emotion-intensity-bar"><div class="emotion-intensity-fill" style="width:' + val + '%;background:' + color + ';"></div></div>';
+                html += '<span class="emotion-intensity-value">' + val + '%</span></div>';
+            });
+            html += '</div>';
+        }
+    }
+    eb.innerHTML = html || '<em style="color:var(--text-secondary);">No analysis available.</em>';
+}
+
+function showAnalyzeModal(id) {
+    var data = explanationsById && explanationsById[id] ? explanationsById[id] : null;
+    var se = document.getElementById('analyzeSentiment');
+    var ue = document.getElementById('analyzeUrgency');
+    var eb = document.getElementById('analyzeEmotion');
+    if (!se || !ue || !eb) return;
+    renderEmotionBlock(eb, data);
+    if (!data) {
+        se.innerHTML = '<em style="color:var(--text-secondary);">No sentiment analysis available.</em>';
+        ue.innerHTML = '<em style="color:var(--text-secondary);">No urgency analysis available.</em>';
+    } else {
+        if (data.sentiment_explanation && data.sentiment_explanation.length) {
+            se.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">' + data.sentiment_explanation.map(function(x) {
+                return '<span class="keyword-chip">' + x.word + ' <span class="keyword-chip-impact">(' + x.impact + ')</span></span>';
+            }).join('') + '</div>';
+        } else {
+            se.innerHTML = '<em style="color:var(--text-secondary);">No sentiment influencers detected.</em>';
+        }
+        var u = data.urgency_explanation || {};
+        var urgHtml = '<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">';
+        urgHtml += '<div><strong>Final urgency:</strong> <span class="urgency-badge ' + (u.final_urgency >= 4 ? 'urgency-high' : u.final_urgency >= 3 ? 'urgency-medium' : 'urgency-low') + '" style="font-size:0.85rem;">' + (u.final_urgency || 'N/A') + '/5</span></div>';
+        urgHtml += '<div><strong>Base:</strong> ' + (u.base_urgency_from_keywords || 'N/A') + '/5</div></div>';
+        if (u.sentiment_boost_applied) {
+            urgHtml += '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:0.5rem;padding:0.5rem 0.75rem;margin-bottom:0.75rem;font-size:0.85rem;font-weight:600;color:var(--danger);">⚠️ Sentiment boost applied</div>';
+        }
+        urgHtml += '<div style="margin-top:0.5rem;"><strong>Keywords:</strong></div>';
+        if (u.urgency_keywords_detected && u.urgency_keywords_detected.length) {
+            urgHtml += '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.35rem;">' + u.urgency_keywords_detected.map(function(k) {
+                return '<span class="keyword-chip">' + k + '</span>';
+            }).join('') + '</div>';
+        } else {
+            urgHtml += '<em style="color:var(--text-secondary);">None</em>';
+        }
+        ue.innerHTML = urgHtml;
+    }
+    document.getElementById('modal-analyze').classList.add('active');
+}
+
+function showAdminInsightsModal(id) {
+    var data = adminInsightsById && adminInsightsById[id] ? adminInsightsById[id] : null;
+    var body = document.getElementById('modal-insights-body');
+    if (!body) return;
+    if (!data) {
+        body.innerHTML = '<em style="color:var(--text-secondary);">No administrative insights available.</em>';
+    } else {
+        var priority = data.priority || 'Not Set';
+        var priorityColor = priority === 'High' ? 'var(--danger)' : priority === 'Medium' ? 'var(--warning)' : priority === 'Low' ? 'var(--success)' : 'var(--text-secondary)';
+        var html = '<div class="modal-section"><div class="modal-section-title">📊 Priority & Status</div><div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">' +
+            '<span class="badge" style="background:' + priorityColor + ';color:#fff;font-size:0.85rem;padding:0.4rem 0.8rem;">📊 Priority: ' + priority + '</span>' +
+            '<span class="badge badge-warning" style="font-size:0.85rem;">⚡ Urgency: ' + (data.urgency_score || 0) + '/5</span>' +
+            '<span class="badge badge-info" style="font-size:0.85rem;">🏷️ ' + (data.category || 'Uncategorized') + '</span>' +
+            '<span class="badge" style="background:var(--secondary);color:var(--text-primary);font-size:0.85rem;">' + (data.sentiment || 'N/A') + '</span>' +
+            '</div></div>';
+        html += '<div class="modal-section"><div class="modal-section-title">🏢 Department</div>' + (data.department || '<em style="color:var(--text-secondary);">No department assigned</em>') + '</div>';
+        var invSteps = Array.isArray(data.investigation) ? data.investigation : [];
+        html += '<div class="modal-section"><div class="modal-section-title">🔍 Investigation Steps</div>' + (invSteps.length ? '<ul>' + invSteps.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' : '<em style="color:var(--text-secondary);">No investigation steps defined</em>') + '</div>';
+        var corSteps = Array.isArray(data.corrective) ? data.corrective : [];
+        html += '<div class="modal-section"><div class="modal-section-title">🛠️ Corrective Actions</div>' + (corSteps.length ? '<ul>' + corSteps.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' : '<em style="color:var(--text-secondary);">No corrective actions defined</em>') + '</div>';
+        var prevSteps = Array.isArray(data.preventive) ? data.preventive : [];
+        html += '<div class="modal-section"><div class="modal-section-title">🛡️ Preventive Measures</div>' + (prevSteps.length ? '<ul>' + prevSteps.map(function(s) { return '<li>' + s + '</li>'; }).join('') + '</ul>' : '<em style="color:var(--text-secondary);">No preventive measures defined</em>') + '</div>';
+        if (data.escalation) {
+            html += '<div class="modal-section"><div class="modal-section-title">⬆️ Escalation</div><span style="font-weight:600;color:var(--danger);">' + data.escalation + '</span></div>';
+        }
+        var statusColor = data.status === 'Resolved' ? 'var(--success)' : data.status === 'In Progress' ? 'var(--warning)' : data.status === 'Pending' ? 'var(--text-secondary)' : 'var(--primary)';
+        html += '<div class="modal-section"><div class="modal-section-title">📌 Status & Assignment</div>' +
+            '<span style="font-weight:700;color:' + statusColor + ';font-size:0.95rem;">' + (data.status || 'Pending') + '</span>' +
+            (data.assigned_to ? '<span style="font-size:0.85rem;margin-left:0.75rem;">👤 Assigned to: <strong>' + data.assigned_to + '</strong></span>' : '<span style="font-size:0.85rem;color:var(--text-secondary);margin-left:0.75rem;">👤 Unassigned</span>') +
+            '</div>';
+        body.innerHTML = html;
+    }
+    document.getElementById('modal-insights').classList.add('active');
+}
+
+function showResponseModal(id, response) {
+    var body = document.getElementById('modal-reply-body');
+    if (!body) return;
+    var data = feedbackData[id] || {};
+    var html = '<div class="modal-section"><div class="modal-section-title">📝 Original Feedback</div>' + (data.text || '') + '</div>';
+    if (data.response) {
+        html += '<div class="modal-section"><div class="modal-section-title">💬 Current Response</div>' + data.response + '</div>';
+    }
+    html += '<form method="POST" action="/admin/update/' + id + '">' + document.querySelector('input[name="csrf_token"]').outerHTML + '<textarea name="src_response" rows="4" placeholder="Type your response..." style="width:100%; padding:0.5rem; border-radius:0.5rem; border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-primary); margin-top:0.5rem; box-sizing:border-box;">' + (response || '') + '</textarea><button type="submit" style="margin-top:0.5rem; padding:0.5rem 1rem; border-radius:0.5rem; border:none; background:var(--primary); color:#fff; font-weight:600; cursor:pointer;">Save Response</button></form>';
+    body.innerHTML = html;
+    document.getElementById('modal-reply').classList.add('active');
+}
+
+var currentCorrectionId = null;
+function showCorrectionModal(feedbackId, currentSentiment) {
+    currentCorrectionId = feedbackId;
+    document.getElementById('correctionFeedbackId').value = feedbackId;
+    document.getElementById('correctionOriginal').textContent = currentSentiment;
+    document.getElementById('correctionSelect').value = currentSentiment;
+    document.getElementById('modal-correction').classList.add('active');
+}
+function submitCorrection() {
+    if (!currentCorrectionId) return;
+    var corrected = document.getElementById('correctionSelect').value;
+    var original = document.getElementById('correctionOriginal').textContent;
+    var csrf = document.querySelector('input[name="csrf_token"]').value;
+    if (original === corrected) { closeModal('correction'); return; }
+    fetch('/api/admin/sentiment/record-correction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        body: JSON.stringify({ feedback_id: parseInt(currentCorrectionId), original_sentiment: original, corrected_sentiment: corrected, confidence: 0.0 })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showToast === 'function') showToast('Correction recorded! System will learn from this.', 'success');
+            closeModal('correction');
+            setTimeout(function() { location.reload(); }, 700);
+        } else {
+            if (typeof showToast === 'function') showToast(data.error || 'Failed to record correction', 'error');
+        }
+    })
+    .catch(function() { if (typeof showToast === 'function') showToast('Network error', 'error'); });
+}
+
+var currentAssignId = null;
+var srcUsersLoaded = false;
+var srcUsersLoading = false;
+
+function ensureSrcUsersLoaded(cb) {
+    if (srcUsersLoaded) { cb && cb(); return; }
+    if (srcUsersLoading) {
+        var wait = setInterval(function() { if (!srcUsersLoading) { clearInterval(wait); cb && cb(); } }, 80);
+        return;
+    }
+    var select = document.getElementById('assignMemberSelect');
+    if (!select) { cb && cb(); return; }
+    select.innerHTML = '<option value="" disabled selected>Loading SRC members…</option>';
+    srcUsersLoading = true;
+    fetch('/api/admin/src-users', { headers: { 'Accept': 'application/json' } })
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(data) {
+            select.innerHTML = '<option value="">Unassigned</option>';
+            if (data && data.success && Array.isArray(data.users) && data.users.length) {
+                data.users.forEach(function(u) {
+                    if (!u || !u.name) return;
+                    var opt = document.createElement('option');
+                    opt.value = u.name;
+                    opt.textContent = u.name + (u.role ? ' — ' + u.role : '');
+                    select.appendChild(opt);
+                });
+            } else {
+                var opt = document.createElement('option');
+                opt.value = ''; opt.textContent = 'No SRC members found'; opt.disabled = true;
+                select.appendChild(opt);
+            }
+            srcUsersLoaded = true;
+        })
+        .catch(function(err) {
+            console.error('Failed to load SRC users:', err);
+            var select = document.getElementById('assignMemberSelect');
+            select.innerHTML = '<option value="">Unassigned</option>';
+            var opt = document.createElement('option');
+            opt.value = ''; opt.textContent = '⚠️ Failed to load members'; opt.disabled = true;
+            select.appendChild(opt);
+            if (typeof showToast === 'function') showToast('Failed to load SRC members', 'error');
+        })
+        .finally(function() { srcUsersLoading = false; cb && cb(); });
+}
+
+function openAssignModal(id, currentAssignee) {
+    currentAssignId = id;
+    var modal = document.getElementById('modal-assign');
+    var select = document.getElementById('assignMemberSelect');
+    if (!modal || !select) return;
+    ensureSrcUsersLoaded(function() {
+        if (select) select.value = currentAssignee || '';
+    });
+    modal.classList.add('active');
+}
+function submitAssign() {
+    if (!currentAssignId) {
+        if (typeof showToast === 'function') showToast('No feedback selected', 'error');
+        return;
+    }
+    var select = document.getElementById('assignMemberSelect');
+    if (!select) return;
+    var assignedTo = select.value;
+    var btn = document.getElementById('assignSaveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    fetch('/api/admin/feedback/' + currentAssignId + '/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ assigned_to: assignedTo })
+    })
+    .then(function(r) {
+        if (!r.ok) return r.json().then(function(e) { throw new Error(e.error || 'HTTP ' + r.status); });
+        return r.json();
+    })
+    .then(function(data) {
+        if (data && data.success) {
+            closeModal('assign');
+            if (typeof showToast === 'function') showToast('✓ Assignment updated', 'success');
+            setTimeout(function() { location.reload(); }, 700);
+        } else {
+            if (typeof showToast === 'function') showToast((data && data.error) || 'Failed to assign', 'error');
+        }
+    })
+    .catch(function(err) {
+        console.error('Assign error:', err);
+        if (typeof showToast === 'function') showToast('Assign failed: ' + (err.message || 'network error'), 'error');
+    })
+    .finally(function() { if (btn) { btn.disabled = false; btn.textContent = '💾 Save Assignment'; } });
+}
+
+function applyFilters() {
+    var search = document.getElementById('searchInput').value;
+    var sort = document.getElementById('sortSelect').value;
+    var status = document.getElementById('statusFilter').value;
+    var category = document.getElementById('categoryFilter').value;
+    var dir = document.getElementById('sortDirBtn').dataset.dir || 'desc';
+    var params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (sort) params.set('sort', sort);
+    if (status) params.set('status', status);
+    if (category) params.set('category', category);
+    params.set('dir', dir);
+    window.location.href = '/admin/feedback?' + params.toString();
+}
+
+function toggleSortDir() {
+    var btn = document.getElementById('sortDirBtn');
+    var dir = btn.dataset.dir === 'asc' ? 'desc' : 'asc';
+    btn.dataset.dir = dir;
+    btn.textContent = dir === 'asc' ? '↑' : '↓';
+    applyFilters();
+}
+
+function sortTableClick(column) {
+    var btn = document.getElementById('sortDirBtn');
+    var currentSort = document.getElementById('sortSelect').value;
+    var dir = btn.dataset.dir || 'desc';
+    if (currentSort === column) {
+        dir = dir === 'asc' ? 'desc' : 'asc';
+    }
+    document.getElementById('sortSelect').value = column;
+    btn.dataset.dir = dir;
+    btn.textContent = dir === 'asc' ? '↑' : '↓';
+    applyFilters();
+}
+
+// Close modal on outside click or Escape key
+document.querySelectorAll('.feedback-modal').forEach(function(modal) {
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) modal.classList.remove('active');
+    });
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.feedback-modal.active').forEach(function(modal) {
+            modal.classList.remove('active');
+        });
+    }
+});
+</script>
+
+</main>
+
+<!-- Mobile App-Style Bottom Navigation -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+        <div class="mobile-bottom-nav-inner">
+            <a href="/" class="mobile-bottom-nav-item" data-mbpage="home">
+                <span class="bnav-icon">🏠</span>
+                <span>Home</span>
+            </a>
+            <a href="/forum" class="mobile-bottom-nav-item" data-mbpage="forum">
+                <span class="bnav-icon">💬</span>
+                <span>Forum</span>
+                <span class="bnav-badge" data-badge="forum">0</span>
+            </a>
+            <a href="/chat" class="mobile-bottom-nav-item" data-mbpage="chat">
+                <span class="bnav-icon">💬</span>
+                <span>Chat</span>
+                <span class="bnav-badge" data-badge="chat">0</span>
+            </a>
+            <a href="/announcements" class="mobile-bottom-nav-item" data-mbpage="announcements">
+                <span class="bnav-icon">📢</span>
+                <span>News</span>
+                <span class="bnav-badge" data-badge="announcements">0</span>
+            </a>
+            <a href="/public" class="mobile-bottom-nav-item" data-mbpage="public">
+                <span class="bnav-icon">🧾</span>
+                <span>Board</span>
+            </a>
+            <button class="mobile-bottom-nav-item mobile-more-btn" data-mbpage="more" type="button" id="mobileMoreBtn" aria-label="More options">
+                <span class="bnav-icon">☰</span>
+                <span>More</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile "More" Menu -->
+    <div class="mobile-more-menu" id="mobileMoreMenu">
+        <div class="mobile-more-menu-header">
+            <span>Quick Links</span>
+            <button type="button" class="mobile-more-menu-close" id="mobileMoreClose" aria-label="Close menu">✕</button>
+        </div>
+        <div class="mobile-more-menu-grid">
+            
+            <a href="/admin/login" class="mobile-more-item">
+                <span class="mobile-more-item-icon tile-green">🛡️</span>
+                <span class="mobile-more-item-text">SRC Admin</span>
+            </a>
+            
+            <a href="/student/login" class="mobile-more-item">
+                <span class="mobile-more-item-icon tile-blue">🔑</span>
+                <span class="mobile-more-item-text">Student Login</span>
+            </a>
+            <a href="/student/register" class="mobile-more-item">
+                <span class="mobile-more-item-icon tile-pink">📝</span>
+                <span class="mobile-more-item-text">Register</span>
+            </a>
+            
+            
+            <a href="/admin/dashboard" class="mobile-more-item">
+                <span class="mobile-more-item-icon tile-teal">📊</span>
+                <span class="mobile-more-item-text">Admin Dashboard</span>
+            </a>
+            <a href="/admin/feedback" class="mobile-more-item">
+                <span class="mobile-more-item-icon tile-blue">📱</span>
+                <span class="mobile-more-item-text">Feedback Manager</span>
+            </a>
+            <a href="/admin/logout" class="mobile-more-item">
+                <span class="mobile-more-item-icon tile-amber">⏻</span>
+                <span class="mobile-more-item-text">Admin Logout</span>
+            </a>
+            
+        </div>
+    </div>
+    <div class="mobile-more-backdrop" id="mobileMoreBackdrop"></div>
+
+    <!-- Mobile Admin Drawer -->
+    
+    <div class="mobile-admin-drawer" id="mobileAdminDrawer" aria-hidden="true">
+        <div class="mobile-admin-drawer-header">
+            <div class="mobile-admin-drawer-brand">
+                <div class="mobile-admin-drawer-logo">🛡️</div>
+                <div>
+                    <div class="mobile-admin-drawer-title">SRC Admin</div>
+                    <div class="mobile-admin-drawer-sub">Control & review</div>
+                </div>
+            </div>
+            <button type="button" class="mobile-admin-drawer-close" id="mobileAdminDrawerClose" aria-label="Close menu">✕</button>
+        </div>
+        <nav class="mobile-admin-drawer-nav">
+            <a href="/admin/dashboard" class="mobile-admin-drawer-link" data-adminpage="dashboard">📋 Dashboard</a>
+            <a href="/admin/feedback" class="mobile-admin-drawer-link" data-adminpage="feedback">📱 Feedback</a>
+            <a href="/admin/analytics" class="mobile-admin-drawer-link" data-adminpage="analytics">📈 Analytics</a>
+            <a href="/admin/templates" class="mobile-admin-drawer-link" data-adminpage="templates">📝 Templates</a>
+            <a href="/admin/solution-templates" class="mobile-admin-drawer-link" data-adminpage="solution-templates">🧩 Solution Templates</a>
+            <a href="/admin/students" class="mobile-admin-drawer-link" data-adminpage="students">👥 Students</a>
+            <a href="/admin/announcements" class="mobile-admin-drawer-link" data-adminpage="announcements">📢 Announcements</a>
+            <a href="/admin/ai-review" class="mobile-admin-drawer-link" data-adminpage="ai-review">🔎 AI Review Queue</a>
+            <a href="/admin/lexicon-manager" class="mobile-admin-drawer-link" data-adminpage="lexicon-manager">🧠 Lexicon Manager</a>
+            <a href="/admin/ai-audit" class="mobile-admin-drawer-link" data-adminpage="ai-audit">🛡️ AI Audit Trail</a>
+            <a href="/admin/lexicon-gaps" class="mobile-admin-drawer-link" data-adminpage="lexicon-gaps">🧠 Lexicon Gaps</a>
+            <a href="/admin/logs" class="mobile-admin-drawer-link" data-adminpage="logs">📋 Logs</a>
+            <a href="/admin/chat/rooms" class="mobile-admin-drawer-link" data-adminpage="chat-rooms">💬 Chat Rooms</a>
+            <a href="/admin/chat/messages" class="mobile-admin-drawer-link" data-adminpage="chat-messages">📨 Chat Messages</a>
+            <a href="/admin/export/excel" class="mobile-admin-drawer-link" data-adminpage="export">📊 Export Excel</a>
+            <a href="/admin/change-password" class="mobile-admin-drawer-link" data-adminpage="change-password">🔑 Change Password</a>
+        </nav>
+        <div class="mobile-admin-drawer-footer">
+            <a href="/admin/logout" class="mobile-admin-drawer-logout">
+                <span class="btn-logout-icon">⏻</span>
+                <span>Logout Admin Session</span>
+            </a>
+        </div>
+    </div>
+    <div class="mobile-admin-drawer-backdrop" id="mobileAdminDrawerBackdrop"></div>
+    
+
+    <form id="adminLogoutForm" method="POST" action="/admin/logout" style="display:none;">
+        <input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+    </form>
+    <form id="studentLogoutForm" method="POST" action="/student/logout" style="display:none;">
+        <input type="hidden" name="csrf_token" value="Y2Fudv5qs9o5kTFyQ9mNJ8KgOS1uRTaVCacOrN-VGEI">
+    </form>
+
+    <!-- Floating Submit Button (mobile only) -->
+    <a href="/submit" class="mobile-fab" title="Submit Feedback" aria-label="Submit Feedback">✏️</a>
+    
+    <footer class="footer">
+        <div class="footer-brand">
+            <img src="/static/images/htu-logo.png" alt="HTU Logo" class="htu-logo-footer">
+            <div class="footer-brand-text">
+                <strong>HTU SRC Feedback System</strong>
+                <span>Your Voice, Our Commitment</span>
+            </div>
+        </div>
+        <p>© 2026 HTU SRC Feedback System. All Rights Reserved.</p>
+    </footer>
+    
+    <script src="/static/js/main.js?v=1788551556"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var logoutForm = document.getElementById('adminLogoutForm');
+            var studentLogoutForm = document.getElementById('studentLogoutForm');
+
+            if (logoutForm) {
+                document.querySelectorAll('a[href="/admin/logout"]').forEach(function(link) {
+                    link.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        logoutForm.submit();
+                    });
+                });
+            }
+
+            if (studentLogoutForm) {
+                document.querySelectorAll('a[href="/student/logout"]').forEach(function(link) {
+                    link.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        studentLogoutForm.submit();
+                    });
+                });
+            }
+
+            if (typeof addCsrfToAllForms === 'function') {
+                addCsrfToAllForms();
+            }
+        });
+    </script>
+    <script>
+        // Toast notification system
+        function showToast(message, type) {
+            type = type || 'info';
+            var container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.setAttribute('style', 'position:fixed;top:1rem;right:1rem;z-index:10000;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;');
+                document.body.appendChild(container);
+            }
+            var toast = document.createElement('div');
+            var colors = {
+                success: 'var(--success)',
+                error: 'var(--danger)',
+                warning: 'var(--warning)',
+                info: 'var(--info)'
+            };
+            var icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
+            var bg = colors[type] || colors.info;
+            toast.setAttribute('style', 'background:var(--card-bg);color:var(--text-primary);padding:0.75rem 1.25rem;border-radius:0.5rem;box-shadow:var(--shadow-lg);border-left:4px solid ' + bg + ';font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;pointer-events:auto;animation:toastSlideIn 0.3s ease;min-width:250px;max-width:400px;');
+            toast.innerHTML = '<span style="font-size:1.1rem;">' + (icons[type] || icons.info) + '</span><span>' + message + '</span>';
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 3000);
+        }
+        function getCsrfToken() {
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? meta.getAttribute('content') : '';
+        }
+        // Flash message to toast (for server-side redirects)
+        var flashMessage = '';
+        var flashType = 'info';
+        if (flashMessage) {
+            document.addEventListener('DOMContentLoaded', function() {
+                showToast(decodeURIComponent(flashMessage), flashType);
+            });
+        }
+    </script>
+    <style>
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(100%); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    </style>
+    
+</body>
+</html>

@@ -151,7 +151,7 @@
 </form>
 </td>
 <td>
-<button type="button" onclick="openAssignModal({{ f.id }}, {{ (f.assigned_to or '')|tojson }})" style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
+<button type="button" onclick='openAssignModal({{ f.id }}, {{ (f.assigned_to or "")|tojson }})' style="padding:0.25rem 0.5rem; border-radius:0.35rem; border:1px solid var(--border-color); font-size:0.7rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; min-width:7rem; text-align:left;">
 👤 {{ f.assigned_to or 'Assign' }}
 </button>
 </td>
@@ -160,7 +160,7 @@
 <button onclick="showAdminInsightsModal({{ f.id }})" data-tip="Insights">📋</button>
 <button onclick="showAnalyzeModal({{ f.id }})" data-tip="Analyze">🔍</button>
 <button onclick="showCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" data-tip="Correct">🔄</button>
-<button onclick="showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})" data-tip="Reply">💬</button>
+<button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' data-tip="Reply">💬</button>
 </div>
 </td>
 </tr>
@@ -203,7 +203,7 @@
 </form>
 </div>
 <div class="feedback-card-assign" style="margin-bottom:0.75rem;">
-<button type="button" onclick="openAssignModal({{ f.id }}, {{ (f.assigned_to or '')|tojson }})" style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
+<button type="button" onclick='openAssignModal({{ f.id }}, {{ (f.assigned_to or "")|tojson }})' style="width:100%; padding:0.4rem; border-radius:0.4rem; border:1px solid var(--border-color); font-size:0.78rem; background:var(--bg-color); color:var(--text-primary); cursor:pointer; text-align:left;">
 👤 {{ f.assigned_to or 'Assign Member' }}
 </button>
 </div>
@@ -211,7 +211,7 @@
 <button onclick="showAdminInsightsModal({{ f.id }})" data-tip="Insights">📋</button>
 <button onclick="showAnalyzeModal({{ f.id }})" data-tip="Analyze">🔍</button>
 <button onclick="showCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" data-tip="Correct">🔄</button>
-<button onclick="showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})" data-tip="Reply">💬</button>
+<button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' data-tip="Reply">💬</button>
 </div>
 </div>
 </div>
@@ -239,7 +239,11 @@
 <div class="feedback-modal" id="modal-analyze">
 <div class="feedback-modal-content">
 <div class="feedback-modal-header"><span class="feedback-modal-title">🔍 Feedback Analysis</span><button class="feedback-modal-close" onclick="closeModal('analyze')">✕</button></div>
-<div class="feedback-modal-body" id="modal-analyze-body"></div>
+<div class="feedback-modal-body">
+<div class="modal-section"><div class="modal-section-title">🧠 Emotion Breakdown</div><div id="analyzeEmotion"></div></div>
+<div class="modal-section"><div class="modal-section-title">💭 Sentiment Drivers</div><div id="analyzeSentiment"></div></div>
+<div class="modal-section"><div class="modal-section-title">⚡ Urgency Drivers</div><div id="analyzeUrgency"></div></div>
+</div>
 </div></div>
 
 <div class="feedback-modal" id="modal-reply">

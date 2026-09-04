@@ -3027,6 +3027,38 @@ def api_admin_unread_count():
     count = Notification.query.filter_by(recipient_type='admin', is_read=False).count()
     return jsonify({'success': True, 'unread_count': count})
 
+@app.route('/api/notifications/clear-all', methods=['POST'])
+@login_required
+def api_clear_all_notifications():
+    """Delete all notifications for the logged-in student."""
+    student_id = session.get('student_id')
+    if not student_id:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+
+    try:
+        Notification.query.filter_by(student_id=student_id).delete()
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error clearing all student notifications: {e}")
+        return jsonify({'success': False, 'error': 'Clear all failed'}), 500
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/notifications/clear-all', methods=['POST'])
+@src_required
+def api_admin_clear_all_notifications():
+    """Delete all notifications for the logged-in admin."""
+    try:
+        Notification.query.filter_by(recipient_type='admin').delete()
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error clearing all admin notifications: {e}")
+        return jsonify({'success': False, 'error': 'Clear all failed'}), 500
+    return jsonify({'success': True})
+
+
 @app.route('/api/admin/notifications/<int:notification_id>', methods=['DELETE'])
 @src_required
 def api_admin_delete_notification(notification_id):

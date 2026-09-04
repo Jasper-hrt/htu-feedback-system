@@ -101,14 +101,24 @@ html.theme-dark .admin-sidebar {
             </div>
         </div>
 
-        <!-- Admin Notification Dropdown -->
-        <div class="notification-dropdown" id="adminNotificationDropdown" style="display:none;">
-            <div class="notification-dropdown-header">
-                <span>🔔 Notifications</span>
-                <button onclick="markAllAdminNotificationsRead()" class="notification-mark-read">Mark all read</button>
+        <!-- Admin Notification Center -->
+        <div class="notification-center" id="adminNotificationCenter" style="display:none;">
+            <div class="notification-center-header">
+                <div class="notification-center-title">
+                    🔔 Notifications
+                    <span class="notification-center-count" id="adminNotificationCount" style="display:none;">0</span>
+                </div>
+                <div class="notification-center-actions">
+                    <button class="notification-action-btn" onclick="markAllAdminNotificationsRead()">Mark all read</button>
+                    <button class="notification-action-btn danger" onclick="clearAllAdminNotifications()">Clear all</button>
+                </div>
             </div>
-            <div class="notification-dropdown-list" id="adminNotificationList">
-                <div class="notification-empty">No notifications yet</div>
+            <div class="notification-center-list" id="adminNotificationList">
+                <div class="notification-empty-state">
+                    <div class="notification-empty-state-icon">🔔</div>
+                    <div class="notification-empty-state-title">No notifications</div>
+                    <div class="notification-empty-state-desc">You're all caught up.</div>
+                </div>
             </div>
         </div>
 
@@ -873,41 +883,102 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
 
         function updateAdminNotificationBadge(count) {
             var badge = document.getElementById('adminNotificationBadge');
+            var countBadge = document.getElementById('adminNotificationCount');
             if (count > 0) {
                 badge.textContent = count > 9 ? '9+' : count;
                 badge.style.display = 'flex';
+                if (countBadge) {
+                    countBadge.textContent = count > 9 ? '9+' : count;
+                    countBadge.style.display = 'inline-flex';
+                }
             } else {
                 badge.style.display = 'none';
+                if (countBadge) countBadge.style.display = 'none';
             }
+        }
+
+        function groupNotificationsByDate(notifications) {
+            var groups = {};
+            notifications.forEach(function(n) {
+                var dateKey = 'Older';
+                if (n.created_at) {
+                    var date = new Date(n.created_at);
+                    var now = new Date();
+                    var diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+                    if (diffDays === 0) dateKey = 'Today';
+                    else if (diffDays === 1) dateKey = 'Yesterday';
+                }
+                if (!groups[dateKey]) groups[dateKey] = [];
+                groups[dateKey].push(n);
+            });
+            return groups;
         }
 
         function renderAdminNotifications(notifications) {
             var list = document.getElementById('adminNotificationList');
             if (!notifications || notifications.length === 0) {
-                list.innerHTML = '<div class="notification-empty">No notifications yet</div>';
+                list.innerHTML = '<div class="notification-empty-state">' +
+                    '<div class="notification-empty-state-icon">🔔</div>' +
+                    '<div class="notification-empty-state-title">No notifications</div>' +
+                    '<div class="notification-empty-state-desc">You\'re all caught up.</div>' +
+                    '</div>';
                 return;
             }
-            list.innerHTML = notifications.map(function(n) {
-                var icon = '🔔';
-                if (n.notification_type === 'new_feedback') icon = '📝';
-                else if (n.notification_type === 'unattended') icon = '⚠️';
-                else if (n.notification_type === 'status_change') icon = '📋';
-                var feedbackId = n.feedback_id;
-                return '<div class="notification-item ' + (n.is_read ? '' : 'unread') + '" onclick="handleAdminNotificationClick(' + n.id + ', ' + feedbackId + ')">' +
-                    '<div class="notification-item-title">' + icon + ' ' + n.title + '</div>' +
-                    '<div class="notification-item-message">' + n.message + '</div>' +
-                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.25rem;">' +
-                    '<span class="notification-item-time">' + n.created_at + '</span>' +
-                    (feedbackId ? '<span style="font-size:0.7rem;color:var(--primary);font-weight:600;">View →</span>' : '') +
-                    '</div>' +
-                    '</div>';
-            }).join('');
+
+            var groups = groupNotificationsByDate(notifications);
+            var html = '';
+            var groupOrder = ['Today', 'Yesterday', 'Older'];
+            groupOrder.forEach(function(groupName) {
+                if (!groups[groupName]) return;
+                html += '<div class="notification-group">' +
+                    '<div class="notification-group-title">' + groupName + '</div>';
+                groups[groupName].forEach(function(n) {
+                    var icon = '🔔';
+                    if (n.notification_type === 'new_feedback') icon = '📝';
+                    else if (n.notification_type === 'unattended') icon = '⚠️';
+                    else if (n.notification_type === 'status_change') icon = '📋';
+                    else if (n.notification_type === 'response') icon = '💬';
+                    else if (n.notification_type === 'sentiment_change') icon = '🧠';
+                    else if (n.notification_type === 'category_change') icon = '🏷️';
+                    var feedbackId = n.feedback_id;
+                    html += '<div class="notification-card ' + (n.is_read ? '' : 'unread') + '">' +
+                        '<div class="notification-card-header">' +
+                        '<div class="notification-card-title">' + icon + ' ' + n.title + '</div>' +
+                        '<button class="notification-dismiss" onclick="event.stopPropagation(); dismissAdminNotification(' + n.id + ')" title="Dismiss">×</button>' +
+                        '</div>' +
+                        '<div class="notification-card-body">' + n.message + '</div>' +
+                        '<div class="notification-card-footer">' +
+                        '<span class="notification-card-time">' + n.created_at + '</span>' +
+                        (feedbackId ? '<span class="notification-card-action">View →</span>' : '') +
+                        '</div>' +
+                        '</div>';
+                });
+                html += '</div>';
+            });
+            list.innerHTML = html;
+        }
+
+        function dismissAdminNotification(notifId) {
+            fetch('/api/admin/notifications/' + notifId, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-Token': getCsrfToken() }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) loadAdminNotifications();
+            })
+            .catch(function(e) { console.error('Dismiss notification error:', e); });
         }
 
         function handleAdminNotificationClick(notifId, feedbackId) {
-            // Close dropdown
-            document.getElementById('adminNotificationDropdown').style.display = 'none';
-            // Delete the notification (clears it from the list permanently for this admin)
+            // Close panel
+            document.getElementById('adminNotificationCenter').style.display = 'none';
+            // Mark as read and delete
+            fetch('/api/admin/notifications/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+                body: JSON.stringify({ ids: [notifId] })
+            }).catch(function(e) { console.error('Mark read error:', e); });
             fetch('/api/admin/notifications/' + notifId, {
                 method: 'DELETE',
                 headers: { 'X-CSRF-Token': getCsrfToken() }
@@ -919,20 +990,9 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
         }
 
         function toggleAdminNotificationDropdown() {
-            var dropdown = document.getElementById('adminNotificationDropdown');
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function markAdminNotificationRead(id) {
-            fetch('/api/admin/notifications/mark-read', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
-                body: JSON.stringify({ ids: [id] })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.success) loadAdminNotifications();
-            });
+            var panel = document.getElementById('adminNotificationCenter');
+            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+            if (panel.style.display === 'flex') loadAdminNotifications();
         }
 
         function markAllAdminNotificationsRead() {
@@ -944,15 +1004,29 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) loadAdminNotifications();
+                if (typeof showToast === 'function') showToast('All notifications marked as read', 'info');
             });
         }
 
-        // Close dropdown when clicking outside
+        function clearAllAdminNotifications() {
+            if (!confirm('Clear all notifications permanently?')) return;
+            fetch('/api/admin/notifications/clear-all', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': getCsrfToken() }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) loadAdminNotifications();
+                if (typeof showToast === 'function') showToast('All notifications cleared', 'info');
+            });
+        }
+
+        // Close panel when clicking outside
         document.addEventListener('click', function(e) {
             var bell = document.getElementById('adminNotificationBell');
-            var dropdown = document.getElementById('adminNotificationDropdown');
-            if (bell && dropdown && !bell.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.style.display = 'none';
+            var panel = document.getElementById('adminNotificationCenter');
+            if (bell && panel && !bell.contains(e.target) && !panel.contains(e.target)) {
+                panel.style.display = 'none';
             }
         });
 
