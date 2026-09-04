@@ -739,6 +739,40 @@ class SentimentCorrection(db.Model):
         }
 
 
+class PredictionOutcome(db.Model):
+    """Tracks whether a predictive analytics warning was accurate.
+
+    This lets the system learn from admin feedback and improve confidence
+    calibration over time.
+    """
+    __tablename__ = 'prediction_outcomes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    event = db.Column(db.String(200), nullable=False, index=True)
+    source_type = db.Column(db.String(20), nullable=False, index=True)
+    predicted_confidence = db.Column(db.Integer, nullable=False)
+    outcome = db.Column(db.String(20), nullable=False, index=True)
+    admin_notes = db.Column(db.Text)
+    created_by = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        db.Index('idx_prediction_event_source', 'event', 'source_type'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'event': self.event,
+            'source_type': self.source_type,
+            'predicted_confidence': self.predicted_confidence,
+            'outcome': self.outcome,
+            'admin_notes': self.admin_notes,
+            'created_by': self.created_by,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+        }
+
+
 # ==================== HELPER FUNCTIONS ====================
 
 def is_valid_htu_email(email):

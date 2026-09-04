@@ -59,6 +59,23 @@ def _confidence_to_risk_level(confidence: int) -> str:
     return "🟢 Low"
 
 
+def _accuracy_adjusted_confidence(base_confidence: int, event: str, outcomes: List[Dict[str, Any]]) -> int:
+    """Adjust prediction confidence based on historical accuracy for the same event.
+
+    If there are no outcomes yet, return the base confidence unchanged.
+    Otherwise nudge the confidence toward the observed accuracy rate.
+    """
+    matching = [o for o in outcomes if o.get('event') == event]
+    if not matching:
+        return base_confidence
+
+    total = len(matching)
+    accurate = sum(1 for o in matching if o.get('outcome') in ('accurate', 'partial'))
+    accuracy_rate = (accurate / total) if total else 0.0
+    adjusted = round(base_confidence * (0.5 + 0.5 * accuracy_rate))
+    return max(0, min(100, adjusted))
+
+
 def predict_events_from_chat_history(
     *,
     room_messages: List[Any],
@@ -254,6 +271,7 @@ def predict_events_combined(
     room_messages: List[Any],
     feedback_items: List[Any],
     now: Optional[datetime] = None,
+    prediction_outcomes: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Combine chat + feedback predictions into a unified response.
 
@@ -282,6 +300,17 @@ def predict_events_combined(
             best_by_event[evt] = p
 
     deduped = sorted(best_by_event.values(), key=lambda x: x.get("confidence", 0), reverse=True)
+
+    if prediction_outcomes:
+        for p in deduped:
+            p["confidence"] = _accuracy_adjusted_confidence(
+                p.get("confidence", 0),
+                p.get("event", ""),
+                prediction_outcomes,
+            )
+        deduped.sort(key=lambda x: x.get("confidence", 0), reverse=True)
+        max_conf = max((p.get("confidence", 0) for p in deduped), default=0)
+        early_level = _confidence_to_risk_level(max_conf)
 
     return {
         "predictions": deduped,

@@ -1144,12 +1144,110 @@ function exportAnalytics() {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            const headers = ['Metric', 'Value', 'Description'];
-            const rows = data.metrics.map(m => [m.name, m.value, m.description]);
-            exportToCSV('advanced_analytics', headers, rows);
-        } else {
+        if (!data.success) {
             alert('Error exporting analytics: ' + (data.error || 'Unknown error'));
+            return;
+        }
+
+        const downloads = [];
+
+        if (data.metrics && data.metrics.length) {
+            downloads.push({
+                filename: 'analytics_metrics',
+                headers: ['Metric', 'Value', 'Description'],
+                rows: data.metrics.map(m => [m.name, m.value, m.description])
+            });
+        }
+
+        if (data.category_performance && data.category_performance.length) {
+            downloads.push({
+                filename: 'analytics_category_performance',
+                headers: ['Category', 'Total', 'Positive', 'Negative', 'Neutral', 'Avg Urgency', 'Resolution Rate'],
+                rows: data.category_performance.map(r => [r.category, r.total, r.positive, r.negative, r.neutral, r.avg_urgency, r.resolution_rate + '%'])
+            });
+        }
+
+        if (data.department_performance && data.department_performance.length) {
+            downloads.push({
+                filename: 'analytics_department_performance',
+                headers: ['Department', 'Total Cases', 'Resolved', 'Resolution Rate', 'Avg Time (hours)'],
+                rows: data.department_performance.map(r => [r.department, r.total_cases, r.resolved, r.resolution_rate + '%', r.avg_time_hours])
+            });
+        }
+
+        if (data.sentiment_trend && data.sentiment_trend.length) {
+            downloads.push({
+                filename: 'analytics_sentiment_trend',
+                headers: ['Date', 'Positive', 'Negative', 'Neutral', 'Total'],
+                rows: data.sentiment_trend.map(r => [r.date, r.positive, r.negative, r.neutral, r.total])
+            });
+        }
+
+        if (data.hour_distribution && data.hour_distribution.length) {
+            downloads.push({
+                filename: 'analytics_hour_distribution',
+                headers: ['Hour', 'Count'],
+                rows: data.hour_distribution.map(r => [r.hour, r.count])
+            });
+        }
+
+        if (data.day_distribution && data.day_distribution.length) {
+            downloads.push({
+                filename: 'analytics_day_distribution',
+                headers: ['Day', 'Count'],
+                rows: data.day_distribution.map(r => [r.day, r.count])
+            });
+        }
+
+        if (data.top_locations && data.top_locations.length) {
+            downloads.push({
+                filename: 'analytics_top_locations',
+                headers: ['Location', 'Count'],
+                rows: data.top_locations.map(r => [r.location, r.count])
+            });
+        }
+
+        if (data.predictions && data.predictions.length) {
+            downloads.push({
+                filename: 'analytics_predictions',
+                headers: ['Event', 'Confidence (%)', 'Evidence', 'Recommended Actions'],
+                rows: data.predictions.map(r => [r.event, r.confidence, r.evidence, r.recommended_actions])
+            });
+        }
+
+        const insights = data.recommendation_insights || {};
+        if (insights.template_scores && insights.template_scores.length) {
+            downloads.push({
+                filename: 'analytics_recommendation_templates',
+                headers: ['Category', 'Keywords', 'Used', 'Resolution Rate', 'Effectiveness'],
+                rows: insights.template_scores.map(r => [r.category, r.keywords, r.usage_count, r.resolution_rate + '%', r.effectiveness_score + '%'])
+            });
+        }
+
+        if (insights.keyword_effectiveness && insights.keyword_effectiveness.length) {
+            downloads.push({
+                filename: 'analytics_keyword_effectiveness',
+                headers: ['Keyword', 'Effectiveness (%)'],
+                rows: insights.keyword_effectiveness.map(r => [r.keyword, r.effectiveness])
+            });
+        }
+
+        if (insights.department_insights && insights.department_insights.length) {
+            downloads.push({
+                filename: 'analytics_department_insights',
+                headers: ['Category', 'Best Department', 'Resolution Rate'],
+                rows: insights.department_insights.map(r => [r.category, r.best_department, r.resolution_rate + '%'])
+            });
+        }
+
+        if (!downloads.length) {
+            alert('No analytics data available to export.');
+            return;
+        }
+
+        downloads.forEach(item => exportToCSV(item.filename, item.headers, item.rows));
+        if (typeof showToast === 'function') {
+            showToast('Exported ' + downloads.length + ' analytics file(s)', 'success');
         }
     })
     .catch(err => {
@@ -1182,6 +1280,58 @@ function exportLogs() {
         alert('Failed to export logs');
     });
 }
+
+/**
+ * Record a prediction outcome: accurate / partial / inaccurate.
+ */
+function submitPredictionOutcome(card, outcome) {
+    const event = card.getAttribute('data-event') || '';
+    const sourceType = card.getAttribute('data-source') || 'feedback';
+    const confidence = parseInt(card.getAttribute('data-confidence') || '0', 10);
+
+    fetch('/api/admin/predictions/outcome', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+        },
+        body: JSON.stringify({
+            event: event,
+            source_type: sourceType,
+            predicted_confidence: confidence,
+            outcome: outcome,
+            admin_notes: ''
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            const status = card.querySelector('.prediction-outcome-status');
+            if (status) {
+                status.textContent = 'Thanks! Prediction recorded.';
+                status.style.color = 'var(--success)';
+            }
+            const buttons = card.querySelectorAll('.prediction-outcome-btn');
+            buttons.forEach(function(btn) { btn.disabled = true; });
+            if (typeof showToast === 'function') {
+                showToast('Prediction outcome recorded', 'success');
+            }
+        }
+    })
+    .catch(function(e) {
+        console.error('Prediction outcome error:', e);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.prediction-outcome-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const card = btn.closest('.prediction-card');
+            if (!card) return;
+            submitPredictionOutcome(card, btn.getAttribute('data-outcome'));
+        });
+    });
+});
 
 
 

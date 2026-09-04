@@ -6,7 +6,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import json
 import os
 import re
-from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken, SentimentCorrection
+from database import db, Student, Feedback, SRCUser, SystemLog, Announcement, FeedbackVote, PasswordResetToken, SentimentCorrection, PredictionOutcome
 from database import ForumTopic, ForumReply, ForumTopicVote, ForumTopicTag, ForumReplyVote
 from database import ChatRoom, ChatMessage, ChatRoomMember, ChatRoomSentiment
 from database import SolutionTemplate, SolutionFeedback, CustomLexicon, UnknownWord, AIReviewLog, Notification
@@ -18,6 +18,7 @@ from enhanced_recommender import get_trending_issues, get_department_workload, g
 from recommender import generate_recommendation
 from security_manager import SecurityManager, get_client_ip, get_user_agent
 from recommendation_learning import RecommendationLearner
+from predictive_analytics import predict_events_combined
 import logging
 import sys
 
@@ -2961,9 +2962,6 @@ def api_admin_get_notifications():
     if not admin_id:
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
     
-    # Check for unattended feedback periodically
-    check_unattended_feedback()
-    
     notifications = Notification.query.filter_by(recipient_type='admin').order_by(Notification.created_at.desc()).limit(30).all()
     unread_count = Notification.query.filter_by(recipient_type='admin', is_read=False).count()
     
@@ -3312,15 +3310,17 @@ def api_export_students():
 def api_export_analytics():
     """Export advanced analytics as JSON for CSV conversion"""
     all_feedback = Feedback.query.all()
+    now = datetime.utcnow()
+
     total = len(all_feedback)
-    resolved = sum(1 for f in all_feedback if f.status == 'resolved')
-    pending = sum(1 for f in all_feedback if f.status == 'pending')
-    in_progress = sum(1 for f in all_feedback if f.status == 'in_progress')
-    positive = sum(1 for f in all_feedback if f.sentiment == 'positive')
-    negative = sum(1 for f in all_feedback if f.sentiment == 'negative')
-    neutral = sum(1 for f in all_feedback if f.sentiment == 'neutral')
-    avg_urgency = sum(f.urgency_score for f in all_feedback) / total if total > 0 else 0
-    resolution_rate = (resolved / total * 100) if total > 0 else 0
+    resolved = sum(1 for f in all_feedback if f.status == 'Resolved')
+    pending = sum(1 for f in all_feedback if f.status == 'Pending')
+    in_progress = sum(1 for f in all_feedback if f.status == 'In Progress')
+    positive = sum(1 for f in all_feedback if f.sentiment == 'Positive')
+    negative = sum(1 for f in all_feedback if f.sentiment == 'Negative')
+    neutral = sum(1 for f in all_feedback if f.sentiment == 'Neutral')
+    avg_urgency = round(sum(f.urgency_score for f in all_feedback) / total, 1) if total > 0 else 0
+    resolution_rate = round((resolved / total * 100), 1) if total > 0 else 0
 
     metrics = [
         {'name': 'Total Feedback', 'value': total, 'description': 'Total number of feedback submissions'},
@@ -3330,11 +3330,133 @@ def api_export_analytics():
         {'name': 'Positive Sentiment', 'value': positive, 'description': 'Feedback with positive sentiment'},
         {'name': 'Negative Sentiment', 'value': negative, 'description': 'Feedback with negative sentiment'},
         {'name': 'Neutral Sentiment', 'value': neutral, 'description': 'Feedback with neutral sentiment'},
-        {'name': 'Average Urgency', 'value': f'{avg_urgency:.1f}/5', 'description': 'Average urgency score across all feedback'},
-        {'name': 'Resolution Rate', 'value': f'{resolution_rate:.1f}%', 'description': 'Percentage of feedback resolved'},
+        {'name': 'Average Urgency', 'value': f'{avg_urgency}/5', 'description': 'Average urgency score across all feedback'},
+        {'name': 'Resolution Rate', 'value': f'{resolution_rate}%', 'description': 'Percentage of feedback resolved'},
     ]
 
-    return jsonify({'success': True, 'metrics': metrics})
+    category_stats = {}
+    for f in all_feedback:
+        cat = f.category or 'General'
+        if cat not in category_stats:
+            category_stats[cat] = {
+                'total': 0, 'positive': 0, 'negative': 0, 'neutral': 0,
+                'avg_urgency': 0, 'resolved': 0
+            }
+        s = category_stats[cat]
+        s['total'] += 1
+        s[f.sentiment] += 1
+        if f.status == 'Resolved':
+            s['resolved'] += 1
+        s['avg_urgency'] += f.urgency_score
+
+    category_rows = []
+    for cat, s in category_stats.items():
+        total_cat = s['total']
+        category_rows.append({
+            'category': cat,
+            'total': total_cat,
+            'positive': s['positive'],
+            'negative': s['negative'],
+            'neutral': s['neutral'],
+            'avg_urgency': round(s['avg_urgency'] / total_cat, 1) if total_cat else 0,
+            'resolution_rate': round((s['resolved'] / total_cat) * 100, 1) if total_cat else 0
+        })
+
+    dept_stats = {}
+    for f in all_feedback:
+        dept = f.responsible_department or 'Unassigned'
+        if dept not in dept_stats:
+            dept_stats[dept] = {'total': 0, 'resolved': 0, 'total_time': 0}
+        dept_stats[dept]['total'] += 1
+        if f.status == 'Resolved' and f.resolved_at:
+            dept_stats[dept]['resolved'] += 1
+            dept_stats[dept]['total_time'] += (f.resolved_at - f.created_at).total_seconds() / 3600
+
+    department_rows = []
+    for dept, s in dept_stats.items():
+        resolved_dept = s['resolved']
+        department_rows.append({
+            'department': dept,
+            'total_cases': s['total'],
+            'resolved': resolved_dept,
+            'resolution_rate': round((resolved_dept / s['total']) * 100, 1) if s['total'] else 0,
+            'avg_time_hours': round(s['total_time'] / resolved_dept, 1) if resolved_dept else 0
+        })
+
+    hour_distribution = [0] * 24
+    day_distribution = [0] * 7
+    for f in all_feedback:
+        hour_distribution[f.created_at.hour] += 1
+        day_distribution[f.created_at.weekday()] += 1
+    hour_rows = [{'hour': f'{h}:00', 'count': hour_distribution[h]} for h in range(24)]
+    day_rows = [{'day': d, 'count': day_distribution[i]} for i, d in enumerate(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])]
+
+    location_complaints = {}
+    for f in all_feedback:
+        if f.location:
+            location_complaints[f.location] = location_complaints.get(f.location, 0) + 1
+    top_locations = sorted(location_complaints.items(), key=lambda x: x[1], reverse=True)[:10]
+    location_rows = [{'location': loc, 'count': count} for loc, count in top_locations]
+
+    sentiment_trend = []
+    for i in range(30, -1, -1):
+        day = now - timedelta(days=i)
+        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+        day_feedback = [f for f in all_feedback if day_start <= f.created_at < day_end]
+        sentiment_trend.append({
+            'date': day_start.strftime('%Y-%m-%d'),
+            'positive': sum(1 for f in day_feedback if f.sentiment == 'Positive'),
+            'negative': sum(1 for f in day_feedback if f.sentiment == 'Negative'),
+            'neutral': sum(1 for f in day_feedback if f.sentiment == 'Neutral'),
+            'total': len(day_feedback)
+        })
+
+    unresolved_feedback = Feedback.query.filter(
+        Feedback.status != 'Resolved',
+        Feedback.created_at <= now - timedelta(hours=48)
+    ).all()
+    prediction_result = predict_events_combined(
+        room_messages=[],
+        feedback_items=unresolved_feedback,
+        now=now
+    )
+    predictions = prediction_result.get('predictions', [])
+    prediction_rows = [{
+        'event': p.get('event', ''),
+        'confidence': p.get('confidence', 0),
+        'evidence': '; '.join(p.get('evidence', []) or []),
+        'recommended_actions': '; '.join(p.get('recommended_actions', []) or [])
+    } for p in predictions]
+
+    solution_templates = SolutionTemplate.query.all()
+    learning_report = RecommendationLearner().generate_report(all_feedback, solution_templates)
+    template_rows = [{
+        'category': t.get('category', ''),
+        'keywords': ', '.join(t.get('keywords', [])[:4]),
+        'usage_count': t.get('usage_count', 0),
+        'resolution_rate': round((t.get('resolution_rate', 0) or 0) * 100, 1),
+        'effectiveness_score': round((t.get('effectiveness_score', 0) or 0) * 100, 1)
+    } for t in (learning_report.get('template_scores') or [])]
+    keyword_rows = [{'keyword': kw, 'effectiveness': round((score or 0) * 100, 1)} for kw, score in (learning_report.get('keyword_effectiveness') or {}).items()]
+    department_insight_rows = [{'category': cat, **info} for cat, info in (learning_report.get('department_insights') or {}).items()]
+
+    return jsonify({
+        'success': True,
+        'metrics': metrics,
+        'category_performance': category_rows,
+        'department_performance': department_rows,
+        'sentiment_trend': sentiment_trend,
+        'hour_distribution': hour_rows,
+        'day_distribution': day_rows,
+        'top_locations': location_rows,
+        'predictions': prediction_rows,
+        'recommendation_insights': {
+            'template_scores': template_rows,
+            'keyword_effectiveness': keyword_rows,
+            'department_insights': department_insight_rows
+        }
+    })
 
 @app.route('/api/admin/export/logs')
 @src_required
@@ -3352,6 +3474,80 @@ def api_export_logs():
             'ip_address': l.ip_address or '-'
         } for l in logs]
     })
+
+
+@app.route('/api/admin/predictions/outcome', methods=['POST'])
+@src_required
+def api_prediction_outcome():
+    """Record whether a prediction was accurate, inaccurate, or partially accurate."""
+    data = request.get_json(silent=True) or request.form
+    event = (data.get('event') or '').strip()
+    source_type = (data.get('source_type') or 'feedback').strip()
+    predicted_confidence = int(data.get('predicted_confidence') or 0)
+    outcome = (data.get('outcome') or '').strip()
+    admin_notes = (data.get('admin_notes') or '').strip() or None
+    created_by = session.get('admin_name')
+
+    if not event or outcome not in ('accurate', 'inaccurate', 'partial'):
+        return jsonify({'success': False, 'error': 'Invalid payload'}), 400
+
+    entry = PredictionOutcome(
+        event=event,
+        source_type=source_type,
+        predicted_confidence=predicted_confidence,
+        outcome=outcome,
+        admin_notes=admin_notes,
+        created_by=created_by,
+    )
+    db.session.add(entry)
+    db.session.commit()
+
+    log_admin_action(created_by, 'Prediction Outcome', f'{event}: {outcome}')
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/predictions/accuracy')
+@src_required
+def api_prediction_accuracy():
+    """Return accuracy stats by prediction event."""
+    rows = PredictionOutcome.query.all()
+    stats = {}
+    for row in rows:
+        key = row.event
+        if key not in stats:
+            stats[key] = {
+                'event': key,
+                'source_type': row.source_type,
+                'total': 0,
+                'accurate': 0,
+                'inaccurate': 0,
+                'partial': 0,
+                'accuracy_rate': 0.0,
+                'avg_predicted_confidence': 0.0,
+                'recent_outcomes': [],
+            }
+        s = stats[key]
+        s['total'] += 1
+        s[row.outcome] += 1
+        s['avg_predicted_confidence'] += row.predicted_confidence
+        s['recent_outcomes'].append({
+            'outcome': row.outcome,
+            'predicted_confidence': row.predicted_confidence,
+            'created_at': row.created_at.strftime('%Y-%m-%d %H:%M') if row.created_at else '',
+            'created_by': row.created_by,
+        })
+
+    results = []
+    for s in stats.values():
+        if s['total'] > 0:
+            s['accuracy_rate'] = round(((s['accurate'] + s['partial']) / s['total']) * 100, 1)
+            s['avg_predicted_confidence'] = round(s['avg_predicted_confidence'] / s['total'], 1)
+        s['recent_outcomes'] = s['recent_outcomes'][-10:]
+        results.append(s)
+
+    results.sort(key=lambda x: x['accuracy_rate'], reverse=True)
+    return jsonify({'success': True, 'stats': results})
+
 
 @app.route('/api/admin/trending')
 @src_required
@@ -3420,11 +3616,14 @@ def admin_analytics():
         Feedback.status != 'Resolved',
         Feedback.created_at <= now - timedelta(hours=48)
     ).all()
-    
+
+    prediction_outcomes = [o.to_dict() for o in PredictionOutcome.query.all()]
+
     prediction_result = predict_events_combined(
         room_messages=recent_chat_messages,
         feedback_items=unresolved_feedback,
-        now=now
+        now=now,
+        prediction_outcomes=prediction_outcomes,
     )
     
     # ==================== Category Stats ====================
