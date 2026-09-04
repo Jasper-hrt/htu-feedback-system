@@ -111,26 +111,6 @@ rows.forEach(row => {
     if (urgencyFilter) urgencyFilter.addEventListener('change', filterTable);
 }
 
-function showResponseModal(id, currentResponse) {
-    const modal = document.getElementById('responseModal');
-    const form = document.getElementById('responseForm');
-    if (modal && form) {
-        form.action = `/admin/update/${id}`;
-        const textarea = form.querySelector('textarea');
-        if (textarea) textarea.value = currentResponse;
-        modal.classList.add('active');
-    }
-}
-
-function closeModal() {
-    const modal = document.getElementById('responseModal');
-    if (modal) modal.classList.remove('active');
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeModal();
-});
-
 function filterStatus(status) {
     const cards = document.querySelectorAll('.feedback-card');
     let visibleCount = 0;

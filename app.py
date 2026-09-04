@@ -2127,7 +2127,7 @@ def admin_feedback_detail(feedback_id):
 
 
 @app.route('/student/feedback/<int:feedback_id>')
-@src_required
+@student_required
 def student_feedback_detail(feedback_id):
     """Single-feedback detail view used when a student opens a notification."""
     student_id = session.get('student_id')
@@ -2275,34 +2275,6 @@ def bulk_action():
     log_admin_action(session['admin_name'], 'Bulk Action', f'{action} applied to {count} items')
     
     return jsonify({'success': True, 'count': count})
-
-@app.route('/admin/feedback/<int:feedback_id>/solution-feedback', methods=['POST'])
-@src_required
-def solution_feedback(feedback_id):
-    """Record whether a solution was helpful."""
-    data = request.get_json()
-    was_helpful = data.get('was_helpful', False)
-    
-    feedback = Feedback.query.get_or_404(feedback_id)
-    
-    # Record the feedback
-    sf = SolutionFeedback(
-        feedback_id=feedback_id,
-        template_category=feedback.category,
-        was_helpful=was_helpful,
-        created_by=session.get('admin_name')
-    )
-    db.session.add(sf)
-    db.session.commit()
-    
-    # Update recommendation engine
-    solution_key = (feedback.short_term_solution or '')[:50]
-    get_engine().record_solution_feedback(feedback.category, solution_key, was_helpful, feedback.status == 'Resolved')
-    
-    helpful = SolutionFeedback.query.filter_by(feedback_id=feedback_id, was_helpful=True).count()
-    unhelpful = SolutionFeedback.query.filter_by(feedback_id=feedback_id, was_helpful=False).count()
-    
-    return jsonify({'success': True, 'helpful_count': helpful, 'unhelpful_count': unhelpful})
 
 @app.route('/admin/feedback/<int:feedback_id>/solution-feedback', methods=['POST'])
 @src_required
@@ -3036,7 +3008,8 @@ def api_clear_all_notifications():
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
 
     try:
-        Notification.query.filter_by(student_id=student_id).delete()
+        Notification.query.filter_by(student_id=student_id).update({'is_read': True}, synchronize_session=False)
+        Notification.query.filter_by(student_id=student_id).delete(synchronize_session=False)
         db.session.commit()
     except Exception as e:
         db.session.rollback()
@@ -3050,7 +3023,8 @@ def api_clear_all_notifications():
 def api_admin_clear_all_notifications():
     """Delete all notifications for the logged-in admin."""
     try:
-        Notification.query.filter_by(recipient_type='admin').delete()
+        Notification.query.filter_by(recipient_type='admin').update({'is_read': True}, synchronize_session=False)
+        Notification.query.filter_by(recipient_type='admin').delete(synchronize_session=False)
         db.session.commit()
     except Exception as e:
         db.session.rollback()

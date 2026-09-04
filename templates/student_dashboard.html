@@ -1102,11 +1102,6 @@ function dismissStudentNotification(notifId) {
 function handleStudentNotificationClick(notifId, feedbackId) {
     var panel = document.getElementById('notifDrop');
     if (panel) panel.style.display = 'none';
-    fetch('/api/notifications/mark-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
-        body: JSON.stringify({ ids: [notifId] })
-    }).catch(function(e) { console.error('Mark read error:', e); });
     fetch('/api/notifications/' + notifId, {
         method: 'DELETE',
         headers: { 'X-CSRF-Token': getCsrfToken() }
@@ -1139,8 +1134,16 @@ function clearAllNotifications() {
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-        if (data.success) loadNotifs();
-        if (typeof showToast === 'function') showToast('All notifications cleared', 'info');
+        if (data.success) {
+            loadNotifs();
+            if (typeof showToast === 'function') showToast('All notifications cleared', 'info');
+        } else {
+            if (typeof showToast === 'function') showToast('Failed to clear notifications', 'error');
+        }
+    })
+    .catch(function(e) {
+        console.error('Clear all notifications error:', e);
+        if (typeof showToast === 'function') showToast('Network error while clearing notifications', 'error');
     });
 }
 
