@@ -1563,6 +1563,11 @@ html.theme-dark .urgency-critical {
     border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
+.lexicon-info-card {
+    border-left: 4px solid var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
 /* ============================================ */
 /* 🎚️ Premium Filter Bar
 /* ============================================ */

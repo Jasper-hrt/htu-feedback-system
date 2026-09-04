@@ -38,7 +38,12 @@
                 </div>
             </a>
 <div class="navbar-links{% if request.path.startswith('/admin') and not request.path.endswith('/admin/login') %} navbar-links-admin{% endif %}">
-                {% block top_nav %}{% endblock %}
+                {% block top_nav %}
+                <label class="theme-toggle" title="Toggle theme">
+                    <input id="themeToggle" type="checkbox" />
+                    <span class="theme-toggle-ui">🌙 Dark</span>
+                </label>
+                {% endblock %}
             </div>
 
             <button class="navbar-hamburger" id="navbarHamburger" type="button" aria-label="Toggle navigation" aria-expanded="false">

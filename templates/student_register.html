@@ -78,8 +78,8 @@
                 <label class="form-label">👤 Full Name</label>
                 <div class="input-wrapper" style="position: relative;">
                     <input type="text" name="full_name" id="regFullName" required class="form-input floating-input"
-                           placeholder="John Mensah" autocomplete="name"
-                           style="padding-left: 2.5rem;">
+                           placeholder="John Mensah" autocomplete="name" inputmode="text"
+                           style="padding-left: 2.5rem;" oninput="this.value=this.value.replace(/[^A-Za-z\s]/g,'')">
                     <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.45; pointer-events: none;">👤</span>
                 </div>
             </div>

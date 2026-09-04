@@ -62,10 +62,18 @@
 </div>
 
 <!-- Info Alert -->
-<div class="alert alert-info" style="margin: 1rem 0; padding: 1.1rem 1.25rem; line-height: 1.55;">
-<div style="font-weight: 700; margin-bottom: 0.35rem;">💡 How to read this</div>
-<p style="margin: 0 0 0.6rem;"><strong>"Priority candidates"</strong> are words found in feedback that came out <strong>Neutral</strong>. A Neutral result is often exactly what happens when no engine recognised the text, so a word appearing here repeatedly is a real accuracy gap worth reviewing.</p>
-<p style="margin: 0;"><strong>Action:</strong> Click <strong>➕ Add</strong> to add words directly to the lexicon, or use <strong>➕ Add All</strong> to import all suggestions at once. Sentiment scores are auto-suggested based on context.</p>
+<div class="alert alert-info lexicon-info-card" style="margin: 1rem 0;">
+  <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
+    <span style="font-size:1.3rem;line-height:1;">💡</span>
+    <div style="font-weight:800;font-size:1rem;color:#1e3a8a;">How to read this</div>
+  </div>
+  <p style="margin:0 0 0.6rem;color:#1e3a8a;">
+    <strong>"Priority candidates"</strong> are words found in feedback that came out <strong>Neutral</strong>.
+    A Neutral result is often exactly what happens when no engine recognised the text, so a word appearing here repeatedly is a real accuracy gap worth reviewing.
+  </p>
+  <p style="margin:0;color:#1e3a8a;">
+    <strong>Action:</strong> Click <strong>➕ Add</strong> to add words directly to the lexicon, or use <strong>➕ Add All</strong> to import all suggestions at once. Sentiment scores are auto-suggested based on context.
+  </p>
 </div>
 
 <!-- Priority: Neutral-feedback gap words -->
@@ -104,9 +112,16 @@
 </td>
 <td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
 <td>
-<div style="display:flex;gap:0.3rem;">
-<button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}', 'gap-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
-<button onclick="dismissGap('gap-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;color:var(--secondary);">✗ Dismiss</button>
+<div style="display:flex;gap:0.3rem;" class="gap-actions">
+  <button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}', 'gap-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
+  <button onclick="editGap('gap-row-{{ loop.index }}', '{{ item.word }}', '{{ item.suggested_score }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">✎ Edit</button>
+  <button onclick="dismissGap('gap-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;color:var(--secondary);">✗ Dismiss</button>
+</div>
+<div class="gap-edit-form" id="gap-edit-gap-row-{{ loop.index }}" style="display:none;margin-top:0.5rem;gap:0.3rem;flex-wrap:wrap;align-items:center;">
+  <input type="number" id="gap-edit-score-gap-row-{{ loop.index }}" value="{{ item.suggested_score }}" step="0.1" style="width:70px;padding:0.3rem 0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);font-size:0.8rem;">
+  <input type="text" id="gap-edit-category-gap-row-{{ loop.index }}" value="general" placeholder="category" style="padding:0.3rem 0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);font-size:0.8rem;">
+  <button onclick="saveGapEdit('gap-row-{{ loop.index }}', '{{ item.word }}')" class="btn-hero btn-hero-primary" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">Save</button>
+  <button onclick="cancelGapEdit('gap-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;color:var(--secondary);">Cancel</button>
 </div>
 </td>
 </tr>
@@ -159,9 +174,16 @@
 </td>
 <td style="color: var(--text-secondary); font-size: 0.85rem;">"{{ item.example }}"</td>
 <td>
-<div style="display:flex;gap:0.3rem;">
-<button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}', 'gap-all-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
-<button onclick="dismissGap('gap-all-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;color:var(--secondary);">✗ Dismiss</button>
+<div style="display:flex;gap:0.3rem;" class="gap-actions">
+  <button onclick="addToLexicon('{{ item.word }}', '{{ item.suggested_score }}', 'gap-all-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">➕ Add</button>
+  <button onclick="editGap('gap-all-row-{{ loop.index }}', '{{ item.word }}', '{{ item.suggested_score }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">✎ Edit</button>
+  <button onclick="dismissGap('gap-all-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;color:var(--secondary);">✗ Dismiss</button>
+</div>
+<div class="gap-edit-form" id="gap-edit-gap-all-row-{{ loop.index }}" style="display:none;margin-top:0.5rem;gap:0.3rem;flex-wrap:wrap;align-items:center;">
+  <input type="number" id="gap-edit-score-gap-all-row-{{ loop.index }}" value="{{ item.suggested_score }}" step="0.1" style="width:70px;padding:0.3rem 0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);font-size:0.8rem;">
+  <input type="text" id="gap-edit-category-gap-all-row-{{ loop.index }}" value="general" placeholder="category" style="padding:0.3rem 0.5rem;border-radius:0.4rem;border:1px solid var(--border-color);font-size:0.8rem;">
+  <button onclick="saveGapEdit('gap-all-row-{{ loop.index }}', '{{ item.word }}')" class="btn-hero btn-hero-primary" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;">Save</button>
+  <button onclick="cancelGapEdit('gap-all-row-{{ loop.index }}')" class="btn-hero" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;color:var(--secondary);">Cancel</button>
 </div>
 </td>
 </tr>
@@ -220,6 +242,62 @@ function dismissGap(rowId) {
     btns[0].textContent = 'Dismissed';
     showToast('Gap dismissed', 'info');
     updateGapCounts();
+}
+
+function editGap(rowId, word, suggestedScore) {
+    var row = document.getElementById(rowId);
+    if (!row) return;
+    var actions = row.querySelector('.gap-actions');
+    var form = document.getElementById('gap-edit-' + rowId);
+    if (!actions || !form) return;
+    actions.style.display = 'none';
+    form.style.display = 'flex';
+    var scoreInput = document.getElementById('gap-edit-score-' + rowId);
+    var categoryInput = document.getElementById('gap-edit-category-' + rowId);
+    if (scoreInput) scoreInput.value = suggestedScore;
+    if (categoryInput) categoryInput.value = 'general';
+}
+
+function cancelGapEdit(rowId) {
+    var row = document.getElementById(rowId);
+    if (!row) return;
+    var actions = row.querySelector('.gap-actions');
+    var form = document.getElementById('gap-edit-' + rowId);
+    if (!actions || !form) return;
+    actions.style.display = 'flex';
+    form.style.display = 'none';
+}
+
+function saveGapEdit(rowId, word) {
+    var row = document.getElementById(rowId);
+    if (!row) return;
+    var scoreInput = document.getElementById('gap-edit-score-' + rowId);
+    var categoryInput = document.getElementById('gap-edit-category-' + rowId);
+    var score = scoreInput ? parseFloat(scoreInput.value) : 0;
+    var category = categoryInput ? categoryInput.value.trim() : 'general';
+    if (isNaN(score)) {
+        showToast('Invalid score', 'error');
+        return;
+    }
+    fetch('/admin/api/lexicon/add-word', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+        body: JSON.stringify({ word: word, sentiment_score: score, category: category })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            row.dataset.added = 'true';
+            row.style.opacity = '0.5';
+            row.style.textDecoration = 'line-through';
+            var btns = row.querySelectorAll('button');
+            btns.forEach(function(b) { b.disabled = true; });
+            showToast('"' + word + '" saved to lexicon', 'success');
+            updateGapCounts();
+        } else {
+            showToast(data.error || 'Failed to save', 'error');
+        }
+    });
 }
 
 function updateGapCounts() {

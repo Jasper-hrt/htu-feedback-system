@@ -869,6 +869,10 @@ def student_register():
         if len(password) < 6:
             return render_template('student_register.html', error='Password must be at least 6 characters')
         
+        import re as _re
+        if not full_name or not _re.fullmatch(r"[A-Za-z\s]+", full_name):
+            return render_template('student_register.html', error='Full name must contain only letters and spaces')
+        
         student = Student(
             student_id=student_id, email=email, password_hash=generate_password_hash(password),
             full_name=full_name, department=department, year_of_study=year_of_study
