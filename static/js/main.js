@@ -1142,8 +1142,16 @@ function exportAnalytics() {
     fetch('/api/admin/export/analytics', {
         headers: { 'X-CSRF-Token': getCsrfToken() }
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        var contentType = response.headers.get('content-type') || '';
+        if (!response.ok || !contentType.includes('application/json')) {
+            return response.text().then(function(text) {
+                throw new Error('Server returned non-JSON response. You may need to log in again.');
+            });
+        }
+        return response.json();
+    })
+    .then(function(data) {
         if (!data.success) {
             alert('Error exporting analytics: ' + (data.error || 'Unknown error'));
             return;
@@ -1250,9 +1258,9 @@ function exportAnalytics() {
             showToast('Exported ' + downloads.length + ' analytics file(s)', 'success');
         }
     })
-    .catch(err => {
+    .catch(function(err) {
         console.error('Export error:', err);
-        alert('Failed to export analytics');
+        alert('Failed to export analytics: ' + (err.message || 'Unknown error'));
     });
 }
 
@@ -1263,8 +1271,16 @@ function exportLogs() {
     fetch('/api/admin/export/logs', {
         headers: { 'X-CSRF-Token': getCsrfToken() }
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        var contentType = response.headers.get('content-type') || '';
+        if (!response.ok || !contentType.includes('application/json')) {
+            return response.text().then(function(text) {
+                throw new Error('Server returned non-JSON response. You may need to log in again.');
+            });
+        }
+        return response.json();
+    })
+    .then(function(data) {
         if (data.success) {
             const headers = ['Timestamp', 'Level', 'User', 'Action', 'Details', 'IP Address'];
             const rows = data.logs.map(l => [
@@ -1275,9 +1291,9 @@ function exportLogs() {
             alert('Error exporting logs: ' + (data.error || 'Unknown error'));
         }
     })
-    .catch(err => {
+    .catch(function(err) {
         console.error('Export error:', err);
-        alert('Failed to export logs');
+        alert('Failed to export logs: ' + (err.message || 'Unknown error'));
     });
 }
 
@@ -1303,7 +1319,15 @@ function submitPredictionOutcome(card, outcome) {
             admin_notes: ''
         })
     })
-    .then(function(r) { return r.json(); })
+    .then(function(response) {
+        var contentType = response.headers.get('content-type') || '';
+        if (!response.ok || !contentType.includes('application/json')) {
+            return response.text().then(function(text) {
+                throw new Error('Server returned non-JSON response. You may need to log in again.');
+            });
+        }
+        return response.json();
+    })
     .then(function(data) {
         if (data.success) {
             const status = card.querySelector('.prediction-outcome-status');
@@ -1316,10 +1340,13 @@ function submitPredictionOutcome(card, outcome) {
             if (typeof showToast === 'function') {
                 showToast('Prediction outcome recorded', 'success');
             }
+        } else {
+            alert('Error recording outcome: ' + (data.error || 'Unknown error'));
         }
     })
     .catch(function(e) {
         console.error('Prediction outcome error:', e);
+        alert('Failed to record prediction outcome: ' + (e.message || 'Unknown error'));
     });
 }
 

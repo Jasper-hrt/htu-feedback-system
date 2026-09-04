@@ -29,6 +29,8 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('student_id') and not session.get('admin_id'):
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'error': 'Authentication required'}), 401
             return redirect(url_for('index'))
         return f(*args, **kwargs)
     return decorated_function
@@ -797,6 +799,8 @@ def student_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'student_id' not in session:
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'error': 'Authentication required'}), 401
             return redirect(url_for('student_login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -806,6 +810,8 @@ def src_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'admin_id' not in session:
+            if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'error': 'Authentication required'}), 401
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
