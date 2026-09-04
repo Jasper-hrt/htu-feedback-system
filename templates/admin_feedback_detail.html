@@ -110,8 +110,8 @@
             <button type="button" onclick="showAdminInsightsModal({{ feedback.id }})">📋 Insights</button>
             <button type="button" onclick="showAnalyzeModal({{ feedback.id }})">🔍 Analyze</button>
             <button type="button" onclick="showCorrectionModal({{ feedback.id }}, '{{ feedback.sentiment or 'Neutral' }}')">🔄 Correct Sentiment</button>
-            <button type="button" onclick="showResponseModal({{ feedback.id }}, {{ (feedback.src_response or '')|tojson }})">💬 Reply</button>
-            <button type="button" onclick="openAssignModal({{ feedback.id }}, {{ (feedback.assigned_to or '')|tojson }})">👤 Assign Member</button>
+            <button type="button" onclick='showResponseModal({{ feedback.id }}, {{ (feedback.src_response or "")|tojson }})'>💬 Reply</button>
+            <button type="button" onclick='openAssignModal({{ feedback.id }}, {{ (feedback.assigned_to or "")|tojson }})'>👤 Assign Member</button>
         </div>
     </div>
 

@@ -342,7 +342,7 @@ html.theme-dark .admin-sidebar {
                                     <button onclick="showCorrectionModal({{ f.id }}, '{{ f.sentiment }}')" class="action-btn action-correct" title="Correct Sentiment">🔄</button>
                                     <button onclick="showAdminInsightsModal({{ f.id }})" class="action-btn action-insights" title="Admin Insights">📋</button>
                                     <button onclick='showResponseModal({{ f.id }}, {{ (f.src_response or "")|tojson }})' class="action-btn action-response" title="Response">💬</button>
-                                    <button onclick="openAssignModal({{ f.id }}, {{ (f.assigned_to or '')|tojson }})" class="action-btn action-assign" title="Assign Member">👤</button>
+                                    <button onclick='openAssignModal({{ f.id }}, {{ (f.assigned_to or "")|tojson }})' class="action-btn action-assign" title="Assign Member">👤</button>
                                 </div>
                             </td>
                         </tr>
