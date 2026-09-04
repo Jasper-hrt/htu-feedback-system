@@ -3315,154 +3315,161 @@ def api_export_students():
 @src_required
 def api_export_analytics():
     """Export advanced analytics as JSON for CSV conversion"""
-    all_feedback = Feedback.query.all()
-    now = datetime.utcnow()
+    try:
+        all_feedback = Feedback.query.all()
+        now = datetime.utcnow()
 
-    total = len(all_feedback)
-    resolved = sum(1 for f in all_feedback if f.status == 'Resolved')
-    pending = sum(1 for f in all_feedback if f.status == 'Pending')
-    in_progress = sum(1 for f in all_feedback if f.status == 'In Progress')
-    positive = sum(1 for f in all_feedback if f.sentiment == 'Positive')
-    negative = sum(1 for f in all_feedback if f.sentiment == 'Negative')
-    neutral = sum(1 for f in all_feedback if f.sentiment == 'Neutral')
-    avg_urgency = round(sum(f.urgency_score for f in all_feedback) / total, 1) if total > 0 else 0
-    resolution_rate = round((resolved / total * 100), 1) if total > 0 else 0
+        total = len(all_feedback)
+        resolved = sum(1 for f in all_feedback if f.status == 'Resolved')
+        pending = sum(1 for f in all_feedback if f.status == 'Pending')
+        in_progress = sum(1 for f in all_feedback if f.status == 'In Progress')
+        positive = sum(1 for f in all_feedback if f.sentiment == 'Positive')
+        negative = sum(1 for f in all_feedback if f.sentiment == 'Negative')
+        neutral = sum(1 for f in all_feedback if f.sentiment == 'Neutral')
+        avg_urgency = round(sum(f.urgency_score for f in all_feedback) / total, 1) if total > 0 else 0
+        resolution_rate = round((resolved / total * 100), 1) if total > 0 else 0
 
-    metrics = [
-        {'name': 'Total Feedback', 'value': total, 'description': 'Total number of feedback submissions'},
-        {'name': 'Resolved', 'value': resolved, 'description': 'Feedback marked as resolved'},
-        {'name': 'Pending', 'value': pending, 'description': 'Feedback awaiting review'},
-        {'name': 'In Progress', 'value': in_progress, 'description': 'Feedback currently being processed'},
-        {'name': 'Positive Sentiment', 'value': positive, 'description': 'Feedback with positive sentiment'},
-        {'name': 'Negative Sentiment', 'value': negative, 'description': 'Feedback with negative sentiment'},
-        {'name': 'Neutral Sentiment', 'value': neutral, 'description': 'Feedback with neutral sentiment'},
-        {'name': 'Average Urgency', 'value': f'{avg_urgency}/5', 'description': 'Average urgency score across all feedback'},
-        {'name': 'Resolution Rate', 'value': f'{resolution_rate}%', 'description': 'Percentage of feedback resolved'},
-    ]
+        metrics = [
+            {'name': 'Total Feedback', 'value': total, 'description': 'Total number of feedback submissions'},
+            {'name': 'Resolved', 'value': resolved, 'description': 'Feedback marked as resolved'},
+            {'name': 'Pending', 'value': pending, 'description': 'Feedback awaiting review'},
+            {'name': 'In Progress', 'value': in_progress, 'description': 'Feedback currently being processed'},
+            {'name': 'Positive Sentiment', 'value': positive, 'description': 'Feedback with positive sentiment'},
+            {'name': 'Negative Sentiment', 'value': negative, 'description': 'Feedback with negative sentiment'},
+            {'name': 'Neutral Sentiment', 'value': neutral, 'description': 'Feedback with neutral sentiment'},
+            {'name': 'Average Urgency', 'value': f'{avg_urgency}/5', 'description': 'Average urgency score across all feedback'},
+            {'name': 'Resolution Rate', 'value': f'{resolution_rate}%', 'description': 'Percentage of feedback resolved'},
+        ]
 
-    category_stats = {}
-    for f in all_feedback:
-        cat = f.category or 'General'
-        if cat not in category_stats:
-            category_stats[cat] = {
-                'total': 0, 'positive': 0, 'negative': 0, 'neutral': 0,
-                'avg_urgency': 0, 'resolved': 0
+        category_stats = {}
+        for f in all_feedback:
+            cat = f.category or 'General'
+            if cat not in category_stats:
+                category_stats[cat] = {
+                    'total': 0, 'positive': 0, 'negative': 0, 'neutral': 0,
+                    'avg_urgency': 0, 'resolved': 0
+                }
+            s = category_stats[cat]
+            s['total'] += 1
+            s[f.sentiment] += 1
+            if f.status == 'Resolved':
+                s['resolved'] += 1
+            s['avg_urgency'] += f.urgency_score
+
+        category_rows = []
+        for cat, s in category_stats.items():
+            total_cat = s['total']
+            category_rows.append({
+                'category': cat,
+                'total': total_cat,
+                'positive': s['positive'],
+                'negative': s['negative'],
+                'neutral': s['neutral'],
+                'avg_urgency': round(s['avg_urgency'] / total_cat, 1) if total_cat else 0,
+                'resolution_rate': round((s['resolved'] / total_cat) * 100, 1) if total_cat else 0
+            })
+
+        dept_stats = {}
+        for f in all_feedback:
+            dept = f.responsible_department or 'Unassigned'
+            if dept not in dept_stats:
+                dept_stats[dept] = {'total': 0, 'resolved': 0, 'total_time': 0}
+            dept_stats[dept]['total'] += 1
+            if f.status == 'Resolved' and f.resolved_at:
+                dept_stats[dept]['resolved'] += 1
+                dept_stats[dept]['total_time'] += (f.resolved_at - f.created_at).total_seconds() / 3600
+
+        department_rows = []
+        for dept, s in dept_stats.items():
+            resolved_dept = s['resolved']
+            department_rows.append({
+                'department': dept,
+                'total_cases': s['total'],
+                'resolved': resolved_dept,
+                'resolution_rate': round((resolved_dept / s['total']) * 100, 1) if s['total'] else 0,
+                'avg_time_hours': round(s['total_time'] / resolved_dept, 1) if resolved_dept else 0
+            })
+
+        hour_distribution = [0] * 24
+        day_distribution = [0] * 7
+        for f in all_feedback:
+            hour_distribution[f.created_at.hour] += 1
+            day_distribution[f.created_at.weekday()] += 1
+        hour_rows = [{'hour': f'{h}:00', 'count': hour_distribution[h]} for h in range(24)]
+        day_rows = [{'day': d, 'count': day_distribution[i]} for i, d in enumerate(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])]
+
+        location_complaints = {}
+        for f in all_feedback:
+            if f.location:
+                location_complaints[f.location] = location_complaints.get(f.location, 0) + 1
+        top_locations = sorted(location_complaints.items(), key=lambda x: x[1], reverse=True)[:10]
+        location_rows = [{'location': loc, 'count': count} for loc, count in top_locations]
+
+        sentiment_trend = []
+        for i in range(30, -1, -1):
+            day = now - timedelta(days=i)
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            day_feedback = [f for f in all_feedback if day_start <= f.created_at < day_end]
+            sentiment_trend.append({
+                'date': day_start.strftime('%Y-%m-%d'),
+                'positive': sum(1 for f in day_feedback if f.sentiment == 'Positive'),
+                'negative': sum(1 for f in day_feedback if f.sentiment == 'Negative'),
+                'neutral': sum(1 for f in day_feedback if f.sentiment == 'Neutral'),
+                'total': len(day_feedback)
+            })
+
+        unresolved_feedback = Feedback.query.filter(
+            Feedback.status != 'Resolved',
+            Feedback.created_at <= now - timedelta(hours=48)
+        ).all()
+        prediction_outcomes = [o.to_dict() for o in PredictionOutcome.query.all()]
+        prediction_result = predict_events_combined(
+            room_messages=[],
+            feedback_items=unresolved_feedback,
+            now=now,
+            prediction_outcomes=prediction_outcomes,
+        )
+        predictions = prediction_result.get('predictions', [])
+        prediction_rows = [{
+            'event': p.get('event', ''),
+            'confidence': p.get('confidence', 0),
+            'evidence': '; '.join(p.get('evidence', []) or []),
+            'recommended_actions': '; '.join(p.get('recommended_actions', []) or [])
+        } for p in predictions]
+
+        solution_templates = SolutionTemplate.query.all()
+        learning_report = RecommendationLearner().generate_report(all_feedback, solution_templates)
+        template_rows = [{
+            'category': t.get('category', ''),
+            'keywords': ', '.join(t.get('keywords', [])[:4]),
+            'usage_count': t.get('usage_count', 0),
+            'resolution_rate': round((t.get('resolution_rate', 0) or 0) * 100, 1),
+            'effectiveness_score': round((t.get('effectiveness_score', 0) or 0) * 100, 1)
+        } for t in (learning_report.get('template_scores') or [])]
+        keyword_rows = [{'keyword': kw, 'effectiveness': round((score or 0) * 100, 1)} for kw, score in (learning_report.get('keyword_effectiveness') or {}).items()]
+        department_insight_rows = [{'category': cat, **info} for cat, info in (learning_report.get('department_insights') or {}).items()]
+
+        return jsonify({
+            'success': True,
+            'metrics': metrics,
+            'category_performance': category_rows,
+            'department_performance': department_rows,
+            'sentiment_trend': sentiment_trend,
+            'hour_distribution': hour_rows,
+            'day_distribution': day_rows,
+            'top_locations': location_rows,
+            'predictions': prediction_rows,
+            'recommendation_insights': {
+                'template_scores': template_rows,
+                'keyword_effectiveness': keyword_rows,
+                'department_insights': department_insight_rows
             }
-        s = category_stats[cat]
-        s['total'] += 1
-        s[f.sentiment] += 1
-        if f.status == 'Resolved':
-            s['resolved'] += 1
-        s['avg_urgency'] += f.urgency_score
-
-    category_rows = []
-    for cat, s in category_stats.items():
-        total_cat = s['total']
-        category_rows.append({
-            'category': cat,
-            'total': total_cat,
-            'positive': s['positive'],
-            'negative': s['negative'],
-            'neutral': s['neutral'],
-            'avg_urgency': round(s['avg_urgency'] / total_cat, 1) if total_cat else 0,
-            'resolution_rate': round((s['resolved'] / total_cat) * 100, 1) if total_cat else 0
         })
-
-    dept_stats = {}
-    for f in all_feedback:
-        dept = f.responsible_department or 'Unassigned'
-        if dept not in dept_stats:
-            dept_stats[dept] = {'total': 0, 'resolved': 0, 'total_time': 0}
-        dept_stats[dept]['total'] += 1
-        if f.status == 'Resolved' and f.resolved_at:
-            dept_stats[dept]['resolved'] += 1
-            dept_stats[dept]['total_time'] += (f.resolved_at - f.created_at).total_seconds() / 3600
-
-    department_rows = []
-    for dept, s in dept_stats.items():
-        resolved_dept = s['resolved']
-        department_rows.append({
-            'department': dept,
-            'total_cases': s['total'],
-            'resolved': resolved_dept,
-            'resolution_rate': round((resolved_dept / s['total']) * 100, 1) if s['total'] else 0,
-            'avg_time_hours': round(s['total_time'] / resolved_dept, 1) if resolved_dept else 0
-        })
-
-    hour_distribution = [0] * 24
-    day_distribution = [0] * 7
-    for f in all_feedback:
-        hour_distribution[f.created_at.hour] += 1
-        day_distribution[f.created_at.weekday()] += 1
-    hour_rows = [{'hour': f'{h}:00', 'count': hour_distribution[h]} for h in range(24)]
-    day_rows = [{'day': d, 'count': day_distribution[i]} for i, d in enumerate(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])]
-
-    location_complaints = {}
-    for f in all_feedback:
-        if f.location:
-            location_complaints[f.location] = location_complaints.get(f.location, 0) + 1
-    top_locations = sorted(location_complaints.items(), key=lambda x: x[1], reverse=True)[:10]
-    location_rows = [{'location': loc, 'count': count} for loc, count in top_locations]
-
-    sentiment_trend = []
-    for i in range(30, -1, -1):
-        day = now - timedelta(days=i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
-        day_end = day_start + timedelta(days=1)
-        day_feedback = [f for f in all_feedback if day_start <= f.created_at < day_end]
-        sentiment_trend.append({
-            'date': day_start.strftime('%Y-%m-%d'),
-            'positive': sum(1 for f in day_feedback if f.sentiment == 'Positive'),
-            'negative': sum(1 for f in day_feedback if f.sentiment == 'Negative'),
-            'neutral': sum(1 for f in day_feedback if f.sentiment == 'Neutral'),
-            'total': len(day_feedback)
-        })
-
-    unresolved_feedback = Feedback.query.filter(
-        Feedback.status != 'Resolved',
-        Feedback.created_at <= now - timedelta(hours=48)
-    ).all()
-    prediction_result = predict_events_combined(
-        room_messages=[],
-        feedback_items=unresolved_feedback,
-        now=now
-    )
-    predictions = prediction_result.get('predictions', [])
-    prediction_rows = [{
-        'event': p.get('event', ''),
-        'confidence': p.get('confidence', 0),
-        'evidence': '; '.join(p.get('evidence', []) or []),
-        'recommended_actions': '; '.join(p.get('recommended_actions', []) or [])
-    } for p in predictions]
-
-    solution_templates = SolutionTemplate.query.all()
-    learning_report = RecommendationLearner().generate_report(all_feedback, solution_templates)
-    template_rows = [{
-        'category': t.get('category', ''),
-        'keywords': ', '.join(t.get('keywords', [])[:4]),
-        'usage_count': t.get('usage_count', 0),
-        'resolution_rate': round((t.get('resolution_rate', 0) or 0) * 100, 1),
-        'effectiveness_score': round((t.get('effectiveness_score', 0) or 0) * 100, 1)
-    } for t in (learning_report.get('template_scores') or [])]
-    keyword_rows = [{'keyword': kw, 'effectiveness': round((score or 0) * 100, 1)} for kw, score in (learning_report.get('keyword_effectiveness') or {}).items()]
-    department_insight_rows = [{'category': cat, **info} for cat, info in (learning_report.get('department_insights') or {}).items()]
-
-    return jsonify({
-        'success': True,
-        'metrics': metrics,
-        'category_performance': category_rows,
-        'department_performance': department_rows,
-        'sentiment_trend': sentiment_trend,
-        'hour_distribution': hour_rows,
-        'day_distribution': day_rows,
-        'top_locations': location_rows,
-        'predictions': prediction_rows,
-        'recommendation_insights': {
-            'template_scores': template_rows,
-            'keyword_effectiveness': keyword_rows,
-            'department_insights': department_insight_rows
-        }
-    })
+    except Exception as e:
+        logger = __import__('logging').getLogger('HTU_SRC')
+        logger.exception('Analytics export failed')
+        return jsonify({'success': False, 'error': 'Server error while exporting analytics.'}), 500
 
 @app.route('/api/admin/export/logs')
 @src_required

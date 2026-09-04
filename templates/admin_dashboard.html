@@ -941,7 +941,7 @@ document.querySelectorAll('#feedbackTableBody tr').forEach(function(row) {
                     else if (n.notification_type === 'sentiment_change') icon = '🧠';
                     else if (n.notification_type === 'category_change') icon = '🏷️';
                     var feedbackId = n.feedback_id;
-                    html += '<div class="notification-card ' + (n.is_read ? '' : 'unread') + '">' +
+                    html += '<div class="notification-card ' + (n.is_read ? '' : 'unread') + '" onclick="handleAdminNotificationClick(' + n.id + ', ' + feedbackId + ')">' +
                         '<div class="notification-card-header">' +
                         '<div class="notification-card-title">' + icon + ' ' + n.title + '</div>' +
                         '<button class="notification-dismiss" onclick="event.stopPropagation(); dismissAdminNotification(' + n.id + ')" title="Dismiss">×</button>' +
