@@ -55,6 +55,8 @@
             <span class="urgency-text urgency-{{ feedback.urgency_score or 1 }}">{{ feedback.urgency_score or 1 }}/5 Urgency</span>
             <span class="status-badge status-{{ (feedback.status or 'pending')|lower|replace(' ', '-') }}">{{ feedback.status or 'Pending' }}</span>
             {% if feedback.has_profanity %}<span class="profanity-badge">🤬 Profanity</span>{% endif %}
+            {% if feedback.label_source == 'memory_override' %}<span class="profanity-badge" title="Label auto-applied from a similar past correction." style="background:rgba(168,85,247,0.16);color:#7c3aed;">🧠 Memory-adjusted</span>
+            {% elif feedback.label_source == 'admin_corrected' %}<span class="profanity-badge" title="Label directly corrected by admin." style="background:rgba(245,158,11,0.16);color:var(--warning);">✋ Admin-corrected</span>{% endif %}
         </div>
 
         {% if feedback.location %}

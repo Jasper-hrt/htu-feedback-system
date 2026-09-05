@@ -542,7 +542,30 @@ def process_feedback(text, user_category=None):
         'emotion_scores': {'positive': max(0, compound), 'negative': max(0, -compound)},
         'compound_mood': 'positive' if compound > 0.05 else ('negative' if compound < -0.05 else 'neutral'),
     }
-    
+
+    # 11. Similarity-cache override: if the cleaned text is cosine-similar
+    # (>=0.75 TF-IDF) to any admin-corrected feedback row, trust the
+    # admin's label instead of the model's. Only fires when the model is
+    # unsure (|compound| < 0.20, equivalent to <70 confidence) so high-
+    # confidence correct reads aren't silently overridden. Skipped outside
+    # a Flask app context (e.g. tests, scripts).
+    label_source = 'model'
+    override = None
+    try:
+        from flask import has_app_context
+        if has_app_context() and abs(compound) < 0.20:
+            from database import db
+            from sentiment.similarity_cache import similarity_cache_lookup
+            hit = similarity_cache_lookup(cleaned_text, db.session)
+            if hit and hit.get('sentiment') in ('Positive', 'Negative', 'Neutral'):
+                sentiment = hit['sentiment']
+                if hit.get('category') and (not user_category or user_category == 'Other'):
+                    category = hit['category']
+                override = hit
+                label_source = 'memory_override'
+    except Exception:
+        override = None
+
     return {
         'sentiment': sentiment,
         'sentiment_score': round(compound, 3),
@@ -553,7 +576,10 @@ def process_feedback(text, user_category=None):
         'confidence': round(confidence, 1),
         'emotion': emotion_data,
         'unknown_words': [],
+        'label_source': label_source,
+        'memory_override': override,
     }
+
 
 def analyze_chat_message(message):
     """Fast sentiment analysis for chat messages."""

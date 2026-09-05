@@ -89,6 +89,13 @@ class Feedback(db.Model):
     emotion_intensities = db.Column(db.Text)              # JSON dict {emotion: intensity 0-1}
     secondary_emotions = db.Column(db.Text)               # JSON list of secondary emotions
 
+    # === Active-learning lineage ===
+    label_source = db.Column(db.String(20), default='model', index=True)
+    # 'model' | 'admin_corrected' | 'memory_override'
+    # Set to 'memory_override' when the label was overridden by a similarity-cache hit
+    # against a prior admin correction. Set to 'admin_corrected' when the admin directly
+    # corrected this row. Used by the UI to render an explanatory badge.
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     resolved_at = db.Column(db.DateTime)
     has_profanity = db.Column(db.Boolean, default=False)
@@ -465,6 +472,7 @@ class CustomLexicon(db.Model):
     category = db.Column(db.String(50), default='general')  # e.g., 'slang', 'htu_specific', 'academic'
     added_by = db.Column(db.String(100))
     is_active = db.Column(db.Boolean, default=True)
+    is_bigram = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -492,7 +500,10 @@ class UnknownWord(db.Model):
     word = db.Column(db.String(100), nullable=False, index=True)
     context = db.Column(db.Text)  # The sentence/context where the word was found
     suggested_score = db.Column(db.Float)  # FastText suggestion
-    source = db.Column(db.String(50), default='fasttext')  # 'fasttext', 'manual'
+    polarity = db.Column(db.String(20))    # 'positive' | 'negative' | None
+    proposed_score = db.Column(db.Float)   # delta-weighted score from active learning
+    is_bigram = db.Column(db.Boolean, default=False)
+    source = db.Column(db.String(50), default='fasttext')  # 'fasttext', 'manual', 'correction'
     is_reviewed = db.Column(db.Boolean, default=False)
     is_approved = db.Column(db.Boolean, default=False)
     reviewed_by = db.Column(db.String(100))
@@ -735,6 +746,52 @@ class SentimentCorrection(db.Model):
             'corrected_sentiment': self.corrected_sentiment,
             'admin_name': self.admin_name,
             'confidence_before': self.confidence_before,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
+        }
+
+
+class FeedbackCorrectionMemory(db.Model):
+    """Stores the cleaned-text vector of every admin-corrected feedback row so
+    that future, similar feedback can be auto-relabelled to match the admin's
+    decision. This is the project's active-learning 'memory': once an admin has
+    corrected a piece of feedback, the system remembers it and applies the same
+    label to text that is cosine-similar (>=0.75 TF-IDF cosine) at runtime.
+
+    Rows are inserted by:
+      - review_ai_feedback / api/ai-review/correct on every admin correction
+      - backfill_corrections.py one-shot migration over historical
+        SentimentCorrection rows
+
+    The TF-IDF vector is stored as a JSON-encoded sparse dict
+    ({feature_index: weight}) so we can reuse the *same* fitted vectorizer that
+    the runtime uses without needing to refit it for every lookup.
+    """
+    __tablename__ = 'feedback_correction_memory'
+
+    id = db.Column(db.Integer, primary_key=True)
+    feedback_id = db.Column(db.Integer, db.ForeignKey('feedback.id'),
+                            nullable=False, unique=True, index=True)
+    cleaned_text = db.Column(db.Text, nullable=False)
+    tfidf_vector = db.Column(db.Text, nullable=False)   # JSON sparse dict
+    sentiment = db.Column(db.String(20), nullable=False, index=True)
+    category = db.Column(db.String(50), nullable=False, index=True)
+    urgency_score = db.Column(db.Integer, nullable=False)
+    admin_name = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    __table_args__ = (
+        db.Index('idx_mem_sentiment_category', 'sentiment', 'category'),
+    )
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'feedback_id': self.feedback_id,
+            'cleaned_text': self.cleaned_text,
+            'sentiment': self.sentiment,
+            'category': self.category,
+            'urgency_score': self.urgency_score,
+            'admin_name': self.admin_name,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else '',
         }
 

@@ -812,6 +812,8 @@ def src_required(f):
         if 'admin_id' not in session:
             if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'success': False, 'error': 'Authentication required'}), 401
+            if request.path.startswith('/api/'):
+                return jsonify({'success': False, 'error': 'Authentication required'}), 401
             return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -1170,6 +1172,7 @@ def submit_feedback():
             compound_mood=emotion_data.get('compound_mood') if emotion_data else None,
             emotion_intensities=json.dumps(emotion_data.get('emotion_intensities')) if emotion_data and emotion_data.get('emotion_intensities') else None,
             secondary_emotions=json.dumps(emotion_data.get('secondary_emotions')) if emotion_data and emotion_data.get('secondary_emotions') else None,
+            label_source=analysis.get('label_source', 'model'),
         )
         _apply_enhanced_recommendation(feedback, rec_result)
 
@@ -1221,6 +1224,7 @@ def edit_feedback(feedback_id):
         feedback.compound_mood = emotion_data.get('compound_mood') if emotion_data else None
         feedback.emotion_intensities = json.dumps(emotion_data.get('emotion_intensities')) if emotion_data and emotion_data.get('emotion_intensities') else None
         feedback.secondary_emotions = json.dumps(emotion_data.get('secondary_emotions')) if emotion_data and emotion_data.get('secondary_emotions') else None
+        feedback.label_source = analysis.get('label_source', 'model')
 
         # Recompute the solution recommendation too -- the category or
         # wording may have changed enough to point at a different fix.
@@ -2473,6 +2477,7 @@ def review_ai_feedback(feedback_id):
     feedback.sentiment = new_sentiment
     feedback.category = new_category
     feedback.urgency_score = new_urgency
+    feedback.label_source = 'admin_corrected'
 
     # Regenerate solution recommendation if sentiment changed to Negative
     if new_sentiment == 'Negative' and old[0] != 'Negative':
@@ -2529,7 +2534,19 @@ def review_ai_feedback(feedback_id):
             db.session.add(correction)
         except Exception:
             pass
-    
+
+    # Similarity-cache memory: store the cleaned-text TF-IDF + admin label
+    # so future, similar feedback (cosine >= 0.75) auto-overrides the model
+    # in process_feedback. Idempotent: re-correcting the same row overwrites
+    # the prior memory entry.
+    try:
+        from sentiment.similarity_cache import memory_record_correction
+        memory_record_correction(
+            feedback, db.session, admin_name=session.get('admin_name', 'admin')
+        )
+    except Exception:
+        pass
+
     db.session.commit()
     log_admin_action(session['admin_name'], 'AI Review', f'Feedback ID {feedback.id}: {action}')
 
@@ -2867,6 +2884,7 @@ def api_ai_review_correct(feedback_id):
     feedback.sentiment = new_sentiment
     feedback.category = new_category
     feedback.urgency_score = max(1, min(5, new_urgency))
+    feedback.label_source = 'admin_corrected'
     
     # Regenerate recommendation if sentiment changed to negative
     if new_sentiment == 'Negative' and old[0] != 'Negative':
@@ -2900,7 +2918,16 @@ def api_ai_review_correct(feedback_id):
             )
         except Exception:
             pass
-    
+
+    # Similarity-cache memory
+    try:
+        from sentiment.similarity_cache import memory_record_correction
+        memory_record_correction(
+            feedback, db.session, admin_name=session.get('admin_name', 'admin')
+        )
+    except Exception:
+        pass
+
     db.session.commit()
     log_admin_action(session['admin_name'], 'AI Review', f'Feedback ID {feedback.id}: {action}')
     return jsonify({'success': True})
@@ -3351,7 +3378,13 @@ def api_export_analytics():
                 }
             s = category_stats[cat]
             s['total'] += 1
-            s[f.sentiment] += 1
+            sent = f.sentiment if f.sentiment in ('Positive', 'Negative', 'Neutral') else 'neutral'
+            if sent == 'Positive':
+                s['positive'] += 1
+            elif sent == 'Negative':
+                s['negative'] += 1
+            else:
+                s['neutral'] += 1
             if f.status == 'Resolved':
                 s['resolved'] += 1
             s['avg_urgency'] += f.urgency_score

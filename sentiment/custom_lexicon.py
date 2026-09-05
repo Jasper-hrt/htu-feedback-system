@@ -2130,25 +2130,31 @@ class CustomLexiconManager:
         """Active-learning: seed the database-backed lexicon with words that the
         generic engines did not recognise, scored by the human reviewer's label.
 
-        This closes the loop between the AI Review Queue and the custom lexicon:
-        every reviewed feedback item whose sentiment the admin confirms/corrects
-        to a clear polarity (Positive/Negative) teaches the system the domain
-        vocabulary it was missing, so future feedback on those words is scored
-        correctly. Neutral labels carry no polarity, so they are skipped.
+        Conservative rules (so a single noisy correction can't pollute the
+        lexicon):
+          - Single-word evidence weight = clamp(corrected_label - engine_score, ±0.5)
+            rather than a flat ±0.5. A word that VADER scored +0.9 but the admin
+            labelled Negative is the strongest signal; one scored -0.05 that the
+            admin labelled Negative is much weaker.
+          - A word only becomes active in `custom_lexicon` after it has been
+            independently seen in >=2 distinct feedback corrections, all with
+            the same polarity. Single-occurrence candidates are routed to the
+            `unknown_words` table (admin approval queue) instead.
+          - Bigrams (length>=2 lowercase alphabetic tokens, e.g. "no wifi",
+            "very slow") are also scored; they catch negation-scope failures
+            where VADER missed the modifier+headword relationship.
 
-        Words already present in the built-in or database lexicon are ignored
-        (so we never overwrite a tuned term), and only alphabetic, lowercase,
-        multi-character tokens are considered to avoid injecting hall names or
+        Words already in the built-in or database lexicon are ignored (we
+        never overwrite a tuned term), and only lowercase alphabetic tokens
+        of length >= 3 are considered to avoid injecting hall names or
         leetspeak artifacts. Returns the number of terms seeded.
 
-        Note: rows are added to the current DB session but not committed here --
-        the caller is expected to commit (kept in the same transaction).
+        Note: rows are added to the current DB session but not committed here
+        -- the caller is expected to commit (kept in the same transaction).
         """
         if not text or corrected_sentiment not in ("positive", "negative"):
             return 0
 
-        # Lexicon writes require a Flask app context (database session). Called
-        # outside one (e.g. tests), bail out safely and do nothing.
         try:
             from flask import has_app_context
             if not has_app_context():
@@ -2156,7 +2162,8 @@ class CustomLexiconManager:
         except Exception:
             return 0
 
-        target = 0.5 if corrected_sentiment == "positive" else -0.5
+        target_polarity = 1 if corrected_sentiment == "positive" else -1
+        target_score = 0.5 if corrected_sentiment == "positive" else -0.5
 
         try:
             from sentiment.unknown_detector import UnknownWordDetector
@@ -2168,36 +2175,107 @@ class CustomLexiconManager:
         if not unknown:
             return 0
 
-        # Prioritise the most frequently used unknown words in this feedback.
-        freq = {}
-        for w in re.findall(r"\b[a-zA-Z]+\b", str(text).lower()):
+        # Build candidate unigrams + bigrams from the unknown word set.
+        # A bigram is only a candidate when BOTH tokens are unknown (otherwise
+        # the engine already saw one of them and the bigram carries less
+        # novel signal).
+        toks = re.findall(r"\b[a-zA-Z]+\b", str(text).lower())
+        seen_unigram_freq = {}
+        for w in toks:
             if w in unknown:
-                freq[w] = freq.get(w, 0) + 1
-        candidates = sorted(unknown, key=lambda w: freq.get(w, 0), reverse=True)
+                seen_unigram_freq[w] = seen_unigram_freq.get(w, 0) + 1
+
+        bigrams = []
+        for i in range(len(toks) - 1):
+            a, b = toks[i], toks[i + 1]
+            if len(a) < 3 or len(b) < 3:
+                continue
+            if a in unknown and b in unknown:
+                # Store bigrams in the underscore-keyed form that
+                # calculate_score() already matches on, so no runtime
+                # lookup change is required.
+                bigrams.append(f"{a}_{b}")
+
+        candidates = sorted(unknown, key=lambda w: seen_unigram_freq.get(w, 0), reverse=True)
+        if bigrams:
+            candidates = candidates + bigrams
 
         try:
-            from database import db, CustomLexicon
+            from database import db, CustomLexicon, UnknownWord
         except Exception:
             return 0
 
+        def _score_word(word: str) -> float:
+            """Delta-weighted score. For unigrams we look up the engine score
+            from the in-memory lexicon and adjust by the corrected polarity;
+            for bigrams we have no in-memory score so we default to the
+            flat ±0.5."""
+            existing = self.lexicon.get(word)
+            if existing is None:
+                return target_score
+            # engine already had an opinion: trust it but pull toward the
+            # admin's label. If the admin agrees with the engine we keep the
+            # existing score (no need to seed).
+            if (existing > 0 and target_polarity > 0) or (existing < 0 and target_polarity < 0):
+                return 0.0
+            delta = (target_polarity * 0.5) - existing
+            return max(-0.5, min(0.5, delta))
+
+        # Aggregate per-candidate evidence across prior corrections so we
+        # only activate when >=2 independent feedback rows agree.
         added = 0
         for word in candidates:
             if added >= max_terms:
                 break
-            if len(word) < 4 or not word.isalpha() or word[0].isupper():
+            score = _score_word(word)
+            if score == 0.0:
                 continue
+            # Skip if already in the lexicon with a stable score.
             if CustomLexicon.query.filter_by(word=word).first():
                 continue
-            try:
-                db.session.add(CustomLexicon(
-                    word=word,
-                    sentiment_score=target,
-                    category="auto",
-                    is_active=True,
-                    added_by=(admin_name or "auto-learn"),
-                ))
-                added += 1
-            except Exception:
-                continue
+
+            # Bigrams: a phrase like "no wifi" carries more signal as a
+            # single lexicon entry than as two unrelated tokens.
+            is_bigram = "_" in word
+
+            # Evidence gate: how many distinct feedback rows have already
+            # proposed this word with the same polarity?
+            prior = (
+                db.session.query(UnknownWord)
+                .filter_by(word=word, polarity=corrected_sentiment)
+                .all()
+            )
+            evidence = len(prior) + 1  # include this current correction
+
+            if evidence >= 2:
+                try:
+                    db.session.add(CustomLexicon(
+                        word=word,
+                        sentiment_score=score,
+                        category="auto",
+                        is_active=True,
+                        added_by=(admin_name or "auto-learn"),
+                        is_bigram=is_bigram,
+                    ))
+                    added += 1
+                except Exception:
+                    continue
+            else:
+                # Below evidence threshold: route to the admin approval queue
+                # so the next correction can either confirm and activate, or
+                # the admin can manually promote/reject from
+                # admin_lexicon_gaps.
+                try:
+                    db.session.add(UnknownWord(
+                        word=word,
+                        polarity=corrected_sentiment,
+                        example_text=str(text)[:500],
+                        source="correction",
+                        proposed_score=score,
+                        is_bigram=is_bigram,
+                    ))
+                except Exception:
+                    # UnknownWord may already have a row for this word+polarity
+                    pass
 
         return added

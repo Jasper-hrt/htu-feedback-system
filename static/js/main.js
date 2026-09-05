@@ -1114,7 +1114,10 @@ function exportToCSV(filename, headers, rows) {
  */
 function exportStudentLogs() {
     fetch('/api/admin/export/students', {
-        headers: { 'X-CSRF-Token': getCsrfToken() }
+        headers: {
+            'X-CSRF-Token': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
     .then(response => response.json())
     .then(data => {
@@ -1140,10 +1143,17 @@ function exportStudentLogs() {
  */
 function exportAnalytics() {
     fetch('/api/admin/export/analytics', {
-        headers: { 'X-CSRF-Token': getCsrfToken() }
+        method: 'GET',
+        headers: {
+            'X-CSRF-Token': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
     .then(function(response) {
         var contentType = response.headers.get('content-type') || '';
+        if (response.status === 401) {
+            throw new Error('Your admin session has expired. Please log in again.');
+        }
         if (!response.ok || !contentType.includes('application/json')) {
             return response.text().then(function(text) {
                 throw new Error('Server returned non-JSON response. You may need to log in again.');
@@ -1269,7 +1279,10 @@ function exportAnalytics() {
  */
 function exportLogs() {
     fetch('/api/admin/export/logs', {
-        headers: { 'X-CSRF-Token': getCsrfToken() }
+        headers: {
+            'X-CSRF-Token': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
     .then(function(response) {
         var contentType = response.headers.get('content-type') || '';

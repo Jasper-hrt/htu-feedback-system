@@ -532,6 +532,19 @@ html.theme-dark .stat-card-pill-done   { color: #6ee7b7; }
 .sd-tag-red   { background: rgba(239, 68, 68, 0.14); color: var(--danger); }
 .sd-tag-gray  { background: rgba(100, 116, 139, 0.12); color: var(--text-secondary); }
 
+.sd-tag-override {
+    background: rgba(168, 85, 247, 0.14);
+    color: #7c3aed;
+    border: 1px dashed rgba(168, 85, 247, 0.45);
+    cursor: help;
+}
+.sd-tag-corrected {
+    background: rgba(245, 158, 11, 0.14);
+    color: var(--warning);
+    border: 1px dashed rgba(245, 158, 11, 0.45);
+    cursor: help;
+}
+
 .sd-card-actions { display: inline-flex; flex-wrap: wrap; gap: 0.35rem; }
 .sd-btn-small {
     appearance: none;
@@ -908,6 +921,8 @@ html.theme-dark .stat-card-pill-done   { color: #6ee7b7; }
                         {% if f.sentiment == 'Positive' %}<span class="sd-tag sd-tag-green">😊 Positive</span>
                         {% elif f.sentiment == 'Negative' %}<span class="sd-tag sd-tag-red">😞 Negative</span>
                         {% else %}<span class="sd-tag sd-tag-gray">😐 Neutral</span>{% endif %}
+                        {% if f.label_source == 'memory_override' %}<span class="sd-tag sd-tag-override" title="Label auto-applied from similar past feedback (admin-corrected).">🧠 Memory-adjusted</span>
+                        {% elif f.label_source == 'admin_corrected' %}<span class="sd-tag sd-tag-corrected" title="Label was directly corrected by an admin.">✋ Admin-adjusted</span>{% endif %}
                         <span class="sd-tag sd-tag-urgency-{{ f.urgency_score }}">Urgency {{ f.urgency_score }}/5</span>
                     </div>
                     <div class="sd-card-actions">
